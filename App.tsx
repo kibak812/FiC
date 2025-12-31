@@ -985,7 +985,7 @@ export default function App() {
 
   if (gameState === 'MENU') {
     return (
-      <div className="w-full h-screen flex flex-col items-center justify-center bg-stone-900 text-stone-100 font-serif px-4 text-center">
+      <div className="w-full h-screen-safe flex flex-col items-center justify-center bg-stone-900 text-stone-100 font-serif px-4 text-center">
         <h1 className="text-4xl md:text-6xl font-black mb-4 tracking-tighter text-orange-500 uppercase drop-shadow-lg">혼돈의 대장간</h1>
         <p className="mb-12 text-lg md:text-xl text-stone-400">무기를 직접 제작하여 던전에서 살아남으세요.</p>
         <button 
@@ -1000,7 +1000,7 @@ export default function App() {
 
   if (gameState === 'WIN' || gameState === 'LOSE') {
     return (
-      <div className="w-full h-screen flex flex-col items-center justify-center bg-black/90 text-stone-100 z-50 absolute inset-0">
+      <div className="w-full h-screen-safe flex flex-col items-center justify-center bg-black/90 text-stone-100 z-50 absolute inset-0">
         {gameState === 'WIN' ? <Trophy size={64} className="text-yellow-500 mb-4" /> : <Skull size={64} className="text-red-500 mb-4" />}
         <h2 className="text-5xl font-bold mb-4">{gameState === 'WIN' ? '최종 승리!' : '패배'}</h2>
         <p className="mb-8 text-stone-400">{gameState === 'WIN' ? '대장간의 전설이 되셨습니다.' : `Act ${act} - Floor ${floor} 에서 쓰러졌습니다.`}</p>
@@ -1017,7 +1017,7 @@ export default function App() {
   // --- Boss Reward Screen (Forge Upgrade) ---
   if (gameState === 'BOSS_REWARD') {
       return (
-        <div className="w-full h-screen flex flex-col items-center justify-center bg-stone-950 text-stone-100 p-4">
+        <div className="w-full h-screen-safe flex flex-col items-center justify-center bg-stone-950 text-stone-100 p-4">
             <h2 className="text-3xl font-bold mb-2 text-yellow-500 flex items-center gap-2">
                 <Hammer /> 대장간 개조
             </h2>
@@ -1073,7 +1073,7 @@ export default function App() {
   // --- Shop Screen ---
   if (gameState === 'SHOP') {
       return (
-          <div className="w-full h-screen flex flex-col bg-stone-950 text-stone-100">
+          <div className="w-full h-screen-safe flex flex-col bg-stone-950 text-stone-100">
              <div className="p-4 md:p-6 bg-stone-900 border-b border-stone-800 flex justify-between items-center">
                  <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2 text-yellow-500">
                      <Store /> 암시장
@@ -1148,7 +1148,7 @@ export default function App() {
   // --- Reward Screen ---
   if (gameState === 'REWARD') {
       return (
-        <div className="w-full h-screen flex flex-col items-center justify-center bg-stone-950 text-stone-100 p-4">
+        <div className="w-full h-screen-safe flex flex-col items-center justify-center bg-stone-950 text-stone-100 p-4">
             <h2 className="text-3xl font-bold mb-8 text-yellow-500 flex items-center gap-2">
                 <Trophy /> 전리품 획득
             </h2>
@@ -1175,7 +1175,7 @@ export default function App() {
   // --- Rest Screen (Refactored for Responsiveness & Logic) ---
   if (gameState === 'REST') {
       return (
-        <div className="w-full h-screen flex flex-col items-center justify-center bg-stone-900 text-stone-100 p-4 relative overflow-y-auto">
+        <div className="w-full h-screen-safe flex flex-col items-center justify-center bg-stone-900 text-stone-100 p-4 relative overflow-y-auto">
             {/* Header info */}
             <div className="absolute top-4 right-4 flex items-center gap-2 bg-black/40 px-4 py-2 rounded-full border border-stone-700 z-10">
                 <Coins className="text-yellow-400" size={20} />
@@ -1259,7 +1259,7 @@ export default function App() {
     const selectedName = allCards.find(c => c.instanceId === selectedCardId)?.name;
 
     return (
-        <div className="w-full h-screen flex flex-col bg-stone-950 text-stone-100 overflow-hidden">
+        <div className="w-full h-screen-safe flex flex-col bg-stone-950 text-stone-100 overflow-hidden">
             <div className="flex-shrink-0 text-center p-4 bg-stone-900 shadow-md z-10">
                 <h2 className="text-2xl font-bold text-red-500 mb-1 flex items-center justify-center gap-2">
                     <Flame /> 카드 제련
@@ -1314,7 +1314,7 @@ export default function App() {
 
   // --- Main Gameplay Screen ---
   return (
-    <div className={`w-full h-screen flex flex-col bg-stone-950 text-stone-200 overflow-hidden relative ${shake ? 'animate-shake' : ''} ${shieldEffect ? 'animate-shield-pulse' : ''}`}>
+    <div className={`w-full h-screen-safe flex flex-col bg-stone-950 text-stone-200 overflow-hidden relative ${shake ? 'animate-shake' : ''} ${shieldEffect ? 'animate-shield-pulse' : ''}`}>
       
       {/* Acquired Card Overlay (NEW) */}
       {acquiredCard && (

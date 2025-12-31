@@ -42,6 +42,11 @@
         -ms-overflow-style: none;
         scrollbar-width: none;
       }
+      /* Mobile viewport height fix - uses dvh with vh fallback */
+      .h-screen-safe {
+        height: 100vh;
+        height: 100dvh;
+      }
     </style>
   <script type="importmap">
 {
