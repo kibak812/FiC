@@ -1565,10 +1565,13 @@ export default function App() {
         </div>
       )}
 
-      {/* Feedback Toast - Pixel Style */}
+      {/* Feedback Toast - Above card hand area */}
       {feedback && (
-        <div className="absolute top-[35%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 w-full text-center pointer-events-none px-4">
-          <span className="text-lg md:text-xl font-pixel text-white animate-bounce block" style={{ textShadow: '2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000' }}>
+        <div className="absolute bottom-44 md:bottom-72 left-1/2 transform -translate-x-1/2 z-50 max-w-[90%] text-center pointer-events-none">
+          <span
+            className="inline-block px-4 py-2 bg-black/80 border-2 border-stone-600 text-sm md:text-base font-pixel-kr text-white animate-bounce"
+            style={{ textShadow: '2px 2px 0 #000' }}
+          >
             {feedback}
           </span>
         </div>
