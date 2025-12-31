@@ -1002,7 +1002,7 @@ export default function App() {
 
   if (gameState === 'MENU') {
     return (
-      <div className="w-full h-screen flex flex-col items-center justify-center bg-pixel-bg-dark text-stone-100 px-4 text-center relative overflow-hidden">
+      <div className="w-full h-screen-safe flex flex-col items-center justify-center bg-pixel-bg-dark text-stone-100 px-4 text-center relative overflow-hidden">
         {/* Animated Background Sparks */}
         <div className="absolute inset-0 pointer-events-none">
           <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-orange-500 animate-pulse opacity-50" />
@@ -1057,7 +1057,7 @@ export default function App() {
 
   if (gameState === 'WIN' || gameState === 'LOSE') {
     return (
-      <div className="w-full h-screen flex flex-col items-center justify-center bg-pixel-bg-dark text-stone-100 z-50 absolute inset-0">
+      <div className="w-full h-screen-safe flex flex-col items-center justify-center bg-pixel-bg-dark text-stone-100 z-50 absolute inset-0">
         {/* Icon */}
         <div className={`
           p-6 pixel-border border-4 mb-6
@@ -1123,7 +1123,7 @@ export default function App() {
   // --- Boss Reward Screen (Forge Upgrade) ---
   if (gameState === 'BOSS_REWARD') {
       return (
-        <div className="w-full h-screen flex flex-col items-center justify-center bg-pixel-bg-dark text-stone-100 p-4">
+        <div className="w-full h-screen-safe flex flex-col items-center justify-center bg-pixel-bg-dark text-stone-100 p-4">
             <h2 className="text-xl md:text-2xl font-pixel mb-3 text-yellow-400 flex items-center gap-3" style={{ textShadow: '0 0 15px rgba(250,204,21,0.5)' }}>
                 <Hammer size={24} /> FORGE UPGRADE
             </h2>
@@ -1197,7 +1197,7 @@ export default function App() {
   // --- Shop Screen ---
   if (gameState === 'SHOP') {
       return (
-          <div className="w-full h-screen flex flex-col bg-pixel-bg-dark text-stone-100">
+          <div className="w-full h-screen-safe flex flex-col bg-pixel-bg-dark text-stone-100">
              <div className="p-4 md:p-6 bg-pixel-bg-mid pixel-border border-b-4 border-stone-700 flex justify-between items-center">
                  <h2 className="text-lg md:text-xl font-pixel flex items-center gap-2 text-yellow-400" style={{ textShadow: '0 0 10px rgba(250,204,21,0.5)' }}>
                      <Store size={20} /> BLACK MARKET
@@ -1307,7 +1307,7 @@ export default function App() {
   // --- Reward Screen (Pixel Style) ---
   if (gameState === 'REWARD') {
       return (
-        <div className="w-full h-screen flex flex-col items-center justify-center bg-pixel-bg-dark text-stone-100 p-4">
+        <div className="w-full h-screen-safe flex flex-col items-center justify-center bg-pixel-bg-dark text-stone-100 p-4">
             <h2 className="text-xl md:text-2xl font-pixel mb-8 text-yellow-400 flex items-center gap-3" style={{ textShadow: '0 0 15px rgba(250,204,21,0.5)' }}>
                 <Trophy size={24} /> LOOT!
             </h2>
@@ -1341,7 +1341,7 @@ export default function App() {
   // --- Rest Screen (Refactored for Responsiveness & Logic) ---
   if (gameState === 'REST') {
       return (
-        <div className="w-full h-screen flex flex-col items-center justify-center bg-pixel-bg-dark text-stone-100 p-4 relative overflow-y-auto">
+        <div className="w-full h-screen-safe flex flex-col items-center justify-center bg-pixel-bg-dark text-stone-100 p-4 relative overflow-y-auto">
             {/* Header info - Pixel Style */}
             <div className="absolute top-4 right-4 flex items-center gap-2 bg-black/60 px-3 py-1.5 pixel-border border-2 border-yellow-600 z-10">
                 <Coins className="text-yellow-400" size={16} />
@@ -1461,7 +1461,7 @@ export default function App() {
     const selectedName = allCards.find(c => c.instanceId === selectedCardId)?.name;
 
     return (
-        <div className="w-full h-screen flex flex-col bg-pixel-bg-dark text-stone-100 overflow-hidden">
+        <div className="w-full h-screen-safe flex flex-col bg-pixel-bg-dark text-stone-100 overflow-hidden">
             <div className="flex-shrink-0 text-center p-4 bg-pixel-bg-mid pixel-border border-b-4 border-stone-700 z-10">
                 <h2 className="text-lg md:text-xl font-pixel text-red-400 mb-2 flex items-center justify-center gap-2" style={{ textShadow: '0 0 10px rgba(248,113,113,0.5)' }}>
                     <Flame size={20} /> SMELT CARD
@@ -1525,7 +1525,7 @@ export default function App() {
 
   // --- Main Gameplay Screen ---
   return (
-    <div className={`w-full h-screen flex flex-col bg-stone-950 text-stone-200 overflow-hidden relative ${shake ? 'animate-shake' : ''} ${shieldEffect ? 'animate-shield-pulse' : ''}`}>
+    <div className={`w-full h-screen-safe flex flex-col bg-stone-950 text-stone-200 overflow-hidden relative ${shake ? 'animate-shake' : ''} ${shieldEffect ? 'animate-shield-pulse' : ''}`}>
       
       {/* Acquired Card Overlay - Pixel Style */}
       {acquiredCard && (
