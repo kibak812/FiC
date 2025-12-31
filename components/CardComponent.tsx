@@ -7,68 +7,93 @@ interface CardProps {
   onClick: (card: CardInstance) => void;
   disabled?: boolean;
   selected?: boolean;
-  // Touch Drag Props
+  isDiscarding?: boolean;
   onTouchDragStart?: (card: CardInstance, x: number, y: number) => void;
   onTouchDragMove?: (x: number, y: number) => void;
   onTouchDragEnd?: (x: number, y: number) => void;
-  className?: string; // Allow external override for positioning (e.g., drag ghost)
+  className?: string;
 }
 
-const CardComponent: React.FC<CardProps> = ({ 
-  card, 
-  onClick, 
-  disabled, 
+const CardComponent: React.FC<CardProps> = ({
+  card,
+  onClick,
+  disabled,
   selected,
+  isDiscarding,
   onTouchDragStart,
   onTouchDragMove,
   onTouchDragEnd,
   className
 }) => {
   const elementRef = useRef<HTMLDivElement>(null);
-  
-  // Refs for tracking touch movement delta
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const isDraggingRef = useRef(false);
 
-  const getBorderColor = () => {
+  // Pixel border colors by rarity
+  const getBorderStyle = () => {
     switch (card.rarity) {
-      case CardRarity.LEGEND: return 'border-yellow-400 shadow-[0_0_15px_rgba(250,204,21,0.5)]';
-      case CardRarity.RARE: return 'border-purple-400 shadow-[0_0_10px_rgba(192,132,252,0.4)]';
-      case CardRarity.COMMON: return 'border-blue-400';
-      default: return 'border-stone-500';
+      case CardRarity.LEGEND:
+        return 'border-yellow-400 animate-legend-shimmer';
+      case CardRarity.RARE:
+        return 'border-purple-400 animate-rare-glow';
+      case CardRarity.COMMON:
+        return 'border-pixel-common';
+      case CardRarity.STARTER:
+        return 'border-pixel-starter';
+      default:
+        return 'border-stone-600';
     }
   };
 
+  // Type-based background colors (pixel palette)
   const getBgColor = () => {
     switch (card.type) {
-      case CardType.HANDLE: return 'bg-amber-900/90';
-      case CardType.HEAD: return 'bg-slate-800/90';
-      case CardType.DECO: return 'bg-emerald-900/90';
+      case CardType.HANDLE:
+        return 'bg-gradient-to-b from-pixel-handle to-pixel-handle-dark';
+      case CardType.HEAD:
+        return 'bg-gradient-to-b from-pixel-head to-pixel-head-dark';
+      case CardType.DECO:
+        return 'bg-gradient-to-b from-pixel-deco to-pixel-deco-dark';
+      default:
+        return 'bg-stone-800';
     }
   };
 
   const getTypeName = () => {
     switch (card.type) {
-        case CardType.HANDLE: return '손잡이';
-        case CardType.HEAD: return '머리';
-        case CardType.DECO: return '장식';
-        default: return card.type;
+      case CardType.HANDLE: return '\uc190\uc7a1\uc774';
+      case CardType.HEAD: return '\uba38\ub9ac';
+      case CardType.DECO: return '\uc7a5\uc2dd';
+      default: return card.type;
     }
-  }
+  };
+
+  const getTypeColor = () => {
+    switch (card.type) {
+      case CardType.HANDLE: return 'bg-amber-700 border-amber-500';
+      case CardType.HEAD: return 'bg-slate-600 border-slate-400';
+      case CardType.DECO: return 'bg-emerald-700 border-emerald-500';
+      default: return 'bg-stone-700 border-stone-500';
+    }
+  };
 
   const getIcon = () => {
+    const iconClass = "w-5 h-5 md:w-6 md:h-6";
     switch (card.type) {
-      case CardType.HANDLE: return <ArrowUpCircle className="w-3 h-3 md:w-4 md:h-4" />;
-      case CardType.HEAD: return <Sword className="w-3 h-3 md:w-4 md:h-4" />;
-      case CardType.DECO: return <Gem className="w-3 h-3 md:w-4 md:h-4" />;
+      case CardType.HANDLE:
+        return <ArrowUpCircle className={iconClass} />;
+      case CardType.HEAD:
+        return <Sword className={iconClass} />;
+      case CardType.DECO:
+        return <Gem className={iconClass} />;
     }
   };
 
   // HTML5 Drag (Desktop)
   const handleDragStart = (e: React.DragEvent) => {
     if (disabled) {
-        e.preventDefault();
-        return;
+      e.preventDefault();
+      return;
     }
     e.dataTransfer.setData('cardInstanceId', card.instanceId);
     e.dataTransfer.setData('cardType', card.type);
@@ -79,35 +104,29 @@ const CardComponent: React.FC<CardProps> = ({
   const handleTouchStart = (e: React.TouchEvent) => {
     if (disabled || !onTouchDragStart) return;
     const touch = e.touches[0];
-    // Record start position but do NOT start drag yet
     touchStartRef.current = { x: touch.clientX, y: touch.clientY };
     isDraggingRef.current = false;
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
     if (disabled || !onTouchDragMove || !touchStartRef.current) return;
-    
+
     const touch = e.touches[0];
     const dx = touch.clientX - touchStartRef.current.x;
     const dy = touch.clientY - touchStartRef.current.y;
 
-    // Logic to detect if this is a vertical drag intent or a horizontal scroll intent
     if (!isDraggingRef.current) {
-        // Threshold: 10px movement
-        // Direction: Vertical movement must be greater than horizontal movement
-        if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) {
-            isDraggingRef.current = true;
-            // Now we officially start the drag in the parent
-            if (onTouchDragStart) {
-                onTouchDragStart(card, touch.clientX, touch.clientY);
-            }
+      if (Math.abs(dy) > 10 && Math.abs(dy) > Math.abs(dx)) {
+        isDraggingRef.current = true;
+        if (onTouchDragStart) {
+          onTouchDragStart(card, touch.clientX, touch.clientY);
         }
+      }
     }
 
-    // If we are in dragging mode, update position and prevent default browser scrolling
     if (isDraggingRef.current) {
-        if (e.cancelable) e.preventDefault();
-        onTouchDragMove(touch.clientX, touch.clientY);
+      if (e.cancelable) e.preventDefault();
+      onTouchDragMove(touch.clientX, touch.clientY);
     }
   };
 
@@ -115,13 +134,11 @@ const CardComponent: React.FC<CardProps> = ({
     if (disabled || !onTouchDragEnd) return;
 
     if (isDraggingRef.current) {
-        const touch = e.changedTouches[0];
-        onTouchDragEnd(touch.clientX, touch.clientY);
-        // Prevent ghost clicks if we were dragging
-        if (e.cancelable) e.preventDefault();
+      const touch = e.changedTouches[0];
+      onTouchDragEnd(touch.clientX, touch.clientY);
+      if (e.cancelable) e.preventDefault();
     }
-    
-    // Reset state
+
     touchStartRef.current = null;
     isDraggingRef.current = false;
   };
@@ -136,49 +153,95 @@ const CardComponent: React.FC<CardProps> = ({
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       className={`
-        relative flex flex-col justify-between select-none
+        relative flex flex-col justify-between select-none overflow-hidden
         w-24 h-36 md:w-32 md:h-48
-        rounded-lg border-2 p-1.5 md:p-2 
-        transition-all duration-200
+        pixel-border border-4 p-1 md:p-1.5
+        transition-all duration-150
         touch-pan-x
-        ${getBorderColor()}
+        ${getBorderStyle()}
         ${getBgColor()}
-        ${disabled ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-grab active:cursor-grabbing hover:scale-105 active:scale-95'}
-        ${selected ? 'ring-4 ring-orange-500 translate-y-[-10px]' : ''}
+        ${disabled ? 'opacity-50 grayscale cursor-not-allowed' : 'cursor-grab active:cursor-grabbing hover:scale-105 hover:-translate-y-1 active:scale-95'}
+        ${selected ? 'ring-4 ring-orange-500 -translate-y-3 scale-105' : ''}
+        ${isDiscarding ? 'card-discarding' : ''}
         ${className || ''}
       `}
+      style={{
+        boxShadow: disabled ? 'none' : '3px 3px 0 0 rgba(0,0,0,0.5)'
+      }}
     >
-      {/* Header */}
+      {/* Header - Type Badge & Cost */}
       <div className="flex justify-between items-start">
-        <span className={`text-[8px] md:text-[10px] uppercase font-bold tracking-tighter px-1 rounded text-white bg-black/40`}>
+        <span className={`
+          text-[7px] md:text-[9px] font-pixel-kr font-bold
+          px-1 py-0.5 pixel-border border
+          ${getTypeColor()}
+        `}>
           {getTypeName()}
         </span>
-        <div className="flex items-center justify-center w-5 h-5 md:w-6 md:h-6 rounded-full bg-blue-500 text-white font-bold text-xs md:text-sm border border-blue-300">
+        <div className={`
+          flex items-center justify-center
+          w-5 h-5 md:w-6 md:h-6
+          pixel-border border-2
+          bg-blue-600 border-blue-300
+          font-pixel text-[10px] md:text-xs text-white
+        `}>
           {card.cost}
         </div>
       </div>
 
-      {/* Image / Icon Placeholder */}
-      <div className="flex-grow flex items-center justify-center py-1 md:py-2 text-stone-300">
-         <div className="p-2 md:p-3 rounded-full bg-black/30 border border-white/10">
-            {getIcon()}
-         </div>
+      {/* Icon Area */}
+      <div className="flex-grow flex items-center justify-center py-1">
+        <div className={`
+          p-2 md:p-3 pixel-border border-2
+          bg-black/40 border-white/20
+          text-stone-200
+        `}>
+          {getIcon()}
+        </div>
       </div>
 
-      {/* Content */}
-      <div className="text-center w-full px-1 flex flex-col items-center">
-        <h3 className="text-[10px] md:text-xs font-bold leading-tight mb-1 text-white shadow-black drop-shadow-md break-keep line-clamp-1 md:line-clamp-2">
-            {card.name}
+      {/* Card Name & Description */}
+      <div className="text-center w-full flex flex-col items-center gap-0.5 overflow-hidden">
+        <h3 className="text-[8px] md:text-[10px] font-pixel-kr font-bold leading-tight text-white truncate w-full px-0.5"
+            style={{ textShadow: '1px 1px 0 #000' }}>
+          {card.name}
         </h3>
-        <p className="text-[8px] md:text-[10px] text-stone-300 leading-tight min-h-[40px] md:min-h-[48px] flex items-center justify-center bg-black/20 rounded whitespace-normal break-words text-center p-0.5 w-full">
-          {card.description}
+        <p className={`
+          text-[6px] md:text-[8px] font-pixel-kr
+          text-stone-300 leading-tight
+          h-[28px] md:h-[36px]
+          flex items-center justify-center text-center
+          bg-black/30 pixel-border border border-black/50
+          p-0.5 w-full overflow-hidden
+        `}>
+          <span className="line-clamp-2">{card.description}</span>
         </p>
       </div>
 
-      {/* Value Badge */}
-      <div className="absolute -bottom-2 -right-2 w-6 h-6 md:w-8 md:h-8 bg-stone-800 border-2 border-stone-600 rounded-full flex items-center justify-center text-[10px] md:text-xs font-bold shadow-lg z-10">
+      {/* Value Badge - Pixel Style */}
+      <div className={`
+        absolute -bottom-2 -right-2
+        w-7 h-7 md:w-8 md:h-8
+        pixel-border border-2
+        flex items-center justify-center
+        font-pixel text-[9px] md:text-[11px]
+        z-10
+        ${card.type === CardType.HANDLE
+          ? 'bg-amber-600 border-amber-400 text-amber-100'
+          : card.type === CardType.HEAD
+          ? 'bg-slate-600 border-slate-400 text-slate-100'
+          : 'bg-emerald-600 border-emerald-400 text-emerald-100'
+        }
+      `}>
         {card.type === CardType.HANDLE ? `x${card.value}` : card.value}
       </div>
+
+      {/* Rarity Indicator for Legend/Rare */}
+      {card.rarity === CardRarity.LEGEND && (
+        <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden pixel-border">
+          <div className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-400/20 to-transparent animate-pulse" />
+        </div>
+      )}
     </div>
   );
 };

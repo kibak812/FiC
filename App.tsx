@@ -70,6 +70,7 @@ export default function App() {
   const [shake, setShake] = useState(false);
   const [shieldEffect, setShieldEffect] = useState(false); // New state for defense visual
   const [feedback, setFeedback] = useState<string | null>(null);
+  const [discardingCardIds, setDiscardingCardIds] = useState<Set<string>>(new Set());
 
   // --- Touch Drag State ---
   const [dragState, setDragState] = useState<{
@@ -796,10 +797,26 @@ export default function App() {
         case 'PLAYER_DISCARD':
           setPlayer(prev => ({ ...prev, costLimit: null, disarmed: false }));
           const allRemaining = [...hand, slots.handle, slots.head, slots.deco].filter(Boolean) as CardInstance[];
-          setDiscardPile(prev => [...prev, ...allRemaining]);
-          setHand([]);
-          setSlots({ handle: null, head: null, deco: null });
-          setCombatState(prev => ({ ...prev, phase: 'ENEMY_TURN' }));
+
+          // Trigger sequential discard animation
+          if (allRemaining.length > 0) {
+            allRemaining.forEach((card, i) => {
+              setTimeout(() => {
+                setDiscardingCardIds(prev => new Set([...prev, card.instanceId]));
+              }, i * 60); // Stagger by 60ms
+            });
+
+            // After all animations complete, actually discard
+            setTimeout(() => {
+              setDiscardPile(prev => [...prev, ...allRemaining]);
+              setHand([]);
+              setSlots({ handle: null, head: null, deco: null });
+              setDiscardingCardIds(new Set());
+              setCombatState(prev => ({ ...prev, phase: 'ENEMY_TURN' }));
+            }, allRemaining.length * 60 + 400); // Wait for stagger + animation duration
+          } else {
+            setCombatState(prev => ({ ...prev, phase: 'ENEMY_TURN' }));
+          }
           break;
 
         case 'ENEMY_TURN':
@@ -985,28 +1002,117 @@ export default function App() {
 
   if (gameState === 'MENU') {
     return (
-      <div className="w-full h-screen flex flex-col items-center justify-center bg-stone-900 text-stone-100 font-serif px-4 text-center">
-        <h1 className="text-4xl md:text-6xl font-black mb-4 tracking-tighter text-orange-500 uppercase drop-shadow-lg">혼돈의 대장간</h1>
-        <p className="mb-12 text-lg md:text-xl text-stone-400">무기를 직접 제작하여 던전에서 살아남으세요.</p>
-        <button 
+      <div className="w-full h-screen flex flex-col items-center justify-center bg-pixel-bg-dark text-stone-100 px-4 text-center relative overflow-hidden">
+        {/* Animated Background Sparks */}
+        <div className="absolute inset-0 pointer-events-none">
+          <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-orange-500 animate-pulse opacity-50" />
+          <div className="absolute top-1/3 right-1/3 w-1 h-1 bg-yellow-500 animate-ping opacity-30" />
+          <div className="absolute bottom-1/4 left-1/3 w-2 h-2 bg-red-500 animate-pulse opacity-40" style={{ animationDelay: '0.5s' }} />
+          <div className="absolute top-1/2 right-1/4 w-1 h-1 bg-orange-400 animate-ping opacity-40" style={{ animationDelay: '1s' }} />
+        </div>
+
+        {/* Forge Glow */}
+        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-96 h-48 bg-orange-600/20 blur-3xl pointer-events-none" />
+
+        {/* Title */}
+        <h1 className="font-pixel text-2xl md:text-4xl mb-2 text-orange-500 animate-pulse"
+            style={{ textShadow: '4px 4px 0 #7c2d12, 0 0 20px rgba(249,115,22,0.5)' }}>
+          FORGED IN CHAOS
+        </h1>
+        <h2 className="font-pixel-kr text-3xl md:text-5xl font-bold mb-6 text-orange-400"
+            style={{ textShadow: '3px 3px 0 #431407' }}>
+          혼돈의 대장간
+        </h2>
+
+        <p className="mb-10 text-base md:text-lg text-stone-400 font-pixel-kr">
+          무기를 직접 제작하여 던전에서 살아남으세요.
+        </p>
+
+        {/* Start Button - 3D Pixel Style */}
+        <button
           onClick={startGame}
-          className="px-8 py-4 bg-orange-600 hover:bg-orange-500 rounded text-xl font-bold transition-all shadow-lg hover:shadow-orange-500/50"
+          className="
+            px-8 md:px-12 py-3 md:py-4
+            pixel-border border-4 border-orange-400
+            bg-gradient-to-b from-orange-500 to-orange-700
+            font-pixel-kr text-lg md:text-xl font-bold text-white
+            hover:from-orange-400 hover:to-orange-600
+            active:translate-y-1
+            transition-all
+          "
+          style={{
+            boxShadow: '0 6px 0 0 #9a3412, 0 8px 10px rgba(0,0,0,0.5)',
+          }}
         >
           대장간 입장
         </button>
+
+        {/* Version */}
+        <div className="absolute bottom-4 right-4 text-xs text-stone-600 font-pixel">
+          v0.1
+        </div>
       </div>
     );
   }
 
   if (gameState === 'WIN' || gameState === 'LOSE') {
     return (
-      <div className="w-full h-screen flex flex-col items-center justify-center bg-black/90 text-stone-100 z-50 absolute inset-0">
-        {gameState === 'WIN' ? <Trophy size={64} className="text-yellow-500 mb-4" /> : <Skull size={64} className="text-red-500 mb-4" />}
-        <h2 className="text-5xl font-bold mb-4">{gameState === 'WIN' ? '최종 승리!' : '패배'}</h2>
-        <p className="mb-8 text-stone-400">{gameState === 'WIN' ? '대장간의 전설이 되셨습니다.' : `Act ${act} - Floor ${floor} 에서 쓰러졌습니다.`}</p>
-        <button 
+      <div className="w-full h-screen flex flex-col items-center justify-center bg-pixel-bg-dark text-stone-100 z-50 absolute inset-0">
+        {/* Icon */}
+        <div className={`
+          p-6 pixel-border border-4 mb-6
+          ${gameState === 'WIN' ? 'border-yellow-400 bg-yellow-900/50' : 'border-red-500 bg-red-900/50'}
+        `}>
+          {gameState === 'WIN'
+            ? <Trophy size={64} className="text-yellow-400" />
+            : <Skull size={64} className="text-red-400" />
+          }
+        </div>
+
+        {/* Title */}
+        <h2 className={`
+          font-pixel text-2xl md:text-4xl mb-4
+          ${gameState === 'WIN' ? 'text-yellow-400' : 'text-red-400'}
+        `}
+        style={{ textShadow: '3px 3px 0 #000' }}>
+          {gameState === 'WIN' ? 'VICTORY!' : 'GAME OVER'}
+        </h2>
+
+        <p className="mb-2 font-pixel-kr text-xl md:text-2xl text-stone-300">
+          {gameState === 'WIN' ? '최종 승리!' : '패배'}
+        </p>
+
+        <p className="mb-8 text-stone-500 font-pixel-kr">
+          {gameState === 'WIN'
+            ? '대장간의 전설이 되셨습니다.'
+            : `Act ${act} - Floor ${floor} 에서 쓰러졌습니다.`}
+        </p>
+
+        {/* Stats Box */}
+        <div className="pixel-border border-2 border-stone-600 bg-stone-900/80 p-4 mb-8 min-w-[200px]">
+          <div className="flex justify-between gap-8 font-pixel-kr text-sm mb-2">
+            <span className="text-stone-500">획득 골드:</span>
+            <span className="text-yellow-400">{player.gold} G</span>
+          </div>
+          <div className="flex justify-between gap-8 font-pixel-kr text-sm">
+            <span className="text-stone-500">도달 층:</span>
+            <span className="text-stone-300">Act {act} - {floor}F</span>
+          </div>
+        </div>
+
+        {/* Retry Button */}
+        <button
           onClick={startGame}
-          className="px-6 py-3 border border-stone-500 hover:bg-stone-800 rounded mt-8"
+          className="
+            px-8 py-3
+            pixel-border border-4 border-stone-500
+            bg-gradient-to-b from-stone-600 to-stone-800
+            font-pixel-kr text-base font-bold text-white
+            hover:from-stone-500 hover:to-stone-700
+            active:translate-y-1
+            transition-all
+          "
+          style={{ boxShadow: '0 4px 0 0 #1c1917' }}
         >
           다시 하기
         </button>
@@ -1017,52 +1123,70 @@ export default function App() {
   // --- Boss Reward Screen (Forge Upgrade) ---
   if (gameState === 'BOSS_REWARD') {
       return (
-        <div className="w-full h-screen flex flex-col items-center justify-center bg-stone-950 text-stone-100 p-4">
-            <h2 className="text-3xl font-bold mb-2 text-yellow-500 flex items-center gap-2">
-                <Hammer /> 대장간 개조
+        <div className="w-full h-screen flex flex-col items-center justify-center bg-pixel-bg-dark text-stone-100 p-4">
+            <h2 className="text-xl md:text-2xl font-pixel mb-3 text-yellow-400 flex items-center gap-3" style={{ textShadow: '0 0 15px rgba(250,204,21,0.5)' }}>
+                <Hammer size={24} /> FORGE UPGRADE
             </h2>
-            <p className="text-stone-400 mb-10 text-center">보스를 물리쳤습니다! 대장간을 업그레이드할 기회입니다.</p>
-            
-            <div className="flex flex-col md:flex-row gap-6 mb-8">
+            <p className="text-stone-400 font-pixel-kr text-sm mb-8 text-center">보스를 물리쳤습니다! 대장간을 업그레이드할 기회입니다.</p>
+
+            <div className="flex flex-col md:flex-row gap-4 md:gap-6 mb-8">
                 {/* Max Energy Option */}
-                <button 
+                <button
                     onClick={() => confirmBossReward('ENERGY')}
-                    className="w-full md:w-64 p-6 bg-stone-900 border-2 border-yellow-600/50 hover:border-yellow-500 hover:bg-stone-800 rounded-xl flex flex-col items-center gap-4 transition-all hover:scale-105"
+                    className="w-full md:w-56 p-5
+                      bg-gradient-to-b from-stone-700 to-stone-800
+                      pixel-border border-4 border-yellow-700
+                      flex flex-col items-center gap-3
+                      hover:border-yellow-500 hover:from-stone-600 hover:to-stone-700
+                      transition-all active:translate-y-1"
+                    style={{ boxShadow: '0 4px 0 0 #1c1917' }}
                 >
-                    <div className="p-4 rounded-full bg-yellow-900/30 text-yellow-400">
-                        <Zap size={40} fill="currentColor" />
+                    <div className="p-3 pixel-border border-2 bg-yellow-900/50 border-yellow-600 text-yellow-400">
+                        <Zap size={32} fill="currentColor" />
                     </div>
                     <div className="text-center">
-                        <h3 className="text-xl font-bold text-yellow-400">확장 풀무</h3>
-                        <p className="text-sm text-stone-400 mt-2">최대 에너지가 <span className="text-white font-bold">+1</span> 증가합니다.</p>
+                        <h3 className="font-pixel-kr text-base font-bold text-yellow-400">확장 풀무</h3>
+                        <p className="text-xs text-stone-400 font-pixel-kr mt-2">에너지 <span className="text-white font-pixel">+1</span></p>
                     </div>
                 </button>
 
                 {/* Max HP Option */}
-                <button 
+                <button
                     onClick={() => confirmBossReward('DRAW')}
-                    className="w-full md:w-64 p-6 bg-stone-900 border-2 border-blue-600/50 hover:border-blue-500 hover:bg-stone-800 rounded-xl flex flex-col items-center gap-4 transition-all hover:scale-105"
+                    className="w-full md:w-56 p-5
+                      bg-gradient-to-b from-stone-700 to-stone-800
+                      pixel-border border-4 border-blue-700
+                      flex flex-col items-center gap-3
+                      hover:border-blue-500 hover:from-stone-600 hover:to-stone-700
+                      transition-all active:translate-y-1"
+                    style={{ boxShadow: '0 4px 0 0 #1c1917' }}
                 >
-                    <div className="p-4 rounded-full bg-blue-900/30 text-blue-400">
-                        <Heart size={40} fill="currentColor" />
+                    <div className="p-3 pixel-border border-2 bg-blue-900/50 border-blue-600 text-blue-400">
+                        <Heart size={32} fill="currentColor" />
                     </div>
                     <div className="text-center">
-                        <h3 className="text-xl font-bold text-blue-400">생명석 강화</h3>
-                        <p className="text-sm text-stone-400 mt-2">최대 체력이 <span className="text-white font-bold">+30</span> 증가합니다.</p>
+                        <h3 className="font-pixel-kr text-base font-bold text-blue-400">생명석 강화</h3>
+                        <p className="text-xs text-stone-400 font-pixel-kr mt-2">최대 HP <span className="text-white font-pixel">+30</span></p>
                     </div>
                 </button>
 
                 {/* Gold Option */}
-                <button 
+                <button
                     onClick={() => confirmBossReward('BLOCK')}
-                    className="w-full md:w-64 p-6 bg-stone-900 border-2 border-stone-600 hover:border-stone-400 hover:bg-stone-800 rounded-xl flex flex-col items-center gap-4 transition-all hover:scale-105"
+                    className="w-full md:w-56 p-5
+                      bg-gradient-to-b from-stone-700 to-stone-800
+                      pixel-border border-4 border-stone-600
+                      flex flex-col items-center gap-3
+                      hover:border-stone-400 hover:from-stone-600 hover:to-stone-700
+                      transition-all active:translate-y-1"
+                    style={{ boxShadow: '0 4px 0 0 #1c1917' }}
                 >
-                    <div className="p-4 rounded-full bg-stone-800 text-stone-200">
-                        <Coins size={40} />
+                    <div className="p-3 pixel-border border-2 bg-stone-800 border-stone-500 text-stone-200">
+                        <Coins size={32} />
                     </div>
                     <div className="text-center">
-                        <h3 className="text-xl font-bold text-stone-200">대장간 지원금</h3>
-                        <p className="text-sm text-stone-400 mt-2">즉시 <span className="text-white font-bold">200 골드</span>를 획득합니다.</p>
+                        <h3 className="font-pixel-kr text-base font-bold text-stone-200">지원금</h3>
+                        <p className="text-xs text-stone-400 font-pixel-kr mt-2">골드 <span className="text-yellow-400 font-pixel">+200</span></p>
                     </div>
                 </button>
             </div>
@@ -1073,98 +1197,140 @@ export default function App() {
   // --- Shop Screen ---
   if (gameState === 'SHOP') {
       return (
-          <div className="w-full h-screen flex flex-col bg-stone-950 text-stone-100">
-             <div className="p-4 md:p-6 bg-stone-900 border-b border-stone-800 flex justify-between items-center">
-                 <h2 className="text-xl md:text-2xl font-bold flex items-center gap-2 text-yellow-500">
-                     <Store /> 암시장
+          <div className="w-full h-screen flex flex-col bg-pixel-bg-dark text-stone-100">
+             <div className="p-4 md:p-6 bg-pixel-bg-mid pixel-border border-b-4 border-stone-700 flex justify-between items-center">
+                 <h2 className="text-lg md:text-xl font-pixel flex items-center gap-2 text-yellow-400" style={{ textShadow: '0 0 10px rgba(250,204,21,0.5)' }}>
+                     <Store size={20} /> BLACK MARKET
                  </h2>
-                 <div className="flex items-center gap-2 bg-black/40 px-3 py-1.5 rounded-full border border-stone-700">
-                     <Coins className="text-yellow-400" size={16} />
-                     <span className="font-bold text-lg">{player.gold} G</span>
+                 <div className="flex items-center gap-2 bg-black/60 px-3 py-1.5 pixel-border border-2 border-yellow-600">
+                     <Coins className="text-yellow-400" size={14} />
+                     <span className="font-pixel text-sm text-yellow-300">{player.gold}</span>
                  </div>
              </div>
-             
+
              <div className="flex-1 p-4 md:p-8 overflow-y-auto">
                  <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
                     {/* Card Removal */}
-                    <button 
+                    <button
                         onClick={() => handleShopBuyWithFlag('REMOVE')}
-                        className="aspect-square bg-stone-900 border border-stone-700 rounded-lg flex flex-col items-center justify-center p-2 hover:border-red-500 hover:bg-stone-800 transition-all group"
+                        className="aspect-square bg-gradient-to-b from-stone-700 to-stone-800
+                          pixel-border border-4 border-stone-600
+                          flex flex-col items-center justify-center p-2
+                          hover:border-red-500 hover:from-stone-600 hover:to-stone-700
+                          transition-all group active:translate-y-1"
+                        style={{ boxShadow: '0 4px 0 0 #1c1917' }}
                     >
-                        <Flame size={32} className="text-stone-500 group-hover:text-red-500 transition-colors mb-2" />
-                        <div className="text-sm md:text-base font-bold">카드 정화</div>
-                        <div className="text-[10px] text-stone-400 text-center mb-2">카드 1장 제거</div>
-                        <div className={`font-bold text-sm ${player.gold >= 50 ? 'text-yellow-400' : 'text-red-500'}`}>50 G</div>
+                        <div className="p-2 pixel-border border-2 bg-red-900/40 border-red-700 mb-2 group-hover:bg-red-800/50">
+                          <Flame size={28} className="text-red-400 group-hover:text-red-300 transition-colors" />
+                        </div>
+                        <div className="font-pixel-kr text-xs font-bold">카드 정화</div>
+                        <div className="text-[8px] text-stone-400 font-pixel-kr text-center mb-1">카드 1장 제거</div>
+                        <div className={`font-pixel text-xs ${player.gold >= 50 ? 'text-yellow-400' : 'text-red-500'}`}>50 G</div>
                     </button>
 
                     {/* Heal */}
-                    <button 
+                    <button
                         onClick={() => handleShopBuyWithFlag('HEAL')}
-                        className="aspect-square bg-stone-900 border border-stone-700 rounded-lg flex flex-col items-center justify-center p-2 hover:border-green-500 hover:bg-stone-800 transition-all group"
+                        className="aspect-square bg-gradient-to-b from-stone-700 to-stone-800
+                          pixel-border border-4 border-stone-600
+                          flex flex-col items-center justify-center p-2
+                          hover:border-green-500 hover:from-stone-600 hover:to-stone-700
+                          transition-all group active:translate-y-1"
+                        style={{ boxShadow: '0 4px 0 0 #1c1917' }}
                     >
-                        <Heart size={32} className="text-stone-500 group-hover:text-green-500 transition-colors mb-2" fill="currentColor" />
-                        <div className="text-sm md:text-base font-bold">긴급 수리</div>
-                        <div className="text-[10px] text-stone-400 text-center mb-2">최대 체력 50% 회복</div>
-                        <div className={`font-bold text-sm ${player.gold >= 40 ? 'text-yellow-400' : 'text-red-500'}`}>40 G</div>
+                        <div className="p-2 pixel-border border-2 bg-green-900/40 border-green-700 mb-2 group-hover:bg-green-800/50">
+                          <Heart size={28} className="text-green-400 group-hover:text-green-300 transition-colors" fill="currentColor" />
+                        </div>
+                        <div className="font-pixel-kr text-xs font-bold">긴급 수리</div>
+                        <div className="text-[8px] text-stone-400 font-pixel-kr text-center mb-1">체력 50% 회복</div>
+                        <div className={`font-pixel text-xs ${player.gold >= 40 ? 'text-yellow-400' : 'text-red-500'}`}>40 G</div>
                     </button>
 
                     {/* Rare Card */}
-                    <button 
+                    <button
                         onClick={() => handleShopBuyWithFlag('RARE')}
-                        className="aspect-square bg-stone-900 border border-stone-700 rounded-lg flex flex-col items-center justify-center p-2 hover:border-purple-500 hover:bg-stone-800 transition-all group"
+                        className="aspect-square bg-gradient-to-b from-stone-700 to-stone-800
+                          pixel-border border-4 border-stone-600
+                          flex flex-col items-center justify-center p-2
+                          hover:border-purple-500 hover:from-stone-600 hover:to-stone-700
+                          transition-all group active:translate-y-1"
+                        style={{ boxShadow: '0 4px 0 0 #1c1917' }}
                     >
-                        <Sparkles size={32} className="text-stone-500 group-hover:text-purple-500 transition-colors mb-2" />
-                        <div className="text-sm md:text-base font-bold">희귀 도면</div>
-                        <div className="text-[10px] text-stone-400 text-center mb-2">무작위 희귀 카드</div>
-                        <div className={`font-bold text-sm ${player.gold >= 75 ? 'text-yellow-400' : 'text-red-500'}`}>75 G</div>
+                        <div className="p-2 pixel-border border-2 bg-purple-900/40 border-purple-700 mb-2 group-hover:bg-purple-800/50">
+                          <Sparkles size={28} className="text-purple-400 group-hover:text-purple-300 transition-colors" />
+                        </div>
+                        <div className="font-pixel-kr text-xs font-bold">희귀 도면</div>
+                        <div className="text-[8px] text-stone-400 font-pixel-kr text-center mb-1">무작위 희귀</div>
+                        <div className={`font-pixel text-xs ${player.gold >= 75 ? 'text-yellow-400' : 'text-red-500'}`}>75 G</div>
                     </button>
 
                     {/* Max Energy (Expensive) */}
-                    <button 
+                    <button
                         onClick={() => handleShopBuyWithFlag('ENERGY')}
-                        className="aspect-square bg-stone-900 border border-stone-700 rounded-lg flex flex-col items-center justify-center p-2 hover:border-yellow-400 hover:bg-stone-800 transition-all group relative overflow-hidden"
+                        className="aspect-square bg-gradient-to-b from-stone-700 to-stone-800
+                          pixel-border border-4 border-stone-600
+                          flex flex-col items-center justify-center p-2
+                          hover:border-yellow-400 hover:from-stone-600 hover:to-stone-700
+                          transition-all group relative overflow-hidden active:translate-y-1"
+                        style={{ boxShadow: '0 4px 0 0 #1c1917' }}
                     >
-                        <div className="absolute top-0 right-0 bg-yellow-600 text-[8px] font-bold px-1.5 py-0.5 text-white">LIMITED</div>
-                        <Zap size={32} className="text-stone-500 group-hover:text-yellow-400 transition-colors mb-2" fill="currentColor" />
-                        <div className="text-sm md:text-base font-bold">마나 수정</div>
-                        <div className="text-[10px] text-stone-400 text-center mb-2">최대 에너지 +1</div>
-                        <div className={`font-bold text-sm ${player.gold >= 200 ? 'text-yellow-400' : 'text-red-500'}`}>200 G</div>
+                        <div className="absolute top-0 right-0 bg-yellow-600 font-pixel text-[7px] px-1.5 py-0.5 text-white pixel-border border-l-2 border-b-2 border-yellow-400">LIMITED</div>
+                        <div className="p-2 pixel-border border-2 bg-yellow-900/40 border-yellow-700 mb-2 group-hover:bg-yellow-800/50">
+                          <Zap size={28} className="text-yellow-400 group-hover:text-yellow-300 transition-colors" fill="currentColor" />
+                        </div>
+                        <div className="font-pixel-kr text-xs font-bold">마나 수정</div>
+                        <div className="text-[8px] text-stone-400 font-pixel-kr text-center mb-1">에너지 +1</div>
+                        <div className={`font-pixel text-xs ${player.gold >= 200 ? 'text-yellow-400' : 'text-red-500'}`}>200 G</div>
                     </button>
                  </div>
              </div>
 
-             <div className="p-4 border-t border-stone-800 flex justify-end">
-                 <button 
+             <div className="p-4 pixel-border border-t-4 border-stone-700 flex justify-end bg-pixel-bg-mid">
+                 <button
                     onClick={() => setGameState('REST')}
-                    className="px-6 py-3 bg-stone-800 hover:bg-stone-700 rounded-lg font-bold text-stone-200 flex items-center gap-2"
+                    className="px-5 py-2.5
+                      bg-gradient-to-b from-stone-600 to-stone-700
+                      pixel-border border-4 border-stone-500
+                      font-pixel-kr text-sm font-bold text-stone-200
+                      hover:from-stone-500 hover:to-stone-600
+                      transition-all active:translate-y-1
+                      flex items-center gap-2"
+                    style={{ boxShadow: '0 4px 0 0 #1c1917' }}
                  >
-                    <ArrowLeft size={20} /> 나가기
+                    <ArrowLeft size={16} /> 나가기
                  </button>
              </div>
           </div>
       )
   }
 
-  // --- Reward Screen ---
+  // --- Reward Screen (Pixel Style) ---
   if (gameState === 'REWARD') {
       return (
-        <div className="w-full h-screen flex flex-col items-center justify-center bg-stone-950 text-stone-100 p-4">
-            <h2 className="text-3xl font-bold mb-8 text-yellow-500 flex items-center gap-2">
-                <Trophy /> 전리품 획득
+        <div className="w-full h-screen flex flex-col items-center justify-center bg-pixel-bg-dark text-stone-100 p-4">
+            <h2 className="text-xl md:text-2xl font-pixel mb-8 text-yellow-400 flex items-center gap-3" style={{ textShadow: '0 0 15px rgba(250,204,21,0.5)' }}>
+                <Trophy size={24} /> LOOT!
             </h2>
-            <div className="flex flex-wrap justify-center gap-4 md:gap-8 mb-12">
+            <div className="flex flex-wrap justify-center gap-4 md:gap-6 mb-10">
                 {rewardOptions.map(card => (
-                    <CardComponent 
-                        key={card.instanceId} 
-                        card={card} 
+                    <CardComponent
+                        key={card.instanceId}
+                        card={card}
                         onClick={() => handleSelectReward(card)}
-                        className="scale-110 hover:scale-125 transition-transform cursor-pointer" 
+                        className="hover:scale-110 hover:-translate-y-2 transition-transform cursor-pointer"
                     />
                 ))}
             </div>
-            <button 
+            <button
                 onClick={() => handleSelectReward(null)}
-                className="px-6 py-2 text-stone-400 border border-stone-600 rounded hover:bg-stone-800"
+                className="px-5 py-2
+                  pixel-border border-4 border-stone-600
+                  bg-gradient-to-b from-stone-700 to-stone-800
+                  text-stone-400 hover:text-stone-200
+                  font-pixel-kr text-sm
+                  hover:from-stone-600 hover:to-stone-700
+                  transition-all active:translate-y-1"
+                style={{ boxShadow: '0 4px 0 0 #1c1917' }}
             >
                 건너뛰기
             </button>
@@ -1175,111 +1341,147 @@ export default function App() {
   // --- Rest Screen (Refactored for Responsiveness & Logic) ---
   if (gameState === 'REST') {
       return (
-        <div className="w-full h-screen flex flex-col items-center justify-center bg-stone-900 text-stone-100 p-4 relative overflow-y-auto">
-            {/* Header info */}
-            <div className="absolute top-4 right-4 flex items-center gap-2 bg-black/40 px-4 py-2 rounded-full border border-stone-700 z-10">
-                <Coins className="text-yellow-400" size={20} />
-                <span className="font-bold text-xl">{player.gold} G</span>
+        <div className="w-full h-screen flex flex-col items-center justify-center bg-pixel-bg-dark text-stone-100 p-4 relative overflow-y-auto">
+            {/* Header info - Pixel Style */}
+            <div className="absolute top-4 right-4 flex items-center gap-2 bg-black/60 px-3 py-1.5 pixel-border border-2 border-yellow-600 z-10">
+                <Coins className="text-yellow-400" size={16} />
+                <span className="font-pixel text-sm text-yellow-300">{player.gold}</span>
             </div>
 
             <div className="flex-shrink-0 mb-8 text-center mt-16 md:mt-0">
-                <h2 className="text-3xl font-bold mb-2 text-orange-400">정비 단계</h2>
-                <p className="text-stone-400">다음 전투를 준비하세요.</p>
-                {hasRested && <p className="text-red-400 text-xs mt-2">※ 정비를 완료했습니다.</p>}
+                <h2 className="text-xl md:text-2xl font-pixel mb-3 text-orange-400" style={{ textShadow: '0 0 10px rgba(251,146,60,0.5)' }}>
+                  REST STOP
+                </h2>
+                <p className="text-stone-400 font-pixel-kr text-sm">다음 전투를 준비하세요.</p>
+                {hasRested && <p className="text-red-400 font-pixel-kr text-xs mt-2">* 정비를 완료했습니다.</p>}
             </div>
-            
+
             <div className="flex flex-wrap gap-4 w-full max-w-3xl justify-center items-center px-4 mb-8">
-                {/* Repair Option */}
-                <button 
+                {/* Repair Option - Pixel Style */}
+                <button
                     onClick={() => handleRestAction('REPAIR')}
                     disabled={hasRested}
                     className={`
-                        group relative w-32 h-44 md:w-40 md:h-56 bg-stone-800 border-2 rounded-xl flex flex-col items-center justify-center transition-all shadow-lg
-                        ${hasRested 
-                            ? 'border-stone-700 opacity-50 grayscale cursor-not-allowed' 
-                            : 'border-stone-600 hover:border-green-500 hover:bg-stone-700'}
+                        group relative w-32 h-44 md:w-40 md:h-56
+                        pixel-border border-4
+                        flex flex-col items-center justify-center
+                        transition-all
+                        ${hasRested
+                            ? 'bg-stone-800 border-stone-700 opacity-50 grayscale cursor-not-allowed'
+                            : 'bg-gradient-to-b from-stone-700 to-stone-800 border-stone-500 hover:border-green-500 hover:from-stone-600 hover:to-stone-700 active:translate-y-1'}
                     `}
+                    style={{
+                      boxShadow: hasRested ? 'none' : '0 4px 0 0 #1c1917'
+                    }}
                 >
-                    <Hammer size={32} className={`mb-4 transition-colors ${hasRested ? 'text-stone-600' : 'text-stone-500 group-hover:text-green-500'}`} />
-                    <h3 className="text-lg font-bold mb-1">수리</h3>
-                    <p className="text-stone-400 text-[10px] px-2 text-center">체력 30% 회복</p>
-                    <div className={`mt-2 font-bold flex items-center gap-1 text-sm ${hasRested ? 'text-stone-600' : 'text-green-500'}`}>
-                        <Heart size={14} fill="currentColor" /> +{Math.floor(player.maxHp * 0.3)}
+                    <div className={`p-3 pixel-border border-2 mb-3 ${hasRested ? 'bg-stone-700 border-stone-600' : 'bg-green-900/50 border-green-700 group-hover:bg-green-800/50'}`}>
+                      <Hammer size={28} className={`transition-colors ${hasRested ? 'text-stone-600' : 'text-green-400 group-hover:text-green-300'}`} />
+                    </div>
+                    <h3 className="font-pixel-kr text-base font-bold mb-1">수리</h3>
+                    <p className="text-stone-400 font-pixel-kr text-[9px] px-2 text-center">체력 30% 회복</p>
+                    <div className={`mt-2 font-pixel text-xs flex items-center gap-1 ${hasRested ? 'text-stone-600' : 'text-green-400'}`}>
+                        <Heart size={12} fill="currentColor" /> +{Math.floor(player.maxHp * 0.3)}
                     </div>
                 </button>
 
-                {/* Smelt Option */}
-                <button 
+                {/* Smelt Option - Pixel Style */}
+                <button
                     onClick={() => handleRestAction('SMELT')}
                     disabled={hasRested}
                     className={`
-                        group relative w-32 h-44 md:w-40 md:h-56 bg-stone-800 border-2 rounded-xl flex flex-col items-center justify-center transition-all shadow-lg
-                        ${hasRested 
-                            ? 'border-stone-700 opacity-50 grayscale cursor-not-allowed' 
-                            : 'border-stone-600 hover:border-red-500 hover:bg-stone-700'}
+                        group relative w-32 h-44 md:w-40 md:h-56
+                        pixel-border border-4
+                        flex flex-col items-center justify-center
+                        transition-all
+                        ${hasRested
+                            ? 'bg-stone-800 border-stone-700 opacity-50 grayscale cursor-not-allowed'
+                            : 'bg-gradient-to-b from-stone-700 to-stone-800 border-stone-500 hover:border-red-500 hover:from-stone-600 hover:to-stone-700 active:translate-y-1'}
                     `}
+                    style={{
+                      boxShadow: hasRested ? 'none' : '0 4px 0 0 #1c1917'
+                    }}
                 >
-                    <Flame size={32} className={`mb-4 transition-colors ${hasRested ? 'text-stone-600' : 'text-stone-500 group-hover:text-red-500'}`} />
-                    <h3 className="text-lg font-bold mb-1">제련</h3>
-                    <p className="text-stone-400 text-[10px] px-2 text-center">카드 1장 제거</p>
-                    <div className={`mt-2 font-bold flex items-center gap-1 text-sm ${hasRested ? 'text-stone-600' : 'text-red-400'}`}>
-                        <Ban size={14} /> 제거
+                    <div className={`p-3 pixel-border border-2 mb-3 ${hasRested ? 'bg-stone-700 border-stone-600' : 'bg-red-900/50 border-red-700 group-hover:bg-red-800/50'}`}>
+                      <Flame size={28} className={`transition-colors ${hasRested ? 'text-stone-600' : 'text-red-400 group-hover:text-red-300'}`} />
+                    </div>
+                    <h3 className="font-pixel-kr text-base font-bold mb-1">제련</h3>
+                    <p className="text-stone-400 font-pixel-kr text-[9px] px-2 text-center">카드 1장 제거</p>
+                    <div className={`mt-2 font-pixel text-xs flex items-center gap-1 ${hasRested ? 'text-stone-600' : 'text-red-400'}`}>
+                        <Ban size={12} /> REMOVE
                     </div>
                 </button>
 
-                 {/* Shop Option (New) */}
-                 <button 
+                 {/* Shop Option - Pixel Style */}
+                 <button
                     onClick={() => handleRestAction('SHOP')}
-                    className="group relative w-32 h-44 md:w-40 md:h-56 bg-stone-800 border-2 border-stone-600 rounded-xl flex flex-col items-center justify-center hover:border-yellow-500 hover:bg-stone-700 transition-all shadow-lg"
+                    className="group relative w-32 h-44 md:w-40 md:h-56
+                        pixel-border border-4
+                        bg-gradient-to-b from-stone-700 to-stone-800 border-stone-500
+                        flex flex-col items-center justify-center
+                        hover:border-yellow-500 hover:from-stone-600 hover:to-stone-700
+                        transition-all active:translate-y-1"
+                    style={{
+                      boxShadow: '0 4px 0 0 #1c1917'
+                    }}
                 >
-                    <Store size={32} className="text-stone-500 group-hover:text-yellow-500 mb-4 transition-colors" />
-                    <h3 className="text-lg font-bold mb-1">상점</h3>
-                    <p className="text-stone-400 text-[10px] px-2 text-center">아이템 구매</p>
-                    <div className="mt-2 text-yellow-400 font-bold flex items-center gap-1 text-sm">
-                        <Coins size={14} /> 입장
+                    <div className="p-3 pixel-border border-2 mb-3 bg-yellow-900/50 border-yellow-700 group-hover:bg-yellow-800/50">
+                      <Store size={28} className="text-yellow-400 group-hover:text-yellow-300 transition-colors" />
+                    </div>
+                    <h3 className="font-pixel-kr text-base font-bold mb-1">상점</h3>
+                    <p className="text-stone-400 font-pixel-kr text-[9px] px-2 text-center">아이템 구매</p>
+                    <div className="mt-2 text-yellow-400 font-pixel text-xs flex items-center gap-1">
+                        <Coins size={12} /> ENTER
                     </div>
                 </button>
             </div>
 
             <div className="flex-shrink-0 pb-8">
-                 <button 
+                 <button
                     onClick={advanceGame}
-                    className="flex items-center gap-2 px-8 py-3 bg-stone-800 hover:bg-stone-700 border border-stone-600 rounded-lg text-stone-300 font-bold uppercase tracking-widest transition-colors shadow-md"
+                    className="flex items-center gap-2 px-6 py-2.5
+                      bg-gradient-to-b from-stone-600 to-stone-700
+                      pixel-border border-4 border-stone-500
+                      text-stone-200 font-pixel-kr text-sm font-bold
+                      hover:from-stone-500 hover:to-stone-600
+                      transition-all active:translate-y-1"
+                    style={{
+                      boxShadow: '0 4px 0 0 #1c1917'
+                    }}
                  >
-                     다음 층으로 이동 <ChevronRight size={20} />
+                     다음 층으로 이동 <ChevronRight size={18} />
                  </button>
             </div>
         </div>
       );
   }
 
-  // --- Remove Card Screen (UI Improved) ---
+  // --- Remove Card Screen (Pixel Style) ---
   if (gameState === 'REMOVE_CARD') {
     const allCards = [...deck].sort((a,b) => a.cost - b.cost || a.type.localeCompare(b.type));
     const selectedName = allCards.find(c => c.instanceId === selectedCardId)?.name;
 
     return (
-        <div className="w-full h-screen flex flex-col bg-stone-950 text-stone-100 overflow-hidden">
-            <div className="flex-shrink-0 text-center p-4 bg-stone-900 shadow-md z-10">
-                <h2 className="text-2xl font-bold text-red-500 mb-1 flex items-center justify-center gap-2">
-                    <Flame /> 카드 제련
+        <div className="w-full h-screen flex flex-col bg-pixel-bg-dark text-stone-100 overflow-hidden">
+            <div className="flex-shrink-0 text-center p-4 bg-pixel-bg-mid pixel-border border-b-4 border-stone-700 z-10">
+                <h2 className="text-lg md:text-xl font-pixel text-red-400 mb-2 flex items-center justify-center gap-2" style={{ textShadow: '0 0 10px rgba(248,113,113,0.5)' }}>
+                    <Flame size={20} /> SMELT CARD
                 </h2>
-                <p className="text-stone-400 text-sm">제거할 카드를 선택한 후 확인 버튼을 누르세요.</p>
+                <p className="text-stone-400 font-pixel-kr text-xs">제거할 카드를 선택한 후 확인 버튼을 누르세요.</p>
             </div>
-            
-            <div className="flex-1 overflow-y-auto p-4 bg-stone-950">
+
+            <div className="flex-1 overflow-y-auto p-4 bg-pixel-bg-dark">
                 <div className="flex flex-wrap justify-center gap-4 pb-24">
                     {allCards.map(card => (
                         <div key={card.instanceId} className="relative group">
-                            <CardComponent 
-                                card={card} 
+                            <CardComponent
+                                card={card}
                                 onClick={handleCardClick}
                                 selected={selectedCardId === card.instanceId}
                                 className={`cursor-pointer transition-all ${selectedCardId === card.instanceId ? 'ring-4 ring-red-500 scale-105 z-10' : 'hover:scale-105 opacity-80 hover:opacity-100'}`}
                             />
                             {selectedCardId === card.instanceId && (
-                                <div className="absolute -top-3 -right-3 bg-red-500 text-white rounded-full p-1 shadow-lg z-20">
-                                    <Check size={16} strokeWidth={4} />
+                                <div className="absolute -top-2 -right-2 bg-red-500 text-white pixel-border border-2 border-red-300 p-1 z-20">
+                                    <Check size={14} strokeWidth={4} />
                                 </div>
                             )}
                         </div>
@@ -1287,25 +1489,34 @@ export default function App() {
                 </div>
             </div>
 
-            <div className="flex-shrink-0 p-4 bg-stone-900 border-t border-stone-800 flex items-center justify-between gap-4 safe-area-bottom">
-                <button 
+            <div className="flex-shrink-0 p-4 bg-pixel-bg-mid pixel-border border-t-4 border-stone-700 flex items-center justify-between gap-4 safe-area-bottom">
+                <button
                     onClick={handleCancelRemoval}
-                    className="flex items-center gap-2 px-6 py-3 rounded-lg border border-stone-600 text-stone-400 hover:bg-stone-800 hover:text-white transition-colors font-bold"
+                    className="flex items-center gap-2 px-4 py-2.5
+                      pixel-border border-4 border-stone-600
+                      bg-gradient-to-b from-stone-700 to-stone-800
+                      text-stone-400 hover:text-white hover:from-stone-600 hover:to-stone-700
+                      font-pixel-kr text-sm font-bold
+                      transition-all active:translate-y-1"
+                    style={{ boxShadow: '0 4px 0 0 #1c1917' }}
                 >
-                    <ArrowLeft size={20} /> 취소
+                    <ArrowLeft size={16} /> 취소
                 </button>
-                
-                <button 
+
+                <button
                     onClick={handleConfirmRemoval}
                     disabled={!selectedCardId}
                     className={`
-                        flex-1 flex items-center justify-center gap-2 px-6 py-3 rounded-lg font-black text-lg uppercase tracking-widest transition-all
-                        ${selectedCardId 
-                            ? 'bg-red-600 hover:bg-red-500 text-white shadow-[0_0_15px_rgba(220,38,38,0.5)]' 
-                            : 'bg-stone-800 text-stone-600 cursor-not-allowed'}
+                        flex-1 flex items-center justify-center gap-2 px-4 py-2.5
+                        pixel-border border-4 font-pixel-kr text-sm font-bold
+                        transition-all
+                        ${selectedCardId
+                            ? 'bg-gradient-to-b from-red-600 to-red-700 border-red-400 text-white hover:from-red-500 hover:to-red-600 active:translate-y-1'
+                            : 'bg-stone-800 border-stone-700 text-stone-600 cursor-not-allowed'}
                     `}
+                    style={{ boxShadow: selectedCardId ? '0 4px 0 0 #7f1d1d, 0 0 15px rgba(220,38,38,0.4)' : 'none' }}
                 >
-                    {selectedCardId ? `'${selectedName}' 제거` : '카드 선택 필요'} <Ban size={20} />
+                    {selectedCardId ? `'${selectedName}' 제거` : '카드 선택 필요'} <Ban size={16} />
                 </button>
             </div>
         </div>
@@ -1316,31 +1527,37 @@ export default function App() {
   return (
     <div className={`w-full h-screen flex flex-col bg-stone-950 text-stone-200 overflow-hidden relative ${shake ? 'animate-shake' : ''} ${shieldEffect ? 'animate-shield-pulse' : ''}`}>
       
-      {/* Acquired Card Overlay (NEW) */}
+      {/* Acquired Card Overlay - Pixel Style */}
       {acquiredCard && (
-        <div className="absolute inset-0 z-[100] bg-black/90 flex flex-col items-center justify-center p-4">
-            <h2 className="text-3xl md:text-4xl font-black text-yellow-500 mb-8 animate-bounce drop-shadow-lg">
-                희귀 도면 획득!
+        <div className="absolute inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center p-4">
+            <h2 className="text-xl md:text-2xl font-pixel text-yellow-400 mb-8 animate-pulse" style={{ textShadow: '0 0 20px rgba(250,204,21,0.6)' }}>
+                RARE BLUEPRINT!
             </h2>
-            <div className="scale-125 md:scale-150 mb-12">
-                <CardComponent 
-                  card={acquiredCard} 
-                  onClick={() => {}} 
-                  className="shadow-[0_0_50px_rgba(168,85,247,0.5)] border-purple-400"
+            <div className="scale-110 md:scale-125 mb-10">
+                <CardComponent
+                  card={acquiredCard}
+                  onClick={() => {}}
+                  className="shadow-[0_0_40px_rgba(168,85,247,0.6)]"
                 />
             </div>
-            <button 
+            <button
                 onClick={() => setAcquiredCard(null)}
-                className="px-10 py-4 bg-stone-800 hover:bg-stone-700 rounded-xl text-stone-200 font-bold text-xl border border-stone-600 transition-all shadow-lg active:scale-95"
+                className="px-8 py-3
+                  bg-gradient-to-b from-stone-600 to-stone-700
+                  pixel-border border-4 border-stone-500
+                  text-stone-200 font-pixel text-sm
+                  hover:from-stone-500 hover:to-stone-600
+                  transition-all active:translate-y-1"
+                style={{ boxShadow: '0 4px 0 0 #1c1917' }}
             >
-                확인
+                OK
             </button>
         </div>
       )}
 
       {/* Touch Drag Overlay (Ghost Card) */}
       {dragState && (
-        <div 
+        <div
             className="fixed z-[100] pointer-events-none transform -translate-x-1/2 -translate-y-1/2 opacity-90"
             style={{ left: dragState.x, top: dragState.y }}
         >
@@ -1348,100 +1565,155 @@ export default function App() {
         </div>
       )}
 
-      {/* Feedback Toast */}
+      {/* Feedback Toast - Pixel Style */}
       {feedback && (
         <div className="absolute top-[35%] left-1/2 transform -translate-x-1/2 -translate-y-1/2 z-50 w-full text-center pointer-events-none px-4">
-          <span className="text-2xl md:text-3xl font-black text-white stroke-black drop-shadow-[0_4px_4px_rgba(0,0,0,1)] animate-bounce block">
+          <span className="text-lg md:text-xl font-pixel text-white animate-bounce block" style={{ textShadow: '2px 2px 0 #000, -2px -2px 0 #000, 2px -2px 0 #000, -2px 2px 0 #000' }}>
             {feedback}
           </span>
         </div>
       )}
 
       {/* --- Top: Enemy Section --- */}
-      <div className="flex-[0_0_auto] h-[30%] min-h-[180px] flex justify-center items-center relative border-b border-stone-800 bg-stone-900/50">
+      <div className="flex-[0_0_auto] h-[35%] min-h-[240px] flex justify-center items-center relative border-b border-stone-800 bg-stone-900/50 pb-2">
         
-        {/* Stage Indicator */}
-        <div className="absolute top-2 left-2 md:top-4 md:left-4 text-xs md:text-sm font-bold text-stone-500 flex items-center gap-1">
-            <MapIcon size={14} />
-            Act {act} - Floor {floor}
+        {/* Stage Indicator - Pixel Style */}
+        <div className="absolute top-2 left-2 md:top-4 md:left-4 font-pixel text-[10px] md:text-xs text-stone-400 flex items-center gap-1 bg-black/50 px-2 py-1 pixel-border border-2 border-stone-700">
+            <MapIcon size={12} />
+            {act}-{floor}
         </div>
 
-        {/* Gold Indicator */}
-        <div className="absolute top-2 right-2 md:top-4 md:right-4 flex items-center gap-1 text-xs md:text-sm font-bold text-yellow-500 bg-black/40 px-3 py-1 rounded-full border border-yellow-900/50">
-            <Coins size={14} />
-            {player.gold} G
+        {/* Gold Indicator - Pixel Style */}
+        <div className="absolute top-2 right-2 md:top-4 md:right-4 flex items-center gap-1 font-pixel text-[10px] md:text-xs text-yellow-400 bg-black/60 px-2 py-1 pixel-border border-2 border-yellow-700">
+            <Coins size={12} />
+            {player.gold}
         </div>
 
         <div className="relative flex flex-col items-center scale-90 md:scale-100">
-           {/* Intent Icon */}
-           <div className="mb-1 md:mb-2 flex items-center gap-2 bg-stone-800 px-3 py-1 rounded-full border border-stone-600">
-             {enemy.intents[enemy.currentIntentIndex].type === IntentType.ATTACK ? <Skull size={18} className="text-red-400" /> : 
-              enemy.intents[enemy.currentIntentIndex].type === IntentType.BUFF ? <RefreshCw size={18} className="text-green-400" /> :
-              enemy.intents[enemy.currentIntentIndex].type === IntentType.DEBUFF ? <Zap size={18} className="text-purple-400" /> :
-              <Shield size={18} className="text-blue-400" />}
-             <span className="font-bold text-lg">{enemy.intents[enemy.currentIntentIndex].value > 0 ? enemy.intents[enemy.currentIntentIndex].value : ''}</span>
-             <span className="text-xs text-stone-400 uppercase tracking-widest">{enemy.intents[enemy.currentIntentIndex].description}</span>
+           {/* Intent Icon - Pixel Style */}
+           <div className="mb-2 md:mb-3 flex flex-col items-center animate-intent-drop">
+             <div className={`
+               pixel-border border-4 p-2 md:p-3 flex items-center justify-center
+               ${enemy.intents[enemy.currentIntentIndex].type === IntentType.ATTACK ? 'bg-red-900/80 border-red-500' :
+                 enemy.intents[enemy.currentIntentIndex].type === IntentType.BUFF ? 'bg-green-900/80 border-green-500' :
+                 enemy.intents[enemy.currentIntentIndex].type === IntentType.DEBUFF ? 'bg-purple-900/80 border-purple-500' :
+                 'bg-blue-900/80 border-blue-500'}
+             `}>
+               {enemy.intents[enemy.currentIntentIndex].type === IntentType.ATTACK ? <Skull size={32} className="md:w-10 md:h-10 text-red-400" /> :
+                enemy.intents[enemy.currentIntentIndex].type === IntentType.BUFF ? <RefreshCw size={32} className="md:w-10 md:h-10 text-green-400" /> :
+                enemy.intents[enemy.currentIntentIndex].type === IntentType.DEBUFF ? <Zap size={32} className="md:w-10 md:h-10 text-purple-400" /> :
+                <Shield size={32} className="md:w-10 md:h-10 text-blue-400" />}
+             </div>
+             <div className={`
+               -mt-2 px-2 py-0.5 pixel-border border-2 font-pixel text-xs md:text-sm flex items-center gap-1
+               ${enemy.intents[enemy.currentIntentIndex].type === IntentType.ATTACK ? 'bg-red-800 border-red-400 text-red-200' :
+                 enemy.intents[enemy.currentIntentIndex].type === IntentType.DEFEND ? 'bg-blue-800 border-blue-400 text-blue-200' :
+                 enemy.intents[enemy.currentIntentIndex].type === IntentType.BUFF ? 'bg-green-800 border-green-400 text-green-200' :
+                 enemy.intents[enemy.currentIntentIndex].type === IntentType.DEBUFF ? 'bg-purple-800 border-purple-400 text-purple-200' :
+                 'bg-stone-800 border-stone-500 text-stone-200'}
+             `}>
+               <span className="font-pixel-kr text-[10px] md:text-xs">
+                 {enemy.intents[enemy.currentIntentIndex].type === IntentType.ATTACK ? '공격' :
+                  enemy.intents[enemy.currentIntentIndex].type === IntentType.DEFEND ? '방어' :
+                  enemy.intents[enemy.currentIntentIndex].type === IntentType.BUFF ? '강화' :
+                  enemy.intents[enemy.currentIntentIndex].type === IntentType.DEBUFF ? '약화' : '?'}
+               </span>
+               {enemy.intents[enemy.currentIntentIndex].value > 0 && (
+                 <span>{enemy.intents[enemy.currentIntentIndex].value}</span>
+               )}
+             </div>
            </div>
 
-           {/* Enemy Sprite */}
-           <div className={`w-32 h-32 md:w-48 md:h-48 bg-stone-800 rounded-lg flex items-center justify-center border-4 ${shake ? 'border-red-500' : 'border-stone-600'} shadow-2xl relative overflow-hidden`}>
-              {/* Simple visual based on Enemy Name/Trait */}
-              <Skull size={48} className={`md:w-16 md:h-16 ${enemy.traits.includes(EnemyTrait.THORNS_5) ? 'text-green-600' : enemy.traits.includes(EnemyTrait.DAMAGE_CAP_15) ? 'text-stone-400' : 'text-stone-600'}`} />
-              {enemy.traits.includes(EnemyTrait.THORNS_5) && <div className="absolute bottom-1 right-1 text-[10px] bg-green-900 px-1 rounded">가시</div>}
-              {enemy.traits.includes(EnemyTrait.DAMAGE_CAP_15) && <div className="absolute bottom-1 right-1 text-[10px] bg-stone-700 px-1 rounded">단단함 (MAX 15)</div>}
-              {enemy.traits.includes(EnemyTrait.THIEVERY) && <div className="absolute bottom-1 right-1 text-[10px] bg-yellow-900 px-1 rounded text-yellow-200">탐욕</div>}
+           {/* Enemy Sprite - Pixel Frame */}
+           <div className={`
+             w-32 h-32 md:w-40 md:h-40
+             pixel-border border-4
+             flex items-center justify-center
+             relative overflow-hidden
+             transition-all duration-150
+             ${shake ? 'border-red-500 animate-hit-flash animate-knockback bg-red-900/30' : 'border-stone-600 bg-stone-800'}
+           `}>
+              {/* Pixel Enemy Icon */}
+              <Skull size={48} className={`md:w-16 md:h-16 ${enemy.traits.includes(EnemyTrait.THORNS_5) ? 'text-green-500' : enemy.traits.includes(EnemyTrait.DAMAGE_CAP_15) ? 'text-stone-400' : 'text-stone-500'}`} />
+
+              {/* Enemy Traits - Pixel Badges */}
+              <div className="absolute bottom-1 right-1 flex flex-col gap-0.5">
+                {enemy.traits.includes(EnemyTrait.THORNS_5) && (
+                  <div className="text-[8px] md:text-[10px] bg-green-900 border border-green-600 px-1 pixel-border font-pixel-kr text-green-300">가시</div>
+                )}
+                {enemy.traits.includes(EnemyTrait.DAMAGE_CAP_15) && (
+                  <div className="text-[8px] md:text-[10px] bg-stone-700 border border-stone-500 px-1 pixel-border font-pixel-kr">MAX15</div>
+                )}
+                {enemy.traits.includes(EnemyTrait.THIEVERY) && (
+                  <div className="text-[8px] md:text-[10px] bg-yellow-900 border border-yellow-600 px-1 pixel-border font-pixel-kr text-yellow-300">탐욕</div>
+                )}
+              </div>
            </div>
            
-           {/* Enemy HP & Block */}
-           <div className="w-48 md:w-64 relative mt-2 md:mt-4">
+           {/* Enemy HP & Block - Pixel Style */}
+           <div className="w-40 md:w-56 relative mt-2 md:mt-3">
               {enemy.block > 0 && (
-                <div className="absolute -top-3 -right-2 flex items-center gap-1 bg-blue-900 border border-blue-500 text-blue-200 px-2 py-0.5 rounded-full z-10 text-xs font-bold shadow-lg">
+                <div className="absolute -top-3 -right-2 flex items-center gap-1 bg-blue-900 border-2 border-blue-400 text-blue-200 px-2 py-0.5 pixel-border z-10 text-xs font-pixel">
                     <Shield size={12} fill="currentColor" /> {enemy.block}
                 </div>
               )}
-              <div className="h-4 bg-stone-800 rounded-full border border-stone-600 overflow-hidden relative">
-                <div 
-                  className="h-full bg-red-700 transition-all duration-300" 
-                  style={{ width: `${(enemy.currentHp / enemy.maxHp) * 100}%` }}
-                ></div>
-                <div className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-white shadow-black drop-shadow-sm">
-                  {enemy.currentHp} / {enemy.maxHp}
+              {/* Segmented HP Bar */}
+              <div className="h-5 bg-stone-900 pixel-border border-2 border-stone-600 overflow-hidden relative flex">
+                {/* HP Segments */}
+                {Array.from({ length: 10 }).map((_, i) => {
+                  const segmentPercent = (i + 1) * 10;
+                  const hpPercent = (enemy.currentHp / enemy.maxHp) * 100;
+                  const isFilled = hpPercent >= segmentPercent - 5;
+                  return (
+                    <div
+                      key={i}
+                      className={`flex-1 border-r border-black/30 last:border-r-0 transition-colors duration-150 ${
+                        isFilled
+                          ? 'bg-gradient-to-b from-red-400 via-red-600 to-red-800'
+                          : 'bg-stone-800'
+                      }`}
+                    />
+                  );
+                })}
+                {/* HP Text Overlay */}
+                <div className="absolute inset-0 flex items-center justify-center font-pixel text-[10px] md:text-xs text-white" style={{ textShadow: '1px 1px 0 #000, -1px -1px 0 #000' }}>
+                  {enemy.currentHp}/{enemy.maxHp}
                 </div>
               </div>
            </div>
 
-           <h2 className="mt-1 font-bold text-stone-400 text-base md:text-lg mb-1">{enemy.name}</h2>
+           <h2 className="mt-2 font-pixel-kr font-bold text-stone-200 text-sm md:text-base mb-1 bg-black/50 px-2 py-0.5 pixel-border border border-stone-600">{enemy.name}</h2>
            
            {/* Status Effects Row */}
            <div className="flex items-center justify-center gap-2">
                {enemy.statuses?.poison > 0 && (
-                   <div className="flex items-center gap-1 bg-green-900/50 border border-green-700 px-1.5 py-0.5 rounded text-[10px] md:text-xs text-green-400 font-bold" title="턴 시작 시 피해">
-                       <Droplets size={12} fill="currentColor" /> {enemy.statuses.poison}
+                   <div className="flex items-center gap-1 bg-green-900/60 pixel-border border-2 border-green-600 px-1.5 py-0.5 text-[9px] text-green-400 font-pixel" title="턴 시작 시 피해">
+                       <Droplets size={10} fill="currentColor" /> {enemy.statuses.poison}
                    </div>
                )}
                {enemy.statuses?.bleed > 0 && (
-                   <div className="flex items-center gap-1 bg-red-900/50 border border-red-700 px-1.5 py-0.5 rounded text-[10px] md:text-xs text-red-400 font-bold" title="공격 시 피해">
-                       <Activity size={12} /> {enemy.statuses.bleed}
+                   <div className="flex items-center gap-1 bg-red-900/60 pixel-border border-2 border-red-600 px-1.5 py-0.5 text-[9px] text-red-400 font-pixel" title="공격 시 피해">
+                       <Activity size={10} /> {enemy.statuses.bleed}
                    </div>
                )}
                {enemy.statuses?.stunned > 0 && (
-                   <div className="flex items-center gap-1 bg-yellow-900/50 border border-yellow-700 px-1.5 py-0.5 rounded text-[10px] md:text-xs text-yellow-400 font-bold" title="기절">
-                       <Star size={12} fill="currentColor" /> {enemy.statuses.stunned}
+                   <div className="flex items-center gap-1 bg-yellow-900/60 pixel-border border-2 border-yellow-600 px-1.5 py-0.5 text-[9px] text-yellow-400 font-pixel" title="기절">
+                       <Star size={10} fill="currentColor" /> {enemy.statuses.stunned}
                    </div>
                )}
                {enemy.statuses?.strength > 0 && (
-                   <div className="flex items-center gap-1 bg-red-900/50 border border-red-500 px-1.5 py-0.5 rounded text-[10px] md:text-xs text-red-400 font-bold" title="공격력 증가">
-                       <Swords size={12} /> +{enemy.statuses.strength}
+                   <div className="flex items-center gap-1 bg-red-900/60 pixel-border border-2 border-red-600 px-1.5 py-0.5 text-[9px] text-red-400 font-pixel" title="공격력 증가">
+                       <Swords size={10} /> +{enemy.statuses.strength}
                    </div>
                )}
                {enemy.statuses?.vulnerable > 0 && (
-                   <div className="flex items-center gap-1 bg-purple-900/50 border border-purple-500 px-1.5 py-0.5 rounded text-[10px] md:text-xs text-purple-400 font-bold" title="취약: 받는 피해 50% 증가">
-                       <Percent size={12} /> 취약 {enemy.statuses.vulnerable}
+                   <div className="flex items-center gap-1 bg-purple-900/60 pixel-border border-2 border-purple-600 px-1.5 py-0.5 text-[9px] text-purple-400 font-pixel" title="취약: 받는 피해 50% 증가">
+                       <Percent size={10} /> {enemy.statuses.vulnerable}
                    </div>
                )}
                {enemy.statuses?.weak > 0 && (
-                   <div className="flex items-center gap-1 bg-stone-700/50 border border-stone-500 px-1.5 py-0.5 rounded text-[10px] md:text-xs text-stone-300 font-bold" title="약화: 주는 피해 25% 감소">
-                       <ArrowLeft size={12} className="rotate-[-45deg]" /> 약화 {enemy.statuses.weak}
+                   <div className="flex items-center gap-1 bg-stone-700/60 pixel-border border-2 border-stone-500 px-1.5 py-0.5 text-[9px] text-stone-300 font-pixel" title="약화: 주는 피해 25% 감소">
+                       <ArrowLeft size={10} className="rotate-[-45deg]" /> {enemy.statuses.weak}
                    </div>
                )}
            </div>
@@ -1450,56 +1722,56 @@ export default function App() {
 
       {/* --- Middle: Anvil / Crafting --- */}
       <div className="flex-1 relative flex flex-col justify-center items-center bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-stone-800 to-stone-950 px-2 md:px-4 overflow-y-auto">
-        
-        {/* Player Stats HUD (Sticky Left) */}
-        <div className="absolute left-2 top-2 md:left-4 md:top-4 flex flex-col gap-1 md:gap-3 z-20 pointer-events-none">
-           <div className="flex items-center gap-2 md:gap-3 text-lg md:text-xl font-black text-red-500">
-              <Heart className="w-5 h-5 md:w-6 md:h-6 fill-current" /> {player.hp}
+
+        {/* Player Stats HUD - Pixel Style */}
+        <div className="absolute left-2 top-2 md:left-4 md:top-4 flex flex-col gap-1 md:gap-2 z-20 pointer-events-none">
+           <div className="flex items-center gap-2 font-pixel text-sm md:text-base text-pixel-hp bg-black/50 px-2 py-1 pixel-border border-2 border-red-800">
+              <Heart className="w-4 h-4 md:w-5 md:h-5 fill-current" /> {player.hp}
            </div>
-           <div className="flex items-center gap-2 md:gap-3 text-lg md:text-xl font-black text-blue-400">
-              <Shield className="w-5 h-5 md:w-6 md:h-6 fill-current" /> {player.block}
+           <div className="flex items-center gap-2 font-pixel text-sm md:text-base text-pixel-block bg-black/50 px-2 py-1 pixel-border border-2 border-blue-800">
+              <Shield className="w-4 h-4 md:w-5 md:h-5 fill-current" /> {player.block}
            </div>
-           <div className="flex items-center gap-2 md:gap-3 text-lg md:text-xl font-black text-yellow-500">
-              <div className="flex gap-1">
+           <div className="flex items-center gap-2 font-pixel text-xs md:text-sm text-pixel-energy bg-black/50 px-2 py-1 pixel-border border-2 border-yellow-800">
+              <div className="flex gap-0.5">
                 {Array.from({ length: player.maxEnergy }).map((_, i) => (
-                  <div key={i} className={`w-3 h-3 md:w-4 md:h-4 rounded-full border border-yellow-600 ${i < player.energy ? 'bg-yellow-400 shadow-[0_0_8px_rgba(250,204,21,0.8)]' : 'bg-stone-800'}`} />
+                  <div key={i} className={`w-2.5 h-2.5 md:w-3 md:h-3 pixel-border border border-yellow-600 ${i < player.energy ? 'bg-yellow-400 shadow-[0_0_6px_rgba(250,204,21,0.7)]' : 'bg-stone-800'}`} />
                 ))}
               </div>
            </div>
            {/* Debuff Indicators */}
            <div className="flex flex-col gap-1 mt-2">
                {player.disarmed && (
-                   <div className="flex items-center gap-1 text-red-400 text-xs font-bold bg-black/50 px-2 py-1 rounded border border-red-500/50">
-                       <Ban size={12} /> 무장해제
+                   <div className="flex items-center gap-1 text-red-400 font-pixel text-[8px] bg-black/60 px-2 py-1 pixel-border border-2 border-red-600">
+                       <Ban size={10} /> DISARM
                    </div>
                )}
                {player.costLimit !== null && (
-                   <div className="flex items-center gap-1 text-purple-400 text-xs font-bold bg-black/50 px-2 py-1 rounded border border-purple-500/50">
-                       <Lock size={12} /> 과부하({player.costLimit})
+                   <div className="flex items-center gap-1 text-purple-400 font-pixel text-[8px] bg-black/60 px-2 py-1 pixel-border border-2 border-purple-600">
+                       <Lock size={10} /> LIMIT:{player.costLimit}
                    </div>
                )}
            </div>
         </div>
 
-        {/* Deck/Discard HUD (Sticky Right) - IMPROVED */}
+        {/* Deck/Discard HUD - Pixel Style */}
         <div className="absolute right-2 top-2 md:right-4 md:top-4 flex flex-col gap-1 md:gap-2 z-20 pointer-events-none items-end">
-          <div className="flex items-center gap-2 text-stone-400 text-xs md:text-sm font-bold bg-black/40 px-3 py-1.5 rounded-full border border-stone-700 backdrop-blur-sm">
-             <Layers size={14} className="md:w-4 md:h-4" />
-             <span>남은 덱:</span>
-             <span className="text-white text-sm md:text-base">{deck.length}</span>
+          <div className="flex items-center gap-2 text-stone-300 font-pixel text-[9px] md:text-[10px] bg-black/60 px-2 py-1 pixel-border border-2 border-stone-600">
+             <Layers size={12} />
+             <span>DECK</span>
+             <span className="text-white">{deck.length}</span>
           </div>
-          <div className="flex items-center gap-2 text-stone-500 text-xs md:text-sm font-bold bg-black/40 px-3 py-1.5 rounded-full border border-stone-800 backdrop-blur-sm">
-             <Archive size={14} className="md:w-4 md:h-4" />
-             <span>버린 카드:</span>
-             <span className="text-stone-300 text-sm md:text-base">{discardPile.length}</span>
+          <div className="flex items-center gap-2 text-stone-400 font-pixel text-[9px] md:text-[10px] bg-black/60 px-2 py-1 pixel-border border-2 border-stone-700">
+             <Archive size={12} />
+             <span>DISC</span>
+             <span className="text-stone-300">{discardPile.length}</span>
           </div>
         </div>
 
         {/* THE ANVIL */}
         <div className="w-full h-full flex items-center justify-center p-2">
-            <Anvil 
-                slots={slots} 
-                onRemove={handleSlotRemove} 
+            <Anvil
+                slots={slots}
+                onRemove={handleSlotRemove}
                 onCraft={handleForgeAndAttack}
                 onDropCard={handleCardDrop}
                 onClear={handleClearSlots}
@@ -1516,24 +1788,34 @@ export default function App() {
                     onTouchDragMove: handleTouchDragMove,
                     onTouchDragEnd: handleTouchDragEnd
                 }}
+                discardingCardIds={discardingCardIds}
             />
         </div>
 
-        {/* Turn Control */}
+        {/* Turn Control - Pixel Style */}
         <div className="absolute right-4 bottom-4 z-20">
-           <button 
+           <button
              onClick={endTurn}
              disabled={combatState.phase !== 'PLAYER_ACTION'}
-             className="bg-stone-800 hover:bg-stone-700 text-stone-200 px-4 py-2 md:px-6 md:py-3 rounded-lg border border-stone-600 text-sm md:text-base font-bold uppercase tracking-widest disabled:opacity-50"
+             className={`
+               px-4 py-2 md:px-5 md:py-2.5
+               pixel-border border-4
+               font-pixel text-xs md:text-sm
+               transition-all
+               ${combatState.phase === 'PLAYER_ACTION'
+                 ? 'bg-gradient-to-b from-stone-600 to-stone-700 border-stone-500 text-stone-200 hover:from-stone-500 hover:to-stone-600 active:translate-y-1'
+                 : 'bg-stone-800 border-stone-700 text-stone-600 cursor-not-allowed'}
+             `}
+             style={{ boxShadow: combatState.phase === 'PLAYER_ACTION' ? '0 4px 0 0 #1c1917' : 'none' }}
            >
-             턴 종료
+             END
            </button>
         </div>
 
       </div>
 
       {/* --- Bottom: Hand --- */}
-      <div className="h-40 md:h-64 bg-stone-900 border-t border-stone-800 flex items-center justify-center relative z-30">
+      <div className="h-40 md:h-64 bg-pixel-bg-mid pixel-border border-t-4 border-stone-700 flex items-center justify-center relative z-30">
         <div className="flex items-center justify-start md:justify-center gap-2 pb-2 px-4 overflow-x-auto w-full h-full no-scrollbar whitespace-nowrap">
           {hand.map((card, index) => {
             // Simplified layout for mobile: No overlap, simple horizontal scroll
@@ -1554,10 +1836,11 @@ export default function App() {
                     inline-block flex-shrink-0
                 `}
               >
-                <CardComponent 
-                  card={card} 
-                  onClick={handleCardClick} 
+                <CardComponent
+                  card={card}
+                  onClick={handleCardClick}
                   disabled={combatState.phase !== 'PLAYER_ACTION'}
+                  isDiscarding={discardingCardIds.has(card.instanceId)}
                   onTouchDragStart={handleTouchDragStart}
                   onTouchDragMove={handleTouchDragMove}
                   onTouchDragEnd={handleTouchDragEnd}
