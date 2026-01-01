@@ -21,7 +21,7 @@ export const CARD_DATABASE: CardData[] = [
   
 // New Common
   { id: 206, name: '뼈 손잡이', type: CardType.HANDLE, cost: 1, value: 1, rarity: CardRarity.COMMON, description: '취약 2 부여 (받는 피해 50% 증가)' },
-  { id: 207, name: '스파이크 쉴드', type: CardType.HEAD, cost: 1, value: 0, rarity: CardRarity.COMMON, description: '현재 방어도만큼 피해를 입힙니다.' },
+  { id: 207, name: '철갑 가시', type: CardType.DECO, cost: 1, value: 0, rarity: CardRarity.RARE, description: '현재 방어도만큼 추가 피해.' },
   { id: 208, name: '충전된 보석', type: CardType.DECO, cost: 0, value: 0, rarity: CardRarity.COMMON, description: '에너지 1 회복' },
 
   // Balance Patch v1.0 - New Common

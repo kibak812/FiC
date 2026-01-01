@@ -480,15 +480,22 @@ export const CardSprites: Record<number, React.FC<{ className?: string }>> = {
       <rect x="11" y="8" width="2" height="2" fill="#C0C0B0"/>
     </svg>
   ),
-  207: ({ className }) => ( // Spike shield
+  207: ({ className }) => ( // Spiked Armor (Deco)
     <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
-      <rect x="6" y="6" width="12" height="14" fill="#4682B4"/>
-      <rect x="8" y="8" width="8" height="10" fill="#5A9BD4"/>
-      <rect x="4" y="10" width="2" height="2" fill="#C0C0C0"/>
-      <rect x="18" y="10" width="2" height="2" fill="#C0C0C0"/>
-      <rect x="4" y="14" width="2" height="2" fill="#C0C0C0"/>
-      <rect x="18" y="14" width="2" height="2" fill="#C0C0C0"/>
-      <rect x="11" y="2" width="2" height="4" fill="#C0C0C0"/>
+      {/* Metal plate base */}
+      <rect x="8" y="8" width="8" height="8" fill="#708090"/>
+      <rect x="10" y="6" width="4" height="2" fill="#607080"/>
+      <rect x="10" y="16" width="4" height="2" fill="#607080"/>
+      <rect x="6" y="10" width="2" height="4" fill="#607080"/>
+      <rect x="16" y="10" width="2" height="4" fill="#607080"/>
+      {/* Spikes */}
+      <rect x="11" y="3" width="2" height="3" fill="#C0C0C0"/>
+      <rect x="4" y="11" width="3" height="2" fill="#C0C0C0"/>
+      <rect x="17" y="11" width="3" height="2" fill="#C0C0C0"/>
+      <rect x="11" y="18" width="2" height="3" fill="#C0C0C0"/>
+      {/* Center emblem */}
+      <rect x="10" y="10" width="4" height="4" fill="#A0A0B0"/>
+      <rect x="11" y="11" width="2" height="2" fill="#E0E0E0"/>
     </svg>
   ),
   208: ({ className }) => ( // Charged gem

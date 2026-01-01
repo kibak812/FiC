@@ -503,15 +503,10 @@ const calculateWeaponStats = (): CraftedWeapon => {
     let block = 0;
     let hitCount = 1;
 
-    // Logic for Spiked Shield (207) - Damage equals Block
-    if (head.id === 207) {
-        damage = player.block;
-    }
-
     // Logic for Parrying Guard (102) OR Pot Lid (104) acting as Head
     if (handle.id === 102 || head.id === 104) {
       block = finalValue;
-      if (head.id !== 207) damage = 0; // Spiked Shield retains damage
+      damage = 0;
     }
 
     // Logic for Swift Dagger Hilt (201) -> Now applies Weak instead of -2 damage
@@ -527,6 +522,11 @@ const calculateWeaponStats = (): CraftedWeapon => {
     // 209: Cogwheel - +1 damage per bleed stack
     if (head.id === 209) {
         damage += (enemy.statuses.bleed || 0);
+    }
+
+    // 207: Spiked Armor (Deco) - Add 100% of current block as damage
+    if (deco?.id === 207) {
+        damage += player.block;
     }
 
     // 210: Thorn Sigil (Deco) - Add 50% of current block as damage
