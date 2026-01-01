@@ -66,7 +66,7 @@ export type EffectAction =
 
 // --- Effect Definition ---
 
-export type EffectPhase = 'PRE_DAMAGE' | 'ON_HIT' | 'POST_DAMAGE';
+export type EffectPhase = 'SELF_DAMAGE' | 'PRE_DAMAGE' | 'ON_HIT' | 'POST_DAMAGE';
 export type SlotType = 'handle' | 'head' | 'deco';
 
 export interface CardEffect {
@@ -125,22 +125,22 @@ registerEffect({
   execute: () => [{ type: 'SET_IGNORE_BLOCK', value: true }]
 });
 
-// 318: Blood Handle - Self damage 4
+// 318: Blood Handle - Self damage 4 (SELF_DAMAGE phase - runs before PRE_DAMAGE)
 registerEffect({
   cardId: 318,
   slot: 'handle',
-  phase: 'PRE_DAMAGE',
+  phase: 'SELF_DAMAGE',
   execute: (ctx) => {
     ctx.showFeedback('-4', 'bad');
     return [{ type: 'PLAYER_SELF_DAMAGE', amount: 4 }];
   }
 });
 
-// 314: Frenzy Blade - Self damage 4
+// 314: Frenzy Blade - Self damage 4 (SELF_DAMAGE phase - runs before PRE_DAMAGE)
 registerEffect({
   cardId: 314,
   slot: 'head',
-  phase: 'PRE_DAMAGE',
+  phase: 'SELF_DAMAGE',
   execute: (ctx) => {
     ctx.showFeedback('-4', 'bad');
     return [{ type: 'PLAYER_SELF_DAMAGE', amount: 4 }];

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   CardInstance, CardType, CombatState, PlayerStats, EnemyData, 
   IntentType, CraftedWeapon, CardRarity, EnemyTrait, EnemyTier
@@ -92,7 +92,6 @@ const [player, setPlayer] = useState<PlayerStats>({
 
   // Intent detail modal (long-press on mobile)
   const [showIntentDetail, setShowIntentDetail] = useState(false);
-  const intentLongPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Status effect detail modal
   const [showStatusDetail, setShowStatusDetail] = useState<string | null>(null); // Status key or null
@@ -768,11 +767,10 @@ const calculateWeaponStats = (): CraftedWeapon => {
       selfDamage: player.selfDamageThisTurn
     };
 
-    // === PRE-DAMAGE PHASE ===
-    const preDamageActions = executeEffectsForPhase(effectContext, modifiers, 'PRE_DAMAGE');
-    
-    // Apply self-damage from PRE_DAMAGE effects first
-    for (const action of preDamageActions) {
+    // === SELF-DAMAGE PHASE (runs before PRE_DAMAGE) ===
+    // Process self-damage effects first so Berserker Rune can see the updated selfDamage value
+    const selfDamageActions = executeEffectsForPhase(effectContext, modifiers, 'SELF_DAMAGE');
+    for (const action of selfDamageActions) {
       if (action.type === 'PLAYER_SELF_DAMAGE') {
         setPlayer(prev => ({ 
           ...prev, 
@@ -782,8 +780,12 @@ const calculateWeaponStats = (): CraftedWeapon => {
         modifiers.selfDamage += action.amount;
       }
     }
+
+    // === PRE-DAMAGE PHASE ===
+    // Now Berserker Rune (320) can correctly see selfDamage from Blood Handle/Frenzy Blade
+    const preDamageActions = executeEffectsForPhase(effectContext, modifiers, 'PRE_DAMAGE');
     
-    // Now apply modifier changes (damage, block, ignoreBlock)
+    // Apply modifier changes (damage, block, ignoreBlock)
     modifiers = applyModifierActions(modifiers, preDamageActions);
 
     const { finalDamage, finalBlock, ignoreBlock } = modifiers;

@@ -38,7 +38,8 @@ export const useToast = (): UseToastReturn => {
       const [next, ...rest] = goodToastQueue;
       setCurrentGoodToast(next);
       setGoodToastQueue(rest);
-      setTimeout(() => setCurrentGoodToast(null), 1200);
+      const timer = setTimeout(() => setCurrentGoodToast(null), 1200);
+      return () => clearTimeout(timer);
     }
   }, [goodToastQueue, currentGoodToast]);
 
@@ -48,7 +49,8 @@ export const useToast = (): UseToastReturn => {
       const [next, ...rest] = badToastQueue;
       setCurrentBadToast(next);
       setBadToastQueue(rest);
-      setTimeout(() => setCurrentBadToast(null), 1200);
+      const timer = setTimeout(() => setCurrentBadToast(null), 1200);
+      return () => clearTimeout(timer);
     }
   }, [badToastQueue, currentBadToast]);
 
