@@ -96,7 +96,7 @@ const CardComponent: React.FC<CardProps> = ({
 
   // Touch Drag (Mobile) with Long Press for Detail
   const handleTouchStart = (e: React.TouchEvent) => {
-    if (disabled) return;
+    if (disabled || showDetail) return; // Don't start new long press if modal is open
     const touch = e.touches[0];
     touchStartRef.current = { x: touch.clientX, y: touch.clientY };
     isDraggingRef.current = false;
@@ -259,8 +259,8 @@ const CardComponent: React.FC<CardProps> = ({
       {showDetail && createPortal(
         <div
           className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80"
-          onMouseDown={() => setShowDetail(false)}
-          onTouchStart={() => setShowDetail(false)}
+          onMouseDown={(e) => { e.preventDefault(); e.stopPropagation(); setShowDetail(false); }}
+          onTouchStart={(e) => { e.preventDefault(); e.stopPropagation(); setShowDetail(false); }}
         >
           <div
             className={`
