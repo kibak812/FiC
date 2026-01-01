@@ -18,6 +18,10 @@ import { STATUS_DESCRIPTIONS } from './utils/statusDescriptions';
 import { useAnimations } from './hooks/useAnimations';
 import { useToast } from './hooks/useToast';
 
+// --- Screens ---
+import MenuScreen from './screens/MenuScreen';
+import GameOverScreen from './screens/GameOverScreen';
+
 // --- Main App ---
 
 type GameState = 'MENU' | 'PLAYING' | 'REWARD' | 'BOSS_REWARD' | 'REST' | 'SHOP' | 'REMOVE_CARD' | 'WIN' | 'LOSE';
@@ -1294,122 +1298,18 @@ if (enemy.statuses.poison > 0) {
   // --- Render Sub-Screens ---
 
   if (gameState === 'MENU') {
-    return (
-      <div className="w-full h-screen-safe flex flex-col items-center justify-center bg-pixel-bg-dark text-stone-100 px-4 text-center relative overflow-hidden">
-        {/* Animated Background Sparks */}
-        <div className="absolute inset-0 pointer-events-none">
-          <div className="absolute top-1/4 left-1/4 w-2 h-2 bg-orange-500 animate-pulse opacity-50" />
-          <div className="absolute top-1/3 right-1/3 w-1 h-1 bg-yellow-500 animate-ping opacity-30" />
-          <div className="absolute bottom-1/4 left-1/3 w-2 h-2 bg-red-500 animate-pulse opacity-40" style={{ animationDelay: '0.5s' }} />
-          <div className="absolute top-1/2 right-1/4 w-1 h-1 bg-orange-400 animate-ping opacity-40" style={{ animationDelay: '1s' }} />
-        </div>
-
-        {/* Forge Glow */}
-        <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-96 h-48 bg-orange-600/20 blur-3xl pointer-events-none" />
-
-        {/* Title */}
-        <h1 className="font-pixel text-2xl md:text-4xl mb-2 text-orange-500 animate-pulse"
-            style={{ textShadow: '4px 4px 0 #7c2d12, 0 0 20px rgba(249,115,22,0.5)' }}>
-          FORGED IN CHAOS
-        </h1>
-        <h2 className="font-pixel-kr text-3xl md:text-5xl font-bold mb-6 text-orange-400"
-            style={{ textShadow: '3px 3px 0 #431407' }}>
-          혼돈의 대장간
-        </h2>
-
-        <p className="mb-10 text-base md:text-lg text-stone-400 font-pixel-kr">
-          무기를 직접 제작하여 던전에서 살아남으세요.
-        </p>
-
-        {/* Start Button - 3D Pixel Style */}
-        <button
-          onClick={startGame}
-          className="
-            px-8 md:px-12 py-3 md:py-4
-            pixel-border border-4 border-orange-400
-            bg-gradient-to-b from-orange-500 to-orange-700
-            font-pixel-kr text-lg md:text-xl font-bold text-white
-            hover:from-orange-400 hover:to-orange-600
-            active:translate-y-1
-            transition-all
-          "
-          style={{
-            boxShadow: '0 6px 0 0 #9a3412, 0 8px 10px rgba(0,0,0,0.5)',
-          }}
-        >
-          대장간 입장
-        </button>
-
-        {/* Version */}
-        <div className="absolute bottom-4 right-4 text-xs text-stone-600 font-pixel">
-          v0.1
-        </div>
-      </div>
-    );
+    return <MenuScreen onStartGame={startGame} />;
   }
 
   if (gameState === 'WIN' || gameState === 'LOSE') {
     return (
-      <div className="w-full h-screen-safe flex flex-col items-center justify-center bg-pixel-bg-dark text-stone-100 z-50 absolute inset-0">
-        {/* Icon */}
-        <div className={`
-          p-6 pixel-border border-4 mb-6
-          ${gameState === 'WIN' ? 'border-yellow-400 bg-yellow-900/50' : 'border-red-500 bg-red-900/50'}
-        `}>
-          {gameState === 'WIN'
-            ? <Trophy size={64} className="text-yellow-400" />
-            : <Skull size={64} className="text-red-400" />
-          }
-        </div>
-
-        {/* Title */}
-        <h2 className={`
-          font-pixel text-2xl md:text-4xl mb-4
-          ${gameState === 'WIN' ? 'text-yellow-400' : 'text-red-400'}
-        `}
-        style={{ textShadow: '3px 3px 0 #000' }}>
-          {gameState === 'WIN' ? 'VICTORY!' : 'GAME OVER'}
-        </h2>
-
-        <p className="mb-2 font-pixel-kr text-xl md:text-2xl text-stone-300">
-          {gameState === 'WIN' ? '최종 승리!' : '패배'}
-        </p>
-
-        <p className="mb-8 text-stone-500 font-pixel-kr">
-          {gameState === 'WIN'
-            ? '대장간의 전설이 되셨습니다.'
-            : `Act ${act} - Floor ${floor} 에서 쓰러졌습니다.`}
-        </p>
-
-        {/* Stats Box */}
-        <div className="pixel-border border-2 border-stone-600 bg-stone-900/80 p-4 mb-8 min-w-[200px]">
-          <div className="flex justify-between gap-8 font-pixel-kr text-sm mb-2">
-            <span className="text-stone-500">획득 골드:</span>
-            <span className="text-yellow-400">{player.gold} G</span>
-          </div>
-          <div className="flex justify-between gap-8 font-pixel-kr text-sm">
-            <span className="text-stone-500">도달 층:</span>
-            <span className="text-stone-300">Act {act} - {floor}F</span>
-          </div>
-        </div>
-
-        {/* Retry Button */}
-        <button
-          onClick={startGame}
-          className="
-            px-8 py-3
-            pixel-border border-4 border-stone-500
-            bg-gradient-to-b from-stone-600 to-stone-800
-            font-pixel-kr text-base font-bold text-white
-            hover:from-stone-500 hover:to-stone-700
-            active:translate-y-1
-            transition-all
-          "
-          style={{ boxShadow: '0 4px 0 0 #1c1917' }}
-        >
-          다시 하기
-        </button>
-      </div>
+      <GameOverScreen
+        isWin={gameState === 'WIN'}
+        act={act}
+        floor={floor}
+        gold={player.gold}
+        onRestart={startGame}
+      />
     );
   }
 
