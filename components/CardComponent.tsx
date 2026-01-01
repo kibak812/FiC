@@ -1,4 +1,5 @@
 import React, { useRef, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { CardInstance, CardType, CardRarity } from '../types';
 import { getCardSprite } from './PixelSprites';
 
@@ -254,10 +255,10 @@ const CardComponent: React.FC<CardProps> = ({
         </div>
       )}
 
-      {/* Mobile Detail Modal (Long Press) */}
-      {showDetail && (
+      {/* Mobile Detail Modal (Long Press) - Rendered via Portal */}
+      {showDetail && createPortal(
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80"
           onClick={(e) => {
             e.stopPropagation();
             setShowDetail(false);
@@ -270,53 +271,54 @@ const CardComponent: React.FC<CardProps> = ({
           <div
             className={`
               relative flex flex-col items-center
-              w-48 h-72 p-3
+              w-56 h-80 p-4
               pixel-border border-4
               ${getBorderStyle()}
               ${getBgColor()}
             `}
-            style={{ boxShadow: '6px 6px 0 0 rgba(0,0,0,0.7)' }}
+            style={{ boxShadow: '8px 8px 0 0 rgba(0,0,0,0.7)' }}
             onClick={(e) => e.stopPropagation()}
+            onTouchEnd={(e) => e.stopPropagation()}
           >
             {/* Type & Cost */}
-            <div className="flex justify-between items-center w-full mb-2">
+            <div className="flex justify-between items-center w-full mb-3">
               <span className={`
-                text-xs font-pixel-kr font-bold
+                text-sm font-pixel-kr font-bold
                 px-2 py-1 pixel-border border
                 ${getTypeColor()}
               `}>
                 {getTypeName()}
               </span>
-              <div className="flex items-center justify-center w-8 h-8 pixel-border border-2 bg-blue-600 border-blue-300 font-pixel text-sm text-white">
+              <div className="flex items-center justify-center w-10 h-10 pixel-border border-2 bg-blue-600 border-blue-300 font-pixel text-base text-white">
                 {card.cost}
               </div>
             </div>
 
             {/* Large Card Art */}
-            <div className="pixel-border border-2 bg-black/40 border-white/20 p-2 mb-2">
-              <CardSprite className="w-20 h-20" />
+            <div className="pixel-border border-2 bg-black/40 border-white/20 p-3 mb-3">
+              <CardSprite className="w-24 h-24" />
             </div>
 
             {/* Card Name */}
-            <h3 className="text-sm font-pixel-kr font-bold text-white text-center mb-2"
+            <h3 className="text-base font-pixel-kr font-bold text-white text-center mb-2"
                 style={{ textShadow: '2px 2px 0 #000' }}>
               {card.name}
             </h3>
 
             {/* Full Description */}
-            <div className="flex-grow w-full bg-black/40 pixel-border border border-black/50 p-2 overflow-auto">
-              <p className="text-xs font-pixel-kr text-stone-200 leading-relaxed text-center">
+            <div className="flex-grow w-full bg-black/40 pixel-border border border-black/50 p-3 overflow-auto">
+              <p className="text-sm font-pixel-kr text-stone-200 leading-relaxed text-center">
                 {card.description}
               </p>
             </div>
 
             {/* Value Badge */}
             <div className={`
-              absolute -bottom-3 -right-3
-              w-10 h-10
+              absolute -bottom-4 -right-4
+              w-12 h-12
               pixel-border border-2
               flex items-center justify-center
-              font-pixel text-sm
+              font-pixel text-base
               ${card.type === CardType.HANDLE
                 ? 'bg-amber-600 border-amber-400 text-amber-100'
                 : card.type === CardType.HEAD
@@ -328,11 +330,12 @@ const CardComponent: React.FC<CardProps> = ({
             </div>
 
             {/* Close hint */}
-            <div className="absolute -top-8 left-1/2 -translate-x-1/2 text-xs font-pixel-kr text-stone-400">
+            <div className="absolute -top-10 left-1/2 -translate-x-1/2 text-sm font-pixel-kr text-stone-300 bg-black/50 px-3 py-1 pixel-border">
               탭하여 닫기
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
     </div>
   );
