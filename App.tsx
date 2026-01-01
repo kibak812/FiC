@@ -7,7 +7,7 @@ import { CARD_DATABASE, INITIAL_DECK_IDS, ENEMIES, ENEMY_POOLS } from './constan
 import CardComponent from './components/CardComponent';
 import Anvil from './components/Anvil';
 import { getMonsterSprite } from './components/PixelSprites';
-import { Heart, Shield, Zap, RefreshCw, Trophy, Map as MapIcon, Hammer, Flame, Ban, ArrowLeft, Check, Layers, Archive, Droplets, Activity, Star, Lock, Swords, Percent, Store, Coins, Sparkles, ChevronRight } from 'lucide-react';
+import { Heart, Shield, Zap, RefreshCw, Skull, Trophy, Map as MapIcon, Hammer, Flame, Ban, ArrowLeft, Check, Layers, Archive, Droplets, Activity, Star, Lock, Swords, Percent, Store, Coins, Sparkles, ChevronRight } from 'lucide-react';
 
 // --- Utils ---
 
