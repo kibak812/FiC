@@ -97,6 +97,8 @@ export interface PlayerStats {
   nextTurnDraw: number; // Stores extra draw count for the next turn
   overheat: number; // Overheat: reduces energy next turn
   weaponsUsedThisTurn: number; // Counter for combo cards like 310
+  dodgeNextAttack: boolean; // For 412 Evasion Handle - dodge next enemy attack
+  selfDamageThisTurn: number; // For 320 Berserker Rune - tracks self damage for bonus
 }
 
 export interface CombatState {

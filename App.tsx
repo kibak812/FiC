@@ -40,7 +40,7 @@ export default function App() {
   
   // Entities
 const [player, setPlayer] = useState<PlayerStats>({
-    hp: 50, maxHp: 50, energy: 3, maxEnergy: 3, block: 0, gold: 0, costLimit: null, disarmed: false, nextTurnDraw: 0, overheat: 0, weaponsUsedThisTurn: 0
+    hp: 50, maxHp: 50, energy: 3, maxEnergy: 3, block: 0, gold: 0, costLimit: null, disarmed: false, nextTurnDraw: 0, overheat: 0, weaponsUsedThisTurn: 0, dodgeNextAttack: false, selfDamageThisTurn: 0
   });
   
   const [enemy, setEnemy] = useState<EnemyData>(JSON.parse(JSON.stringify(ENEMIES.RUST_SLIME))); // Init with weak enemy
@@ -211,7 +211,7 @@ const startCombat = (enemyData: EnemyData) => {
     setHand([]);
     setDiscardPile([]);
     setSlots({ handle: null, head: null, deco: null });
-    setPlayer(prev => ({...prev, energy: prev.maxEnergy, block: 0, costLimit: null, disarmed: false, nextTurnDraw: 0, overheat: 0, weaponsUsedThisTurn: 0}));
+    setPlayer(prev => ({...prev, energy: prev.maxEnergy, block: 0, costLimit: null, disarmed: false, nextTurnDraw: 0, overheat: 0, weaponsUsedThisTurn: 0, dodgeNextAttack: false, selfDamageThisTurn: 0}));
     setGameState('PLAYING');
     setCombatState({ turn: 1, phase: 'PLAYER_DRAW' });
     // Reset combat-specific states
@@ -273,7 +273,7 @@ const startCombat = (enemyData: EnemyData) => {
     setHand([]);
     setDiscardPile([]);
     
-    setPlayer({ hp: 50, maxHp: 50, energy: 3, maxEnergy: 3, block: 0, gold: 0, costLimit: null, disarmed: false, nextTurnDraw: 0, overheat: 0, weaponsUsedThisTurn: 0 });
+    setPlayer({ hp: 50, maxHp: 50, energy: 3, maxEnergy: 3, block: 0, gold: 0, costLimit: null, disarmed: false, nextTurnDraw: 0, overheat: 0, weaponsUsedThisTurn: 0, dodgeNextAttack: false, selfDamageThisTurn: 0 });
     
     setFloor(1);
     setAct(1);
@@ -492,8 +492,9 @@ const calculateWeaponStats = (): CraftedWeapon => {
     if (handle.id === 309) {
         handleMultiplier = 2; // Average for display, actual random in handleForgeAndAttack
     }
+    // 218: Lightweight Handle - 0.75 multiplier (already in value)
 
-    let finalValue = baseValue * handleMultiplier;
+    let finalValue = Math.floor(baseValue * handleMultiplier);
 
     // Handle "Cost 0" effect from Philosopher's Stone (ID 403)
     if (deco?.id === 403) totalCost = 0;
@@ -701,13 +702,15 @@ const effectMultiplier = slots.handle?.id === 301 ? 2 : 1;
     // === Balance Patch v1.0 - Pre-damage calculations ===
     let finalDamage = stats.damage;
     let finalBlock = stats.block;
+    let ignoreBlock = false; // For 317 Piercing Handle
+    let currentSelfDamage = player.selfDamageThisTurn; // Track self damage this weapon
 
     // 309: Gambler's Handle - Random multiplier 1~3
     if (slots.handle?.id === 309) {
         const randomMultiplier = Math.floor(Math.random() * 3) + 1; // 1, 2, or 3
         const { head, deco } = slots;
         let baseValue = head!.value + (deco ? deco.value : 0);
-        finalDamage = baseValue * randomMultiplier;
+        finalDamage = Math.floor(baseValue * randomMultiplier);
         showFeedback(`도박! x${randomMultiplier} 배율!`);
     }
 
@@ -716,6 +719,43 @@ const effectMultiplier = slots.handle?.id === 301 ? 2 : 1;
         const bonusDmg = remainingEnergyAfterCost * 4;
         finalDamage += bonusDmg;
         if (bonusDmg > 0) showFeedback(`축전지 보너스 +${bonusDmg}!`, 'good');
+    }
+
+    // 317: Piercing Handle - Ignore enemy block
+    if (slots.handle?.id === 317) {
+        ignoreBlock = true;
+    }
+
+    // === Balance Patch v1.1 - Self-damage cards (applied before 320 bonus) ===
+    // 318: Blood Handle - Self damage 4
+    if (slots.handle?.id === 318) {
+        const selfDmg = 4;
+        setPlayer(prev => ({ ...prev, hp: Math.max(0, prev.hp - selfDmg), selfDamageThisTurn: prev.selfDamageThisTurn + selfDmg }));
+        currentSelfDamage += selfDmg;
+        showFeedback(`피의 자루! 자해 ${selfDmg}`, 'bad');
+    }
+
+    // 314: Frenzy Blade - Self damage 4
+    if (slots.head?.id === 314) {
+        const selfDmg = 4;
+        setPlayer(prev => ({ ...prev, hp: Math.max(0, prev.hp - selfDmg), selfDamageThisTurn: prev.selfDamageThisTurn + selfDmg }));
+        currentSelfDamage += selfDmg;
+        showFeedback(`광기의 칼날! 자해 ${selfDmg}`, 'bad');
+    }
+
+    // 320: Berserker Rune - Add self damage taken this turn as bonus damage
+    if (slots.deco?.id === 320) {
+        const bonusDmg = currentSelfDamage;
+        if (bonusDmg > 0) {
+            finalDamage += bonusDmg;
+            showFeedback(`광전사 보너스! +${bonusDmg}`, 'good');
+        }
+    }
+
+    // 413: Dragon Sigil - Double final damage
+    if (slots.deco?.id === 413) {
+        finalDamage *= 2;
+        showFeedback(`용의 문장! 피해 2배!`, 'good');
     }
 
     if (finalDamage > 0) {
@@ -757,13 +797,15 @@ const effectMultiplier = slots.handle?.id === 301 ? 2 : 1;
               showFeedback("코볼트가 희귀 카드를 보고 격분!");
           }
 
-          // Apply Damage to Block First
+          // Apply Damage to Block First (unless ignoreBlock)
           let damageDealt = actualDmg;
-          if (damageDealt > 0 && enemy.block > 0) {
+          if (damageDealt > 0 && enemy.block > 0 && !ignoreBlock) {
               const blockDamage = Math.min(enemy.block, damageDealt);
               damageDealt -= blockDamage;
               setEnemy(prev => ({ ...prev, block: prev.block - blockDamage }));
               if (blockDamage > 0) showFeedback("방어도에 막힘!");
+          } else if (ignoreBlock && enemy.block > 0) {
+              showFeedback("관통! 방어도 무시!");
           }
 
           // Apply remaining damage to HP
@@ -822,10 +864,11 @@ if (finalBlock > 0) {
         showFeedback("에너지 +1", 'good');
     }
 
-    // 404: Meteor Shard - Self Damage
+    // 404: Meteor Shard - Self Damage 6 (Balance Patch v1.1: 5->6)
     if (slots.head?.id === 404) {
-        setPlayer(prev => ({ ...prev, hp: Math.max(0, prev.hp - 5) }));
-        showFeedback("반동 피해 -5 HP", 'bad');
+        const selfDmg = 6;
+        setPlayer(prev => ({ ...prev, hp: Math.max(0, prev.hp - selfDmg), selfDamageThisTurn: prev.selfDamageThisTurn + selfDmg }));
+        showFeedback(`반동 피해 -${selfDmg} HP`, 'bad');
     }
 
 if (slots.head?.id === 203 && stats.damage > 0) {
@@ -940,6 +983,68 @@ if (slots.deco?.id === 305) {
         showFeedback(`화상 ${burnAmt} 부여!`);
     }
 
+    // === Balance Patch v1.1 - New Card Effects ===
+
+    // 215: Agile Blade - Draw +1 next turn
+    if (slots.head?.id === 215) {
+        setPlayer(prev => ({ ...prev, nextTurnDraw: prev.nextTurnDraw + 1 }));
+        showFeedback("다음 턴 드로우 +1!", 'good');
+    }
+
+    // 219: Weakening Sigil - Apply Weak 1
+    if (slots.deco?.id === 219) {
+        setEnemy(prev => ({
+            ...prev,
+            statuses: { ...prev.statuses, weak: (prev.statuses.weak || 0) + 1 }
+        }));
+        showFeedback("쇠약 부여!");
+    }
+
+    // 313: Mana Blade - Restore 1 energy
+    if (slots.head?.id === 313) {
+        setPlayer(prev => ({ ...prev, energy: Math.min(prev.maxEnergy, prev.energy + 1) }));
+        showFeedback("에너지 +1!", 'good');
+    }
+
+    // 319: Blood Whetstone - Apply Bleed 2
+    if (slots.deco?.id === 319) {
+        const bleedAmt = 2 * effectMultiplier;
+        setEnemy(prev => ({
+            ...prev,
+            statuses: { ...prev.statuses, bleed: (prev.statuses.bleed || 0) + bleedAmt }
+        }));
+        showFeedback(`출혈 ${bleedAmt} 부여!`);
+    }
+
+    // 408: Frost Blade - Stun 1
+    if (slots.head?.id === 408) {
+        setEnemy(prev => ({
+            ...prev,
+            statuses: { ...prev.statuses, stunned: 1 }
+        }));
+        showFeedback("적 기절!");
+    }
+
+    // 409: Executioner's Blade - Execute if enemy HP <= 20% max
+    if (slots.head?.id === 409) {
+        // Check after damage is applied
+        setTimeout(() => {
+            setEnemy(prev => {
+                if (prev.currentHp > 0 && prev.currentHp <= prev.maxHp * 0.2) {
+                    showFeedback("처형!");
+                    return { ...prev, currentHp: 0 };
+                }
+                return prev;
+            });
+        }, 100);
+    }
+
+    // 412: Evasion Handle - Dodge next enemy attack
+    if (slots.handle?.id === 412) {
+        setPlayer(prev => ({ ...prev, dodgeNextAttack: true }));
+        showFeedback("회피 준비!", 'good');
+    }
+
     // 406: Time Cog - Stun 1 + Skip next intent
     if (slots.head?.id === 406) {
         setEnemy(prev => ({
@@ -1019,7 +1124,8 @@ case 'PLAYER_DRAW':
               block: 0,
               nextTurnDraw: 0,
               overheat: 0,
-              weaponsUsedThisTurn: 0
+              weaponsUsedThisTurn: 0,
+              selfDamageThisTurn: 0 // Reset self damage counter for new turn
           })); 
           setEnemy(prev => ({ ...prev, damageTakenThisTurn: 0 })); 
           setInfiniteLoopUsed(false); // Reset 405 usage
@@ -1160,6 +1266,14 @@ if (enemy.statuses.poison > 0) {
                       await new Promise(r => setTimeout(r, 400));
                   }
                  if (enemy.currentHp <= 0) break;
+
+                 // 412: Evasion Handle - Dodge one attack
+                 if (player.dodgeNextAttack) {
+                     setPlayer(p => ({ ...p, dodgeNextAttack: false }));
+                     showFeedback("회피 성공!", 'good');
+                     await new Promise(r => setTimeout(r, 400));
+                     continue; // Skip this attack hit
+                 }
 
                  const unblockedDmg = Math.max(0, dmg - player.block);
                  setPlayer(p => ({ ...p, hp: Math.max(0, p.hp - unblockedDmg), block: Math.max(0, p.block - dmg) }));

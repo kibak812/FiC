@@ -623,6 +623,189 @@ export const CardSprites: Record<number, React.FC<{ className?: string }>> = {
     </svg>
   ),
 
+  // Balance Patch v1.1 - New Common
+  215: ({ className }) => ( // Agile blade
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      <rect x="11" y="2" width="2" height="12" fill="#A0A0A0"/>
+      <rect x="10" y="4" width="1" height="8" fill="#C0C0C0"/>
+      <rect x="13" y="4" width="1" height="8" fill="#707070"/>
+      <rect x="8" y="14" width="8" height="2" fill="#87CEEB"/>
+      <rect x="10" y="16" width="4" height="4" fill="#654321"/>
+      {/* Speed lines */}
+      <rect x="6" y="6" width="2" height="1" fill="#ADD8E6"/>
+      <rect x="5" y="9" width="3" height="1" fill="#ADD8E6"/>
+      <rect x="16" y="7" width="2" height="1" fill="#ADD8E6"/>
+    </svg>
+  ),
+  218: ({ className }) => ( // Lightweight handle
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      <rect x="10" y="4" width="4" height="14" fill="#D2B48C"/>
+      <rect x="8" y="6" width="2" height="3" fill="#C4A76C"/>
+      <rect x="14" y="6" width="2" height="3" fill="#C4A76C"/>
+      <rect x="9" y="16" width="6" height="4" fill="#A08060"/>
+      {/* Feather decorations */}
+      <rect x="6" y="8" width="2" height="4" fill="#E8E8E8"/>
+      <rect x="16" y="8" width="2" height="4" fill="#E8E8E8"/>
+    </svg>
+  ),
+  219: ({ className }) => ( // Weakening sigil
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      <rect x="8" y="8" width="8" height="8" fill="#4A4A4A"/>
+      <rect x="10" y="6" width="4" height="2" fill="#3A3A3A"/>
+      <rect x="10" y="16" width="4" height="2" fill="#3A3A3A"/>
+      <rect x="6" y="10" width="2" height="4" fill="#3A3A3A"/>
+      <rect x="16" y="10" width="2" height="4" fill="#3A3A3A"/>
+      {/* Skull symbol */}
+      <rect x="10" y="10" width="4" height="3" fill="#808080"/>
+      <rect x="11" y="10" width="1" height="1" fill="#2D2D2D"/>
+      <rect x="12" y="10" width="1" height="1" fill="#2D2D2D"/>
+      <rect x="11" y="13" width="2" height="1" fill="#606060"/>
+    </svg>
+  ),
+
+  // Balance Patch v1.1 - New Rare
+  313: ({ className }) => ( // Mana blade
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      <rect x="11" y="2" width="2" height="12" fill="#4169E1"/>
+      <rect x="10" y="4" width="1" height="8" fill="#6495ED"/>
+      <rect x="13" y="4" width="1" height="8" fill="#27408B"/>
+      <rect x="8" y="14" width="8" height="2" fill="#9400D3"/>
+      <rect x="10" y="16" width="4" height="4" fill="#8B008B"/>
+      {/* Magic sparkles */}
+      <rect x="7" y="6" width="2" height="2" fill="#00FFFF"/>
+      <rect x="15" y="8" width="2" height="2" fill="#00FFFF"/>
+      <rect x="11" y="6" width="2" height="2" fill="#FFFFFF"/>
+    </svg>
+  ),
+  314: ({ className }) => ( // Frenzy blade
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      <rect x="11" y="2" width="2" height="12" fill="#8B0000"/>
+      <rect x="10" y="4" width="1" height="8" fill="#A52A2A"/>
+      <rect x="13" y="4" width="1" height="8" fill="#660000"/>
+      <rect x="8" y="14" width="8" height="2" fill="#4A0000"/>
+      <rect x="10" y="16" width="4" height="4" fill="#2D0000"/>
+      {/* Blood drips */}
+      <rect x="9" y="6" width="1" height="3" fill="#FF0000"/>
+      <rect x="14" y="8" width="1" height="4" fill="#FF0000"/>
+      <rect x="11" y="10" width="2" height="2" fill="#FF4444"/>
+    </svg>
+  ),
+  317: ({ className }) => ( // Piercing handle
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      <rect x="10" y="4" width="4" height="14" fill="#708090"/>
+      <rect x="8" y="6" width="2" height="4" fill="#A0A0A0"/>
+      <rect x="14" y="6" width="2" height="4" fill="#A0A0A0"/>
+      <rect x="9" y="16" width="6" height="4" fill="#505050"/>
+      {/* Sharp spike decorations */}
+      <rect x="6" y="8" width="2" height="2" fill="#C0C0C0"/>
+      <rect x="5" y="9" width="1" height="1" fill="#E0E0E0"/>
+      <rect x="16" y="8" width="2" height="2" fill="#C0C0C0"/>
+      <rect x="18" y="9" width="1" height="1" fill="#E0E0E0"/>
+    </svg>
+  ),
+  318: ({ className }) => ( // Blood handle
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      <rect x="10" y="4" width="4" height="14" fill="#8B4513"/>
+      <rect x="8" y="6" width="2" height="4" fill="#A0522D"/>
+      <rect x="14" y="6" width="2" height="4" fill="#A0522D"/>
+      <rect x="9" y="16" width="6" height="4" fill="#654321"/>
+      {/* Blood stains */}
+      <rect x="11" y="6" width="2" height="3" fill="#8B0000"/>
+      <rect x="10" y="10" width="1" height="2" fill="#B22222"/>
+      <rect x="13" y="11" width="1" height="3" fill="#8B0000"/>
+      <rect x="9" y="18" width="2" height="1" fill="#660000"/>
+    </svg>
+  ),
+  319: ({ className }) => ( // Blood whetstone
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      <rect x="4" y="10" width="16" height="8" fill="#8B0000"/>
+      <rect x="6" y="8" width="12" height="2" fill="#A52A2A"/>
+      <rect x="6" y="18" width="12" height="2" fill="#660000"/>
+      <rect x="8" y="12" width="4" height="4" fill="#B22222"/>
+      <rect x="14" y="12" width="2" height="2" fill="#FF4444"/>
+      {/* Blood drops */}
+      <rect x="10" y="6" width="1" height="2" fill="#FF0000"/>
+      <rect x="14" y="5" width="1" height="3" fill="#FF0000"/>
+    </svg>
+  ),
+  320: ({ className }) => ( // Berserker rune
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      <rect x="8" y="8" width="8" height="8" fill="#8B0000"/>
+      <rect x="10" y="6" width="4" height="2" fill="#A52A2A"/>
+      <rect x="10" y="16" width="4" height="2" fill="#A52A2A"/>
+      <rect x="6" y="10" width="2" height="4" fill="#A52A2A"/>
+      <rect x="16" y="10" width="2" height="4" fill="#A52A2A"/>
+      {/* Rage symbol */}
+      <rect x="10" y="10" width="4" height="4" fill="#FF4500"/>
+      <rect x="11" y="9" width="2" height="1" fill="#FF6600"/>
+      <rect x="11" y="14" width="2" height="1" fill="#FF6600"/>
+      <rect x="11" y="11" width="2" height="2" fill="#FFFF00"/>
+    </svg>
+  ),
+
+  // Balance Patch v1.1 - New Legend
+  408: ({ className }) => ( // Frost blade
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      <rect x="11" y="2" width="2" height="12" fill="#87CEEB"/>
+      <rect x="10" y="4" width="1" height="8" fill="#B0E0E6"/>
+      <rect x="13" y="4" width="1" height="8" fill="#4682B4"/>
+      <rect x="8" y="14" width="8" height="2" fill="#00CED1"/>
+      <rect x="10" y="16" width="4" height="4" fill="#008B8B"/>
+      {/* Ice crystals */}
+      <rect x="7" y="5" width="2" height="2" fill="#E0FFFF"/>
+      <rect x="15" y="7" width="2" height="2" fill="#E0FFFF"/>
+      <rect x="6" y="10" width="1" height="3" fill="#AFEEEE"/>
+      <rect x="17" y="9" width="1" height="3" fill="#AFEEEE"/>
+      <rect x="11" y="4" width="2" height="2" fill="#FFFFFF"/>
+    </svg>
+  ),
+  409: ({ className }) => ( // Executioner's blade
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      <rect x="8" y="2" width="8" height="4" fill="#2F2F2F"/>
+      <rect x="10" y="6" width="4" height="10" fill="#404040"/>
+      <rect x="8" y="4" width="2" height="6" fill="#505050"/>
+      <rect x="14" y="4" width="2" height="6" fill="#505050"/>
+      <rect x="9" y="16" width="6" height="4" fill="#8B4513"/>
+      {/* Blood on edge */}
+      <rect x="7" y="6" width="1" height="4" fill="#8B0000"/>
+      <rect x="16" y="5" width="1" height="5" fill="#8B0000"/>
+      {/* Skull emblem */}
+      <rect x="11" y="8" width="2" height="2" fill="#E8E8DC"/>
+      <rect x="11" y="8" width="1" height="1" fill="#2D2D2D"/>
+    </svg>
+  ),
+  412: ({ className }) => ( // Evasion handle
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      <rect x="10" y="4" width="4" height="14" fill="#4A4A6A"/>
+      <rect x="8" y="6" width="2" height="4" fill="#6A6A8A"/>
+      <rect x="14" y="6" width="2" height="4" fill="#6A6A8A"/>
+      <rect x="9" y="16" width="6" height="4" fill="#3A3A5A"/>
+      {/* Wind/smoke trails */}
+      <rect x="5" y="7" width="3" height="1" fill="#A0A0C0" opacity="0.7"/>
+      <rect x="4" y="10" width="4" height="1" fill="#8080A0" opacity="0.6"/>
+      <rect x="6" y="13" width="2" height="1" fill="#A0A0C0" opacity="0.5"/>
+      <rect x="16" y="8" width="3" height="1" fill="#A0A0C0" opacity="0.7"/>
+      <rect x="15" y="11" width="4" height="1" fill="#8080A0" opacity="0.6"/>
+    </svg>
+  ),
+  413: ({ className }) => ( // Dragon sigil
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      <rect x="8" y="6" width="8" height="12" fill="#8B0000"/>
+      <rect x="10" y="4" width="4" height="2" fill="#A52A2A"/>
+      <rect x="10" y="18" width="4" height="2" fill="#A52A2A"/>
+      <rect x="6" y="8" width="2" height="8" fill="#A52A2A"/>
+      <rect x="16" y="8" width="2" height="8" fill="#A52A2A"/>
+      {/* Dragon eye */}
+      <rect x="10" y="8" width="4" height="4" fill="#FFD700"/>
+      <rect x="11" y="9" width="2" height="2" fill="#FF4500"/>
+      <rect x="12" y="10" width="1" height="1" fill="#000000"/>
+      {/* Dragon scales */}
+      <rect x="9" y="13" width="2" height="2" fill="#B22222"/>
+      <rect x="13" y="13" width="2" height="2" fill="#B22222"/>
+      <rect x="11" y="15" width="2" height="2" fill="#B22222"/>
+    </svg>
+  ),
+
   // Special/Junk
   801: ({ className }) => ( // Shadow weapon
     <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>

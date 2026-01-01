@@ -32,6 +32,11 @@ export const CARD_DATABASE: CardData[] = [
   { id: 213, name: '독침', type: CardType.HEAD, cost: 1, value: 3, rarity: CardRarity.COMMON, description: '피해 3. 적 독 스택만큼 추가 피해.' },
   { id: 214, name: '무딘 곤봉', type: CardType.HEAD, cost: 1, value: 8, rarity: CardRarity.COMMON, description: '피해 8. 약화 1 부여.' },
 
+  // Balance Patch v1.1 - New Common
+  { id: 215, name: '민첩한 칼날', type: CardType.HEAD, cost: 1, value: 6, rarity: CardRarity.COMMON, description: '피해 6. 다음 턴 드로우 +1.' },
+  { id: 218, name: '가벼운 자루', type: CardType.HANDLE, cost: 0, value: 0.75, rarity: CardRarity.COMMON, description: '피해량 75%. 비용 0.' },
+  { id: 219, name: '쇠약의 문양', type: CardType.DECO, cost: 0, value: 0, rarity: CardRarity.COMMON, description: '적에게 약화 1 부여.' },
+
   // Rare
   { id: 301, name: '쌍둥이 손잡이', type: CardType.HANDLE, cost: 2, value: 2, rarity: CardRarity.RARE, description: '머리 효과 2회 발동 (피해량 2배 아님)' },
   { id: 302, name: '흡혈 덩굴', type: CardType.HANDLE, cost: 2, value: 1, rarity: CardRarity.RARE, description: '입힌 피해의 50% 회복' },
@@ -50,18 +55,32 @@ export const CARD_DATABASE: CardData[] = [
   { id: 311, name: '강철 도금', type: CardType.DECO, cost: 1, value: 0, rarity: CardRarity.RARE, description: '이 무기의 방어도 2배.' },
   { id: 312, name: '용암 칼날', type: CardType.HEAD, cost: 2, value: 10, rarity: CardRarity.RARE, description: '피해 10. 화상 4 부여.' },
 
+  // Balance Patch v1.1 - New Rare
+  { id: 313, name: '마력 칼날', type: CardType.HEAD, cost: 1, value: 4, rarity: CardRarity.RARE, description: '피해 4. 에너지 1 회복.' },
+  { id: 314, name: '광기의 칼날', type: CardType.HEAD, cost: 1, value: 12, rarity: CardRarity.RARE, description: '피해 12. 자해 4.' },
+  { id: 317, name: '관통 자루', type: CardType.HANDLE, cost: 1, value: 1, rarity: CardRarity.RARE, description: '적 방어도 무시.' },
+  { id: 318, name: '피의 자루', type: CardType.HANDLE, cost: 0, value: 1, rarity: CardRarity.RARE, description: '비용 0. 자해 4.' },
+  { id: 319, name: '피의 숫돌', type: CardType.DECO, cost: 0, value: 2, rarity: CardRarity.RARE, description: '피해량 +2. 출혈 2 부여.' },
+  { id: 320, name: '광전사의 룬', type: CardType.DECO, cost: 0, value: 0, rarity: CardRarity.RARE, description: '이번 턴 자해량만큼 추가 피해.' },
+
   // Legend
   { id: 401, name: '거인의 악력', type: CardType.HANDLE, cost: 3, value: 3, rarity: CardRarity.LEGEND, description: '피해량 3배. 적 기절.' },
   { id: 402, name: '공허의 수정', type: CardType.HEAD, cost: 3, value: 30, rarity: CardRarity.LEGEND, description: '피해 30. 소멸.' },
   { id: 403, name: '현자의 돌', type: CardType.DECO, cost: 0, value: 0, rarity: CardRarity.LEGEND, description: '무기 비용을 0으로 설정' },
   
-// New Legend
-  { id: 404, name: '운석 파편', type: CardType.HEAD, cost: 2, value: 40, rarity: CardRarity.LEGEND, description: '피해 40. 내 체력 5 감소.' },
+// New Legend (Balance Patch v1.1: 40->30 damage, 5->6 self-damage)
+  { id: 404, name: '운석 파편', type: CardType.HEAD, cost: 2, value: 30, rarity: CardRarity.LEGEND, description: '피해 30. 자해 6.' },
 
   // Balance Patch v1.0 - New Legend
   { id: 405, name: '무한 회귀', type: CardType.HANDLE, cost: 2, value: 1, rarity: CardRarity.LEGEND, description: '사용 후 손으로 귀환. 턴당 1회.' },
   { id: 406, name: '시간의 톱니', type: CardType.HEAD, cost: 2, value: 0, rarity: CardRarity.LEGEND, description: '적 기절 1. 다음 의도 건너뜀.' },
   { id: 407, name: '성장하는 결정', type: CardType.DECO, cost: 0, value: 2, rarity: CardRarity.LEGEND, description: '영구 피해 +2. 전투 중 중첩 (최대 16).' },
+
+  // Balance Patch v1.1 - New Legend
+  { id: 408, name: '서리 칼날', type: CardType.HEAD, cost: 2, value: 8, rarity: CardRarity.LEGEND, description: '피해 8. 적 기절.' },
+  { id: 409, name: '처형자의 칼날', type: CardType.HEAD, cost: 2, value: 5, rarity: CardRarity.LEGEND, description: '피해 5. 빈사 상태(HP 20% 이하) 적 처형.' },
+  { id: 412, name: '회피의 자루', type: CardType.HANDLE, cost: 2, value: 1, rarity: CardRarity.LEGEND, description: '적의 다음 공격 회피.' },
+  { id: 413, name: '용의 문장', type: CardType.DECO, cost: 1, value: 0, rarity: CardRarity.LEGEND, description: '피해량 2배.' },
 
   // Special / Generated
   { id: 801, name: '그림자 무기', type: CardType.HEAD, cost: 0, value: 0, rarity: CardRarity.SPECIAL, description: '복제된 무기의 힘을 담은 그림자입니다.' },
