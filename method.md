@@ -377,3 +377,56 @@ onTouchStart={(e) => {
   setShowDetail(false);
 }}
 ```
+
+---
+
+### 2026-01-02: 토스트 알림이 첫 번째만 표시되는 문제
+
+**증상**: 게임 시작 후 첫 토스트만 표시되고, 이후 액션의 토스트가 전혀 표시되지 않음
+
+**원인**:
+- `useToast` 훅에서 useEffect의 cleanup 함수가 의존성 변경 시마다 실행됨
+- 새 토스트가 큐에 추가될 때 `goodToastQueue`가 변경되어 useEffect 재실행
+- cleanup에서 `clearTimeout(timer)`가 실행되어 기존 타이머 취소
+- `currentGoodToast`가 null로 돌아가지 않아 다음 토스트 처리 불가
+
+**문제 코드**:
+```typescript
+useEffect(() => {
+  if (goodToastQueue.length > 0 && currentGoodToast === null) {
+    // ...
+    const timer = setTimeout(() => setCurrentGoodToast(null), 1200);
+    return () => clearTimeout(timer); // 의존성 변경 시마다 타이머 취소됨!
+  }
+}, [goodToastQueue, currentGoodToast]);
+```
+
+**해결방법**:
+```typescript
+// useRef로 타이머 관리
+const goodTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+useEffect(() => {
+  if (goodToastQueue.length > 0 && currentGoodToast === null) {
+    // ...
+    if (goodTimerRef.current) clearTimeout(goodTimerRef.current);
+    goodTimerRef.current = setTimeout(() => {
+      setCurrentGoodToast(null);
+      goodTimerRef.current = null;
+    }, 1200);
+  }
+}, [goodToastQueue, currentGoodToast]);
+
+// cleanup은 unmount 시에만
+useEffect(() => {
+  return () => {
+    if (goodTimerRef.current) clearTimeout(goodTimerRef.current);
+  };
+}, []);
+```
+
+**교훈**:
+- useEffect의 cleanup은 의존성 변경 시마다 실행됨을 인지해야 함
+- setTimeout/setInterval은 useRef로 관리하는 것이 더 안전함
+- 복잡한 타이머 로직은 cleanup과 의존성 배열의 상호작용을 주의깊게 고려
+

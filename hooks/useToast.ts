@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 
 /**
  * Toast hook return type
@@ -18,6 +18,10 @@ export const useToast = (): UseToastReturn => {
   const [badToastQueue, setBadToastQueue] = useState<string[]>([]);
   const [currentGoodToast, setCurrentGoodToast] = useState<string | null>(null);
   const [currentBadToast, setCurrentBadToast] = useState<string | null>(null);
+  
+  // Timer refs to prevent cleanup issues
+  const goodTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const badTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   /**
    * Show feedback message
@@ -38,8 +42,15 @@ export const useToast = (): UseToastReturn => {
       const [next, ...rest] = goodToastQueue;
       setCurrentGoodToast(next);
       setGoodToastQueue(rest);
-      const timer = setTimeout(() => setCurrentGoodToast(null), 1200);
-      return () => clearTimeout(timer);
+      
+      // Clear any existing timer before setting new one
+      if (goodTimerRef.current) {
+        clearTimeout(goodTimerRef.current);
+      }
+      goodTimerRef.current = setTimeout(() => {
+        setCurrentGoodToast(null);
+        goodTimerRef.current = null;
+      }, 1200);
     }
   }, [goodToastQueue, currentGoodToast]);
 
@@ -49,10 +60,25 @@ export const useToast = (): UseToastReturn => {
       const [next, ...rest] = badToastQueue;
       setCurrentBadToast(next);
       setBadToastQueue(rest);
-      const timer = setTimeout(() => setCurrentBadToast(null), 1200);
-      return () => clearTimeout(timer);
+      
+      // Clear any existing timer before setting new one
+      if (badTimerRef.current) {
+        clearTimeout(badTimerRef.current);
+      }
+      badTimerRef.current = setTimeout(() => {
+        setCurrentBadToast(null);
+        badTimerRef.current = null;
+      }, 1200);
     }
   }, [badToastQueue, currentBadToast]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (goodTimerRef.current) clearTimeout(goodTimerRef.current);
+      if (badTimerRef.current) clearTimeout(badTimerRef.current);
+    };
+  }, []);
 
   return {
     showFeedback,

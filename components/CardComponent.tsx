@@ -230,23 +230,29 @@ const CardComponent: React.FC<CardProps> = ({
         </p>
       </div>
 
-      {/* Value Badge - Pixel Style */}
-      <div className={`
-        absolute -bottom-2 -right-2
-        w-7 h-7 md:w-8 md:h-8
-        pixel-border border-2
-        flex items-center justify-center
-        font-pixel text-[9px] md:text-[11px]
-        z-10
-        ${card.type === CardType.HANDLE
-          ? 'bg-amber-600 border-amber-400 text-amber-100'
-          : card.type === CardType.HEAD
-          ? 'bg-slate-600 border-slate-400 text-slate-100'
-          : 'bg-emerald-600 border-emerald-400 text-emerald-100'
-        }
-      `}>
-        {card.type === CardType.HANDLE ? `x${card.value}` : card.value}
-      </div>
+      {/* Value Badge - Pixel Style (Adaptive width for decimals) */}
+      {(() => {
+        const displayValue = card.type === CardType.HANDLE ? `x${card.value}` : String(card.value);
+        const isLongValue = displayValue.length > 3;
+        return (
+          <div className={`
+            absolute -bottom-2 -right-2
+            ${isLongValue ? 'w-9 md:w-10' : 'w-7 md:w-8'} h-7 md:h-8
+            pixel-border border-2
+            flex items-center justify-center
+            font-pixel ${isLongValue ? 'text-[7px] md:text-[9px]' : 'text-[9px] md:text-[11px]'}
+            z-10
+            ${card.type === CardType.HANDLE
+              ? 'bg-amber-600 border-amber-400 text-amber-100'
+              : card.type === CardType.HEAD
+              ? 'bg-slate-600 border-slate-400 text-slate-100'
+              : 'bg-emerald-600 border-emerald-400 text-emerald-100'
+            }
+          `}>
+            {displayValue}
+          </div>
+        );
+      })()}
 
       {/* Rarity Indicator for Legend/Rare */}
       {card.rarity === CardRarity.LEGEND && (
@@ -314,22 +320,28 @@ const CardComponent: React.FC<CardProps> = ({
               </p>
             </div>
 
-            {/* Value Badge */}
-            <div className={`
-              absolute -bottom-4 -right-4
-              w-12 h-12
-              pixel-border border-2
-              flex items-center justify-center
-              font-pixel text-base
-              ${card.type === CardType.HANDLE
-                ? 'bg-amber-600 border-amber-400 text-amber-100'
-                : card.type === CardType.HEAD
-                ? 'bg-slate-600 border-slate-400 text-slate-100'
-                : 'bg-emerald-600 border-emerald-400 text-emerald-100'
-              }
-            `}>
-              {card.type === CardType.HANDLE ? `x${card.value}` : card.value}
-            </div>
+            {/* Value Badge (Adaptive for decimals) */}
+            {(() => {
+              const displayValue = card.type === CardType.HANDLE ? `x${card.value}` : String(card.value);
+              const isLongValue = displayValue.length > 3;
+              return (
+                <div className={`
+                  absolute -bottom-4 -right-4
+                  ${isLongValue ? 'w-14' : 'w-12'} h-12
+                  pixel-border border-2
+                  flex items-center justify-center
+                  font-pixel ${isLongValue ? 'text-sm' : 'text-base'}
+                  ${card.type === CardType.HANDLE
+                    ? 'bg-amber-600 border-amber-400 text-amber-100'
+                    : card.type === CardType.HEAD
+                    ? 'bg-slate-600 border-slate-400 text-slate-100'
+                    : 'bg-emerald-600 border-emerald-400 text-emerald-100'
+                  }
+                `}>
+                  {displayValue}
+                </div>
+              );
+            })()}
 
           </div>
         </div>,

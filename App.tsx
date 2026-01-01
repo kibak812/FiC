@@ -1109,7 +1109,12 @@ if (enemy.statuses.poison > 0) {
           
           if (enemy.currentHp <= 0) return;
 
-          if (intent.type === IntentType.BUFF) {
+          // DEFEND intent - enemy gains block
+          if (intent.type === IntentType.DEFEND) {
+             const blockGain = intent.value;
+             setEnemy(prev => ({ ...prev, block: prev.block + blockGain }));
+             showFeedback(`적 방어 태세! +${blockGain} 방어도`, 'bad');
+          } else if (intent.type === IntentType.BUFF) {
              if (intent.description.includes('공격력')) {
                  let gain = intent.value;
                  if (enemy.id === 'kobold_scrapper') {

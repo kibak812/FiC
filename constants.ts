@@ -16,7 +16,7 @@ export const CARD_DATABASE: CardData[] = [
   { id: 201, name: '날렵한 단검 자루', type: CardType.HANDLE, cost: 0, value: 1, rarity: CardRarity.COMMON, description: '약화 1 부여. 비용 0.' },
   { id: 202, name: '강철 롱소드', type: CardType.HEAD, cost: 1, value: 9, rarity: CardRarity.COMMON, description: '피해 9' },
   { id: 203, name: '톱날', type: CardType.HEAD, cost: 1, value: 3, rarity: CardRarity.COMMON, description: '피해 3, 출혈 3 부여 (적 공격 시 피해)' },
-  { id: 204, name: '가벼운 깃털', type: CardType.DECO, cost: 0, value: 0, rarity: CardRarity.COMMON, description: '다음 턴에 카드 1장 추가 뽑기' },
+  { id: 204, name: '가벼운 깃털', type: CardType.DECO, cost: 0, value: 0, rarity: CardRarity.COMMON, description: '카드 1장 즉시 드로우' },
   { id: 205, name: '독 묻은 헝겊', type: CardType.DECO, cost: 1, value: 0, rarity: CardRarity.COMMON, description: '독 4 부여' },
   
 // New Common
@@ -34,7 +34,7 @@ export const CARD_DATABASE: CardData[] = [
 
   // Balance Patch v1.1 - New Common
   { id: 215, name: '민첩한 칼날', type: CardType.HEAD, cost: 1, value: 6, rarity: CardRarity.COMMON, description: '피해 6. 다음 턴 드로우 +1.' },
-  { id: 218, name: '가벼운 자루', type: CardType.HANDLE, cost: 0, value: 0.75, rarity: CardRarity.COMMON, description: '피해량 75%. 비용 0.' },
+  { id: 218, name: '가벼운 자루', type: CardType.HANDLE, cost: 0, value: 0.8, rarity: CardRarity.COMMON, description: '피해량 80%. 비용 0.' },
   { id: 219, name: '쇠약의 문양', type: CardType.DECO, cost: 0, value: 0, rarity: CardRarity.COMMON, description: '적에게 약화 1 부여.' },
 
   // Rare

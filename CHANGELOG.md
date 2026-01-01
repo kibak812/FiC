@@ -6,6 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.3.1] - 2026-01-02
+
+### Fixed
+- **Enemy DEFEND Intent Bug**: Enemies with "방어 태세" (Defend stance) now correctly gain block
+  - Affected enemies: Skeleton Warrior, Rock Crusher, Automaton Defender, Shadow Assassin, Loot Goblin
+  - Previously, DEFEND intents were displayed but had no effect
+- **Toast Notification Bug**: Fixed toasts only showing once then stopping
+  - Root cause: useEffect cleanup was clearing timers on every dependency change
+  - Fix: Use useRef for timer management, cleanup only on unmount
+
+### Changed
+- **Light Feather (204)**: "다음 턴 드로우 +1" -> "카드 1장 즉시 드로우"
+  - Differentiated from Old Strap (106) which keeps the delayed draw effect
+- **Lightweight Handle (218)**: 0.75x -> 0.8x damage multiplier
+  - Description updated: "피해량 75%" -> "피해량 80%"
+
+### Improved
+- **Enemy HP Bar**: Enhanced text visibility with stronger text-shadow outline
+- **Shop Confirmation**: Added purchase confirmation modal before deducting gold
+  - Shows item name, description, and price
+  - Cancel/Confirm buttons prevent accidental purchases
+- **Card Value Badge**: Adaptive width for decimal multipliers (e.g., x0.8)
+  - Prevents text overflow on cards with non-integer values
+
+---
+
 ## [1.3.0] - 2026-01-01
 
 ### Architecture Refactoring
