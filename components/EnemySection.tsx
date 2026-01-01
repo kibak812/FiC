@@ -153,7 +153,7 @@ const EnemySection: React.FC<EnemySectionProps> = ({
                   />
                 );
               })}
-              <div className="absolute inset-0 flex items-center justify-center font-pixel text-[9px] text-white" style={{ textShadow: '1px 1px 0 #000' }}>
+              <div className="absolute inset-0 flex items-center justify-center font-pixel text-[9px] text-white" style={{ textShadow: '1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 0 0 4px #000' }}>
                 {enemy.currentHp}/{enemy.maxHp}
               </div>
             </div>

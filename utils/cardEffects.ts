@@ -291,12 +291,12 @@ registerEffect({
   execute: () => [{ type: 'ENEMY_APPLY_STATUS', status: 'stunned', amount: 1 }]
 });
 
-// 204: Scroll - Draw +1 next turn
+// 204: Light Feather - Draw 1 card immediately
 registerEffect({
   cardId: 204,
   slot: 'deco',
   phase: 'POST_DAMAGE',
-  execute: () => [{ type: 'PLAYER_NEXT_TURN_DRAW', amount: 1 }]
+  execute: () => [{ type: 'DRAW_CARDS', count: 1 }]
 });
 
 // 106: Feather - Draw +1 next turn
