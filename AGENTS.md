@@ -296,6 +296,44 @@ Before submitting changes:
 
 ---
 
+## Changelog Management
+
+**IMPORTANT**: Update `CHANGELOG.md` for every gameplay-related change.
+
+### When to Update
+- Adding/removing/modifying cards
+- Changing card stats (cost, damage, effects)
+- Adding/modifying enemies or bosses
+- Adding new mechanics or status effects
+- Balance changes
+
+### Format
+```markdown
+## [X.Y.Z] - YYYY-MM-DD
+
+### Added
+- New features, cards, enemies
+
+### Changed
+- Modifications to existing content
+
+### Fixed
+- Bug fixes
+
+### Removed
+- Removed features
+
+### Design Notes
+- Explain WHY changes were made (optional but recommended)
+```
+
+### Version Numbering
+- **Major (X)**: Large content updates, new floors
+- **Minor (Y)**: New cards, enemies, mechanics
+- **Patch (Z)**: Balance tweaks, bug fixes
+
+---
+
 ## Git Workflow
 
 - CI runs on push to main/master
