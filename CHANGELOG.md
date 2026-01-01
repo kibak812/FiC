@@ -6,6 +6,79 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.3.0] - 2026-01-01
+
+### Architecture Refactoring
+
+Major internal refactoring to improve code maintainability. App.tsx reduced from ~2,400 lines to ~1,400 lines.
+
+#### New Directory Structure
+```
+FiC/
+  components/           # UI Components
+    Anvil.tsx          # Crafting station
+    CardComponent.tsx  # Card display with drag/touch
+    DamageNumber.tsx   # Damage popup
+    DeckHUD.tsx        # Deck/discard counter
+    EnemySection.tsx   # Enemy display with intents
+    IntentDetailModal.tsx
+    PlayerHUD.tsx      # HP/energy/block display
+    PixelSprites.tsx   # SVG pixel art
+    SparkParticle.tsx  # Visual effects
+    StatusDetailModal.tsx
+  hooks/               # Custom React Hooks
+    useAnimations.ts   # Combat animation state
+    useToast.ts        # Toast notification queue
+  screens/             # Full-screen views
+    BossRewardScreen.tsx
+    GameOverScreen.tsx
+    MenuScreen.tsx
+    RemoveCardScreen.tsx
+    RestScreen.tsx
+    RewardScreen.tsx
+    ShopScreen.tsx
+  utils/               # Utilities
+    cardEffects.ts     # Effect registry system
+    cardUtils.ts       # Card creation helpers
+    statusDescriptions.ts
+```
+
+#### Card Effect Registry System
+
+New declarative effect system replaces inline conditionals:
+
+```typescript
+// Before (scattered in handleForgeAndAttack)
+if (slots.handle?.id === 318) {
+  // Blood Handle logic
+}
+
+// After (utils/cardEffects.ts)
+registerEffect({
+  cardId: 318,
+  slot: 'handle',
+  phase: 'SELF_DAMAGE',
+  execute: (ctx) => [{ type: 'PLAYER_SELF_DAMAGE', amount: 4 }]
+});
+```
+
+Effect phases:
+- `SELF_DAMAGE`: Self-damage effects (processed first)
+- `PRE_DAMAGE`: Damage modifiers (Berserker Rune, Gambler, etc.)
+- `ON_HIT`: Per-hit effects (Lifesteal, Gold gain)
+- `POST_DAMAGE`: Status effects, draw, etc.
+
+### Fixed
+- **Berserker Rune + Blood Handle combo**: Fixed timing issue where self-damage wasn't counted for Berserker Rune's bonus when used on the same weapon
+  - Root cause: All PRE_DAMAGE conditions were evaluated before self-damage actions were processed
+  - Fix: Added SELF_DAMAGE phase that runs before PRE_DAMAGE
+
+### Technical Improvements
+- Removed unused `intentLongPressTimer` ref
+- Added timeout cleanup in `useToast` hook to prevent memory leaks on unmount
+
+---
+
 ## [1.2.1] - 2026-01-01
 
 ### Added
