@@ -1,6 +1,6 @@
-import React, { useRef } from 'react';
+import React, { useRef, useState } from 'react';
 import { CardInstance, CardType, CardRarity } from '../types';
-import { Sword, Gem, ArrowUpCircle } from 'lucide-react';
+import { getCardSprite } from './PixelSprites';
 
 interface CardProps {
   card: CardInstance;
@@ -28,6 +28,8 @@ const CardComponent: React.FC<CardProps> = ({
   const elementRef = useRef<HTMLDivElement>(null);
   const touchStartRef = useRef<{ x: number; y: number } | null>(null);
   const isDraggingRef = useRef(false);
+  const [showDetail, setShowDetail] = useState(false);
+  const longPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // Pixel border colors by rarity
   const getBorderStyle = () => {
@@ -77,17 +79,8 @@ const CardComponent: React.FC<CardProps> = ({
     }
   };
 
-  const getIcon = () => {
-    const iconClass = "w-5 h-5 md:w-6 md:h-6";
-    switch (card.type) {
-      case CardType.HANDLE:
-        return <ArrowUpCircle className={iconClass} />;
-      case CardType.HEAD:
-        return <Sword className={iconClass} />;
-      case CardType.DECO:
-        return <Gem className={iconClass} />;
-    }
-  };
+  // Get unique card sprite
+  const CardSprite = getCardSprite(card.id, card.type);
 
   // HTML5 Drag (Desktop)
   const handleDragStart = (e: React.DragEvent) => {
@@ -100,15 +93,27 @@ const CardComponent: React.FC<CardProps> = ({
     e.dataTransfer.effectAllowed = 'move';
   };
 
-  // Touch Drag (Mobile)
+  // Touch Drag (Mobile) with Long Press for Detail
   const handleTouchStart = (e: React.TouchEvent) => {
-    if (disabled || !onTouchDragStart) return;
+    if (disabled) return;
     const touch = e.touches[0];
     touchStartRef.current = { x: touch.clientX, y: touch.clientY };
     isDraggingRef.current = false;
+
+    // Start long press timer for detail view
+    longPressTimer.current = setTimeout(() => {
+      setShowDetail(true);
+      isDraggingRef.current = false;
+    }, 500);
   };
 
   const handleTouchMove = (e: React.TouchEvent) => {
+    // Cancel long press on move
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
+
     if (disabled || !onTouchDragMove || !touchStartRef.current) return;
 
     const touch = e.touches[0];
@@ -131,9 +136,15 @@ const CardComponent: React.FC<CardProps> = ({
   };
 
   const handleTouchEnd = (e: React.TouchEvent) => {
-    if (disabled || !onTouchDragEnd) return;
+    // Cancel long press timer
+    if (longPressTimer.current) {
+      clearTimeout(longPressTimer.current);
+      longPressTimer.current = null;
+    }
 
-    if (isDraggingRef.current) {
+    if (disabled) return;
+
+    if (isDraggingRef.current && onTouchDragEnd) {
       const touch = e.changedTouches[0];
       onTouchDragEnd(touch.clientX, touch.clientY);
       if (e.cancelable) e.preventDefault();
@@ -189,14 +200,14 @@ const CardComponent: React.FC<CardProps> = ({
         </div>
       </div>
 
-      {/* Icon Area */}
+      {/* Icon Area - Unique Pixel Art */}
       <div className="flex-grow flex items-center justify-center py-1">
         <div className={`
-          p-2 md:p-3 pixel-border border-2
+          pixel-border border-2
           bg-black/40 border-white/20
-          text-stone-200
+          overflow-hidden
         `}>
-          {getIcon()}
+          <CardSprite className="w-10 h-10 md:w-12 md:h-12" />
         </div>
       </div>
 
@@ -240,6 +251,87 @@ const CardComponent: React.FC<CardProps> = ({
       {card.rarity === CardRarity.LEGEND && (
         <div className="absolute top-0 left-0 w-full h-full pointer-events-none overflow-hidden pixel-border">
           <div className="absolute inset-0 bg-gradient-to-r from-transparent via-yellow-400/20 to-transparent animate-pulse" />
+        </div>
+      )}
+
+      {/* Mobile Detail Modal (Long Press) */}
+      {showDetail && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/70"
+          onClick={(e) => {
+            e.stopPropagation();
+            setShowDetail(false);
+          }}
+          onTouchEnd={(e) => {
+            e.stopPropagation();
+            setShowDetail(false);
+          }}
+        >
+          <div
+            className={`
+              relative flex flex-col items-center
+              w-48 h-72 p-3
+              pixel-border border-4
+              ${getBorderStyle()}
+              ${getBgColor()}
+            `}
+            style={{ boxShadow: '6px 6px 0 0 rgba(0,0,0,0.7)' }}
+            onClick={(e) => e.stopPropagation()}
+          >
+            {/* Type & Cost */}
+            <div className="flex justify-between items-center w-full mb-2">
+              <span className={`
+                text-xs font-pixel-kr font-bold
+                px-2 py-1 pixel-border border
+                ${getTypeColor()}
+              `}>
+                {getTypeName()}
+              </span>
+              <div className="flex items-center justify-center w-8 h-8 pixel-border border-2 bg-blue-600 border-blue-300 font-pixel text-sm text-white">
+                {card.cost}
+              </div>
+            </div>
+
+            {/* Large Card Art */}
+            <div className="pixel-border border-2 bg-black/40 border-white/20 p-2 mb-2">
+              <CardSprite className="w-20 h-20" />
+            </div>
+
+            {/* Card Name */}
+            <h3 className="text-sm font-pixel-kr font-bold text-white text-center mb-2"
+                style={{ textShadow: '2px 2px 0 #000' }}>
+              {card.name}
+            </h3>
+
+            {/* Full Description */}
+            <div className="flex-grow w-full bg-black/40 pixel-border border border-black/50 p-2 overflow-auto">
+              <p className="text-xs font-pixel-kr text-stone-200 leading-relaxed text-center">
+                {card.description}
+              </p>
+            </div>
+
+            {/* Value Badge */}
+            <div className={`
+              absolute -bottom-3 -right-3
+              w-10 h-10
+              pixel-border border-2
+              flex items-center justify-center
+              font-pixel text-sm
+              ${card.type === CardType.HANDLE
+                ? 'bg-amber-600 border-amber-400 text-amber-100'
+                : card.type === CardType.HEAD
+                ? 'bg-slate-600 border-slate-400 text-slate-100'
+                : 'bg-emerald-600 border-emerald-400 text-emerald-100'
+              }
+            `}>
+              {card.type === CardType.HANDLE ? `x${card.value}` : card.value}
+            </div>
+
+            {/* Close hint */}
+            <div className="absolute -top-8 left-1/2 -translate-x-1/2 text-xs font-pixel-kr text-stone-400">
+              탭하여 닫기
+            </div>
+          </div>
         </div>
       )}
     </div>

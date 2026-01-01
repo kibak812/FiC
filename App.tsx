@@ -6,7 +6,8 @@ import {
 import { CARD_DATABASE, INITIAL_DECK_IDS, ENEMIES, ENEMY_POOLS } from './constants';
 import CardComponent from './components/CardComponent';
 import Anvil from './components/Anvil';
-import { Heart, Shield, Zap, RefreshCw, Skull, Trophy, Map as MapIcon, Hammer, Flame, Ban, ArrowLeft, Check, Layers, Archive, Droplets, Activity, Star, Lock, Swords, Percent, Store, Coins, Sparkles, ChevronRight } from 'lucide-react';
+import { getMonsterSprite } from './components/PixelSprites';
+import { Heart, Shield, Zap, RefreshCw, Trophy, Map as MapIcon, Hammer, Flame, Ban, ArrowLeft, Check, Layers, Archive, Droplets, Activity, Star, Lock, Swords, Percent, Store, Coins, Sparkles, ChevronRight } from 'lucide-react';
 
 // --- Utils ---
 
@@ -1636,8 +1637,8 @@ export default function App() {
              transition-all duration-150
              ${shake ? 'border-red-500 animate-hit-flash animate-knockback bg-red-900/30' : 'border-stone-600 bg-stone-800'}
            `}>
-              {/* Pixel Enemy Icon */}
-              <Skull size={48} className={`md:w-16 md:h-16 ${enemy.traits.includes(EnemyTrait.THORNS_5) ? 'text-green-500' : enemy.traits.includes(EnemyTrait.DAMAGE_CAP_15) ? 'text-stone-400' : 'text-stone-500'}`} />
+              {/* Unique Pixel Enemy Sprite */}
+              {React.createElement(getMonsterSprite(enemy.id), { className: 'w-24 h-24 md:w-32 md:h-32' })}
 
               {/* Enemy Traits - Pixel Badges */}
               <div className="absolute bottom-1 right-1 flex flex-col gap-0.5">
