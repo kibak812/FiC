@@ -14,6 +14,9 @@ import { Heart, Shield, Zap, RefreshCw, Skull, Trophy, Map as MapIcon, Hammer, F
 import { generateId, createCardInstance, shuffle } from './utils/cardUtils';
 import { STATUS_DESCRIPTIONS } from './utils/statusDescriptions';
 
+// --- Hooks ---
+import { useAnimations } from './hooks/useAnimations';
+
 // --- Main App ---
 
 type GameState = 'MENU' | 'PLAYING' | 'REWARD' | 'BOSS_REWARD' | 'REST' | 'SHOP' | 'REMOVE_CARD' | 'WIN' | 'LOSE';
@@ -58,24 +61,15 @@ const [player, setPlayer] = useState<PlayerStats>({
     phase: 'PLAYER_DRAW'
   });
 
-// Visuals
-  const [shake, setShake] = useState(false);
-  const [shieldEffect, setShieldEffect] = useState(false); // New state for defense visual
+// Visuals - Animation hook
+  const [animations, animationTriggers] = useAnimations();
+  
   // Toast messages - split by sentiment (good vs bad for player)
   const [goodToastQueue, setGoodToastQueue] = useState<string[]>([]);
   const [badToastQueue, setBadToastQueue] = useState<string[]>([]);
   const [currentGoodToast, setCurrentGoodToast] = useState<string | null>(null);
   const [currentBadToast, setCurrentBadToast] = useState<string | null>(null);
   const [discardingCardIds, setDiscardingCardIds] = useState<Set<string>>(new Set());
-  
-  // Animation states for differentiated effects
-  const [playerHit, setPlayerHit] = useState(false);
-  const [enemyPoisoned, setEnemyPoisoned] = useState(false);
-  const [enemyBurning, setEnemyBurning] = useState(false);
-  const [enemyBleeding, setEnemyBleeding] = useState(false);
-  const [playerHealing, setPlayerHealing] = useState(false);
-  const [playerBlocking, setPlayerBlocking] = useState(false);
-  const [enemyAttacking, setEnemyAttacking] = useState(false);
 
   // Balance Patch v1.0 - New card states
   const [growingCrystalBonus, setGrowingCrystalBonus] = useState(0); // 407: Permanent damage bonus per combat
@@ -97,52 +91,33 @@ const [player, setPlayer] = useState<PlayerStats>({
     startY: number;
   } | null>(null);
 
-  // --- Helpers ---
+// --- Helpers ---
 
-  const triggerShake = () => {
-    setShake(true);
-    setTimeout(() => setShake(false), 500);
-  };
+  // Animation triggers extracted from useAnimations hook
+  const { 
+    triggerShake, 
+    triggerShieldEffect, 
+    triggerPlayerHit, 
+    triggerEnemyPoison, 
+    triggerEnemyBurn, 
+    triggerEnemyBleed, 
+    triggerPlayerHeal, 
+    triggerPlayerBlock, 
+    triggerEnemyAttack 
+  } = animationTriggers;
 
-  const triggerShieldEffect = () => {
-    setShieldEffect(true);
-    setTimeout(() => setShieldEffect(false), 600);
-  };
-
-  const triggerPlayerHit = () => {
-    setPlayerHit(true);
-    setTimeout(() => setPlayerHit(false), 400);
-  };
-
-  const triggerEnemyPoison = () => {
-    setEnemyPoisoned(true);
-    setTimeout(() => setEnemyPoisoned(false), 600);
-  };
-
-  const triggerEnemyBurn = () => {
-    setEnemyBurning(true);
-    setTimeout(() => setEnemyBurning(false), 500);
-  };
-
-  const triggerEnemyBleed = () => {
-    setEnemyBleeding(true);
-    setTimeout(() => setEnemyBleeding(false), 500);
-  };
-
-  const triggerPlayerHeal = () => {
-    setPlayerHealing(true);
-    setTimeout(() => setPlayerHealing(false), 600);
-  };
-
-  const triggerPlayerBlock = () => {
-    setPlayerBlocking(true);
-    setTimeout(() => setPlayerBlocking(false), 400);
-  };
-
-  const triggerEnemyAttack = () => {
-    setEnemyAttacking(true);
-    setTimeout(() => setEnemyAttacking(false), 400);
-  };
+  // Animation states extracted from useAnimations hook
+  const { 
+    shake, 
+    shieldEffect, 
+    playerHit, 
+    enemyPoisoned, 
+    enemyBurning, 
+    enemyBleeding, 
+    playerHealing, 
+    playerBlocking, 
+    enemyAttacking 
+  } = animations;
 
   // Show feedback - 'good' for positive effects (blue), 'bad' for negative effects (red)
   const showFeedback = (text: string, sentiment: 'good' | 'bad' = 'good') => {
