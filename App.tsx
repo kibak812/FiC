@@ -7,8 +7,7 @@ import {
 import { CARD_DATABASE, INITIAL_DECK_IDS, ENEMIES, ENEMY_POOLS } from './constants';
 import CardComponent from './components/CardComponent';
 import Anvil from './components/Anvil';
-import { getMonsterSprite } from './components/PixelSprites';
-import { Heart, Shield, Zap, RefreshCw, Skull, Trophy, Map as MapIcon, Hammer, Flame, Ban, ArrowLeft, Check, Layers, Archive, Droplets, Activity, Star, Lock, Swords, Percent, Store, Coins, Sparkles, ChevronRight } from 'lucide-react';
+import { Heart, Shield, Zap, RefreshCw, Skull, Trophy, Hammer, Flame, ArrowLeft, Check, Layers, Droplets, Activity, Star, Swords, Percent, Store, Sparkles, ChevronRight } from 'lucide-react';
 
 // --- Utilities ---
 import { generateId, createCardInstance, shuffle } from './utils/cardUtils';
@@ -26,6 +25,9 @@ import RewardScreen from './screens/RewardScreen';
 import ShopScreen from './screens/ShopScreen';
 import RestScreen from './screens/RestScreen';
 import RemoveCardScreen from './screens/RemoveCardScreen';
+import DeckHUD from './components/DeckHUD';
+import PlayerHUD from './components/PlayerHUD';
+import EnemySection from './components/EnemySection';
 
 // --- Main App ---
 
@@ -1551,247 +1553,39 @@ if (enemy.statuses.poison > 0) {
         document.body
       )}
 
-      {/* --- Top: Enemy Section (Horizontal Layout) --- */}
-      <div className="flex-[0_0_auto] h-[28%] min-h-[180px] flex justify-center items-center relative border-b border-stone-800 bg-stone-900/50 px-2">
-        
-        {/* Stage Indicator - Pixel Style */}
-        <div className="absolute top-2 left-2 font-pixel text-[10px] text-stone-400 flex items-center gap-1 bg-black/50 px-2 py-1 pixel-border border-2 border-stone-700 z-10">
-            <MapIcon size={12} />
-            {act}-{floor}
-        </div>
-
-        {/* Gold Indicator - Pixel Style */}
-        <div className="absolute top-2 right-2 flex items-center gap-1 font-pixel text-[10px] text-yellow-400 bg-black/60 px-2 py-1 pixel-border border-2 border-yellow-700 z-10">
-            <Coins size={12} />
-            {player.gold}
-        </div>
-
-        {/* Horizontal Enemy Layout */}
-        <div className="flex items-center justify-center gap-3 md:gap-6 w-full max-w-xl mt-6">
-          
-          {/* Left: Intent (with long-press for mobile) */}
-          <div 
-            className="flex flex-col items-center animate-intent-drop flex-shrink-0 cursor-help"
-            onTouchStart={(e) => {
-              if (showIntentDetail) return;
-              intentLongPressTimer.current = setTimeout(() => {
-                setShowIntentDetail(true);
-              }, 400);
-            }}
-            onTouchMove={() => {
-              if (intentLongPressTimer.current) {
-                clearTimeout(intentLongPressTimer.current);
-                intentLongPressTimer.current = null;
-              }
-            }}
-            onTouchEnd={() => {
-              if (intentLongPressTimer.current) {
-                clearTimeout(intentLongPressTimer.current);
-                intentLongPressTimer.current = null;
-              }
-            }}
-            onClick={() => setShowIntentDetail(true)}
-          >
-            <div className={`
-              pixel-border border-3 p-2 flex items-center justify-center
-              ${enemy.intents[enemy.currentIntentIndex].type === IntentType.ATTACK ? 'bg-red-900/80 border-red-500' :
-                enemy.intents[enemy.currentIntentIndex].type === IntentType.BUFF ? 'bg-green-900/80 border-green-500' :
-                enemy.intents[enemy.currentIntentIndex].type === IntentType.DEBUFF ? 'bg-purple-900/80 border-purple-500' :
-                'bg-blue-900/80 border-blue-500'}
-            `}>
-              {enemy.intents[enemy.currentIntentIndex].type === IntentType.ATTACK ? <Skull size={24} className="text-red-400" /> :
-               enemy.intents[enemy.currentIntentIndex].type === IntentType.BUFF ? <RefreshCw size={24} className="text-green-400" /> :
-               enemy.intents[enemy.currentIntentIndex].type === IntentType.DEBUFF ? <Zap size={24} className="text-purple-400" /> :
-               <Shield size={24} className="text-blue-400" />}
-            </div>
-            <div 
-              className={`
-                mt-1 px-2 py-0.5 pixel-border border-2 font-pixel text-xs flex items-center gap-1
-                ${enemy.intents[enemy.currentIntentIndex].type === IntentType.ATTACK ? 'bg-red-800 border-red-400 text-red-200' :
-                  enemy.intents[enemy.currentIntentIndex].type === IntentType.DEFEND ? 'bg-blue-800 border-blue-400 text-blue-200' :
-                  enemy.intents[enemy.currentIntentIndex].type === IntentType.BUFF ? 'bg-green-800 border-green-400 text-green-200' :
-                  enemy.intents[enemy.currentIntentIndex].type === IntentType.DEBUFF ? 'bg-purple-800 border-purple-400 text-purple-200' :
-                  'bg-stone-800 border-stone-500 text-stone-200'}
-              `}
-            >
-              {enemy.intents[enemy.currentIntentIndex].value > 0 && (
-                <span className="font-bold">{enemy.intents[enemy.currentIntentIndex].value}</span>
-              )}
-            </div>
-            {/* Hint for tap */}
-            <div className="text-[7px] text-stone-500 mt-0.5 font-pixel-kr">TAP</div>
-          </div>
-
-          {/* Center: Sprite + HP + Name */}
-          <div className={`flex flex-col items-center flex-shrink-0 ${enemyAttacking ? 'animate-enemy-attack' : ''}`}>
-            {/* Enemy Sprite */}
-            <div className={`
-              w-24 h-24 md:w-32 md:h-32
-              pixel-border border-3
-              flex items-center justify-center
-              relative overflow-hidden
-              transition-all duration-150
-              ${shake ? 'border-red-500 animate-hit-flash animate-knockback bg-red-900/30' : 
-                enemyPoisoned ? 'border-green-500 animate-poison bg-green-900/30' :
-                enemyBurning ? 'border-orange-500 animate-burn bg-orange-900/30' :
-                enemyBleeding ? 'border-red-600 animate-bleed bg-red-900/30' :
-                'border-stone-600 bg-stone-800'}
-            `}>
-              {React.createElement(getMonsterSprite(enemy.id), { className: 'w-20 h-20 md:w-28 md:h-28' })}
-              
-              {/* Block indicator on sprite */}
-              {enemy.block > 0 && (
-                <div className="absolute top-0 right-0 flex items-center gap-0.5 bg-blue-900 border-2 border-blue-400 text-blue-200 px-1 py-0.5 pixel-border text-[10px] font-pixel">
-                    <Shield size={10} fill="currentColor" /> {enemy.block}
-                </div>
-              )}
-            </div>
-            
-            {/* HP Bar - Compact */}
-            <div className="w-28 md:w-36 relative mt-1">
-              <div className="h-4 bg-stone-900 pixel-border border-2 border-stone-600 overflow-hidden relative flex">
-                {Array.from({ length: 10 }).map((_, i) => {
-                  const segmentPercent = (i + 1) * 10;
-                  const hpPercent = (enemy.currentHp / enemy.maxHp) * 100;
-                  const isFilled = hpPercent >= segmentPercent - 5;
-                  return (
-                    <div
-                      key={i}
-                      className={`flex-1 border-r border-black/30 last:border-r-0 transition-colors duration-150 ${
-                        isFilled ? 'bg-gradient-to-b from-red-400 via-red-600 to-red-800' : 'bg-stone-800'
-                      }`}
-                    />
-                  );
-                })}
-                <div className="absolute inset-0 flex items-center justify-center font-pixel text-[9px] text-white" style={{ textShadow: '1px 1px 0 #000' }}>
-                  {enemy.currentHp}/{enemy.maxHp}
-                </div>
-              </div>
-            </div>
-
-            {/* Name + Traits inline */}
-            <div className="mt-1 flex items-center gap-1 flex-wrap justify-center">
-              <span className="font-pixel-kr font-bold text-stone-200 text-xs bg-black/50 px-1.5 py-0.5 pixel-border border border-stone-600">{enemy.name}</span>
-              {enemy.traits.includes(EnemyTrait.THORNS_5) && (
-                <span className="text-[8px] bg-green-900 border border-green-600 px-1 pixel-border font-pixel-kr text-green-300">가시</span>
-              )}
-              {enemy.traits.includes(EnemyTrait.DAMAGE_CAP_15) && (
-                <span className="text-[8px] bg-stone-700 border border-stone-500 px-1 pixel-border font-pixel-kr text-stone-300">MAX15</span>
-              )}
-              {enemy.traits.includes(EnemyTrait.THIEVERY) && (
-                <span className="text-[8px] bg-yellow-900 border border-yellow-600 px-1 pixel-border font-pixel-kr text-yellow-300">탐욕</span>
-              )}
-            </div>
-          </div>
-
-          {/* Right: Status Effects (Vertical) - Clickable for details */}
-          <div className="flex flex-col gap-1 flex-shrink-0">
-            {enemy.statuses?.poison > 0 && (
-              <div 
-                className="flex items-center gap-1 bg-green-900/60 pixel-border border-2 border-green-600 px-1.5 py-0.5 text-[9px] text-green-400 font-pixel cursor-help hover:bg-green-800/80 transition-colors"
-                onClick={() => setShowStatusDetail('poison')}
-              >
-                <Droplets size={10} fill="currentColor" /> {enemy.statuses.poison}
-              </div>
-            )}
-            {enemy.statuses?.bleed > 0 && (
-              <div 
-                className="flex items-center gap-1 bg-red-900/60 pixel-border border-2 border-red-600 px-1.5 py-0.5 text-[9px] text-red-400 font-pixel cursor-help hover:bg-red-800/80 transition-colors"
-                onClick={() => setShowStatusDetail('bleed')}
-              >
-                <Activity size={10} /> {enemy.statuses.bleed}
-              </div>
-            )}
-            {enemy.statuses?.burn > 0 && (
-              <div 
-                className="flex items-center gap-1 bg-orange-900/60 pixel-border border-2 border-orange-600 px-1.5 py-0.5 text-[9px] text-orange-400 font-pixel cursor-help hover:bg-orange-800/80 transition-colors"
-                onClick={() => setShowStatusDetail('burn')}
-              >
-                <Flame size={10} /> {enemy.statuses.burn}
-              </div>
-            )}
-            {enemy.statuses?.stunned > 0 && (
-              <div 
-                className="flex items-center gap-1 bg-yellow-900/60 pixel-border border-2 border-yellow-600 px-1.5 py-0.5 text-[9px] text-yellow-400 font-pixel cursor-help hover:bg-yellow-800/80 transition-colors"
-                onClick={() => setShowStatusDetail('stunned')}
-              >
-                <Star size={10} fill="currentColor" /> {enemy.statuses.stunned}
-              </div>
-            )}
-            {enemy.statuses?.strength > 0 && (
-              <div 
-                className="flex items-center gap-1 bg-red-900/60 pixel-border border-2 border-red-600 px-1.5 py-0.5 text-[9px] text-red-400 font-pixel cursor-help hover:bg-red-800/80 transition-colors"
-                onClick={() => setShowStatusDetail('strength')}
-              >
-                <Swords size={10} /> +{enemy.statuses.strength}
-              </div>
-            )}
-            {enemy.statuses?.vulnerable > 0 && (
-              <div 
-                className="flex items-center gap-1 bg-purple-900/60 pixel-border border-2 border-purple-600 px-1.5 py-0.5 text-[9px] text-purple-400 font-pixel cursor-help hover:bg-purple-800/80 transition-colors"
-                onClick={() => setShowStatusDetail('vulnerable')}
-              >
-                <Percent size={10} /> {enemy.statuses.vulnerable}
-              </div>
-            )}
-            {enemy.statuses?.weak > 0 && (
-              <div 
-                className="flex items-center gap-1 bg-stone-700/60 pixel-border border-2 border-stone-500 px-1.5 py-0.5 text-[9px] text-stone-300 font-pixel cursor-help hover:bg-stone-600/80 transition-colors"
-                onClick={() => setShowStatusDetail('weak')}
-              >
-                <ArrowLeft size={10} className="rotate-[-45deg]" /> {enemy.statuses.weak}
-              </div>
-            )}
-          </div>
-        </div>
-      </div>
+      {/* Enemy Section */}
+      <EnemySection
+        enemy={enemy}
+        act={act}
+        floor={floor}
+        playerGold={player.gold}
+        shake={shake}
+        enemyPoisoned={enemyPoisoned}
+        enemyBurning={enemyBurning}
+        enemyBleeding={enemyBleeding}
+        enemyAttacking={enemyAttacking}
+        onIntentClick={() => setShowIntentDetail(true)}
+        onStatusClick={(status) => setShowStatusDetail(status)}
+      />
 
       {/* --- Middle: Anvil / Crafting --- */}
       <div className="flex-1 relative flex flex-col justify-center items-center bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-stone-800 to-stone-950 px-2 md:px-4 overflow-y-auto">
 
-        {/* Player Stats HUD - Pixel Style */}
-        <div className="absolute left-2 top-2 md:left-4 md:top-4 flex flex-col gap-1 md:gap-2 z-20 pointer-events-none">
-           <div className={`flex items-center gap-2 font-pixel text-sm md:text-base text-pixel-hp bg-black/50 px-2 py-1 pixel-border border-2 border-red-800 transition-all ${playerHealing ? 'animate-heal' : ''} ${playerHit ? 'animate-hp-flash border-red-400' : ''}`}>
-              <Heart className={`w-4 h-4 md:w-5 md:h-5 fill-current ${playerHit ? 'animate-pulse' : ''}`} /> {player.hp}
-           </div>
-           <div className={`flex items-center gap-2 font-pixel text-sm md:text-base text-pixel-block bg-black/50 px-2 py-1 pixel-border border-2 border-blue-800 transition-all ${playerBlocking ? 'animate-block-gain' : ''}`}>
-              <Shield className="w-4 h-4 md:w-5 md:h-5 fill-current" /> {player.block}
-           </div>
-           <div className="flex items-center gap-2 font-pixel text-xs md:text-sm text-pixel-energy bg-black/50 px-2 py-1 pixel-border border-2 border-yellow-800">
-              <div className="flex gap-0.5">
-                {Array.from({ length: player.maxEnergy }).map((_, i) => (
-                  <div key={i} className={`w-2.5 h-2.5 md:w-3 md:h-3 pixel-border border border-yellow-600 ${i < player.energy ? 'bg-yellow-400 shadow-[0_0_6px_rgba(250,204,21,0.7)]' : 'bg-stone-800'}`} />
-                ))}
-              </div>
-           </div>
-           {/* Debuff Indicators */}
-           <div className="flex flex-col gap-1 mt-2">
-               {player.disarmed && (
-                   <div className="flex items-center gap-1 text-red-400 font-pixel text-[8px] bg-black/60 px-2 py-1 pixel-border border-2 border-red-600">
-                       <Ban size={10} /> DISARM
-                   </div>
-               )}
-               {player.costLimit !== null && (
-                   <div className="flex items-center gap-1 text-purple-400 font-pixel text-[8px] bg-black/60 px-2 py-1 pixel-border border-2 border-purple-600">
-                       <Lock size={10} /> LIMIT:{player.costLimit}
-                   </div>
-               )}
-           </div>
-        </div>
+        {/* Player Stats HUD */}
+        <PlayerHUD
+          hp={player.hp}
+          block={player.block}
+          energy={player.energy}
+          maxEnergy={player.maxEnergy}
+          disarmed={player.disarmed}
+          costLimit={player.costLimit}
+          playerHealing={playerHealing}
+          playerHit={playerHit}
+          playerBlocking={playerBlocking}
+        />
 
-        {/* Deck/Discard HUD - Pixel Style */}
-        <div className="absolute right-2 top-2 md:right-4 md:top-4 flex flex-col gap-1 md:gap-2 z-20 pointer-events-none items-end">
-          <div className="flex items-center gap-2 text-stone-300 font-pixel text-[9px] md:text-[10px] bg-black/60 px-2 py-1 pixel-border border-2 border-stone-600">
-             <Layers size={12} />
-             <span>DECK</span>
-             <span className="text-white">{deck.length}</span>
-          </div>
-          <div className="flex items-center gap-2 text-stone-400 font-pixel text-[9px] md:text-[10px] bg-black/60 px-2 py-1 pixel-border border-2 border-stone-700">
-             <Archive size={12} />
-             <span>DISC</span>
-             <span className="text-stone-300">{discardPile.length}</span>
-          </div>
-        </div>
+        {/* Deck/Discard HUD */}
+        <DeckHUD deckCount={deck.length} discardCount={discardPile.length} />
 
         {/* THE ANVIL */}
         <div className="w-full h-full flex items-center justify-center p-2">
