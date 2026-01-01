@@ -259,14 +259,8 @@ const CardComponent: React.FC<CardProps> = ({
       {showDetail && createPortal(
         <div
           className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/80"
-          onClick={(e) => {
-            e.stopPropagation();
-            setShowDetail(false);
-          }}
-          onTouchEnd={(e) => {
-            e.stopPropagation();
-            setShowDetail(false);
-          }}
+          onMouseDown={() => setShowDetail(false)}
+          onTouchStart={() => setShowDetail(false)}
         >
           <div
             className={`
@@ -277,9 +271,17 @@ const CardComponent: React.FC<CardProps> = ({
               ${getBgColor()}
             `}
             style={{ boxShadow: '8px 8px 0 0 rgba(0,0,0,0.7)' }}
-            onClick={(e) => e.stopPropagation()}
-            onTouchEnd={(e) => e.stopPropagation()}
+            onMouseDown={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
           >
+            {/* Close Button */}
+            <button
+              className="absolute -top-4 -right-4 w-10 h-10 pixel-border border-2 bg-red-600 border-red-400 text-white font-pixel text-lg flex items-center justify-center hover:bg-red-500 active:bg-red-700"
+              onMouseDown={(e) => { e.stopPropagation(); setShowDetail(false); }}
+              onTouchStart={(e) => { e.stopPropagation(); setShowDetail(false); }}
+            >
+              X
+            </button>
             {/* Type & Cost */}
             <div className="flex justify-between items-center w-full mb-3">
               <span className={`
@@ -329,10 +331,6 @@ const CardComponent: React.FC<CardProps> = ({
               {card.type === CardType.HANDLE ? `x${card.value}` : card.value}
             </div>
 
-            {/* Close hint */}
-            <div className="absolute -top-10 left-1/2 -translate-x-1/2 text-sm font-pixel-kr text-stone-300 bg-black/50 px-3 py-1 pixel-border">
-              탭하여 닫기
-            </div>
           </div>
         </div>,
         document.body
