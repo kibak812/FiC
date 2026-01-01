@@ -10,6 +10,60 @@ import Anvil from './components/Anvil';
 import { getMonsterSprite } from './components/PixelSprites';
 import { Heart, Shield, Zap, RefreshCw, Skull, Trophy, Map as MapIcon, Hammer, Flame, Ban, ArrowLeft, Check, Layers, Archive, Droplets, Activity, Star, Lock, Swords, Percent, Store, Coins, Sparkles, ChevronRight } from 'lucide-react';
 
+// --- Status Effect Descriptions ---
+
+const STATUS_DESCRIPTIONS: Record<string, { name: string; description: string; color: string; bgColor: string; borderColor: string }> = {
+  poison: {
+    name: '독',
+    description: '턴 종료 시 독 수치만큼 피해를 입고, 독이 1 감소합니다.',
+    color: 'text-green-300',
+    bgColor: 'bg-green-900',
+    borderColor: 'border-green-500'
+  },
+  bleed: {
+    name: '출혈',
+    description: '공격받을 때 출혈 수치만큼 추가 피해를 입고, 출혈이 1 감소합니다.',
+    color: 'text-red-300',
+    bgColor: 'bg-red-900',
+    borderColor: 'border-red-500'
+  },
+  burn: {
+    name: '화상',
+    description: '턴 종료 시 화상 수치만큼 피해를 입습니다. 화상은 감소하지 않습니다.',
+    color: 'text-orange-300',
+    bgColor: 'bg-orange-900',
+    borderColor: 'border-orange-500'
+  },
+  stunned: {
+    name: '기절',
+    description: '기절한 동안 행동할 수 없습니다. 턴 종료 시 1 감소합니다.',
+    color: 'text-yellow-300',
+    bgColor: 'bg-yellow-900',
+    borderColor: 'border-yellow-500'
+  },
+  strength: {
+    name: '힘',
+    description: '모든 공격에 힘 수치만큼 추가 피해를 줍니다.',
+    color: 'text-red-300',
+    bgColor: 'bg-red-900',
+    borderColor: 'border-red-500'
+  },
+  vulnerable: {
+    name: '취약',
+    description: '받는 피해가 50% 증가합니다. 턴 종료 시 1 감소합니다.',
+    color: 'text-purple-300',
+    bgColor: 'bg-purple-900',
+    borderColor: 'border-purple-500'
+  },
+  weak: {
+    name: '약화',
+    description: '주는 피해가 25% 감소합니다. 턴 종료 시 1 감소합니다.',
+    color: 'text-stone-300',
+    bgColor: 'bg-stone-700',
+    borderColor: 'border-stone-500'
+  }
+};
+
 // --- Utils ---
 
 const generateId = () => Math.random().toString(36).substr(2, 9);
@@ -94,6 +148,9 @@ const [player, setPlayer] = useState<PlayerStats>({
   // Intent detail modal (long-press on mobile)
   const [showIntentDetail, setShowIntentDetail] = useState(false);
   const intentLongPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Status effect detail modal
+  const [showStatusDetail, setShowStatusDetail] = useState<string | null>(null); // Status key or null
 
   // --- Touch Drag State ---
   const [dragState, setDragState] = useState<{
@@ -789,13 +846,7 @@ const effectMultiplier = slots.handle?.id === 301 ? 2 : 1;
               showFeedback("가시 반사! -5 HP", 'bad');
           }
           
-          if (enemy.traits.includes(EnemyTrait.REACTIVE_RARE) && isRareUsed) {
-              setEnemy(prev => ({
-                  ...prev,
-                  intents: prev.intents.map(i => i.type === IntentType.ATTACK ? { ...i, value: i.value + 2 } : i)
-              }));
-              showFeedback("코볼트가 희귀 카드를 보고 격분!");
-          }
+
 
           // Apply Damage to Block First (unless ignoreBlock)
           let damageDealt = actualDmg;
@@ -2016,6 +2067,65 @@ if (enemy.statuses.poison > 0) {
         document.body
       )}
 
+      {/* Status Effect Detail Modal */}
+      {showStatusDetail && STATUS_DESCRIPTIONS[showStatusDetail] && createPortal(
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85"
+          onClick={() => setShowStatusDetail(null)}
+          onTouchStart={(e) => { e.preventDefault(); setShowStatusDetail(null); }}
+        >
+          <div
+            className={`
+              relative p-5 max-w-xs w-[90%]
+              pixel-border border-4
+              ${STATUS_DESCRIPTIONS[showStatusDetail].bgColor} ${STATUS_DESCRIPTIONS[showStatusDetail].borderColor}
+            `}
+            style={{ boxShadow: '6px 6px 0 0 rgba(0,0,0,0.6)' }}
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-4">
+              <div className={`
+                pixel-border border-3 p-3 flex items-center justify-center
+                ${STATUS_DESCRIPTIONS[showStatusDetail].bgColor} ${STATUS_DESCRIPTIONS[showStatusDetail].borderColor}
+              `}>
+                {showStatusDetail === 'poison' && <Droplets size={32} className={STATUS_DESCRIPTIONS[showStatusDetail].color} fill="currentColor" />}
+                {showStatusDetail === 'bleed' && <Activity size={32} className={STATUS_DESCRIPTIONS[showStatusDetail].color} />}
+                {showStatusDetail === 'burn' && <Flame size={32} className={STATUS_DESCRIPTIONS[showStatusDetail].color} />}
+                {showStatusDetail === 'stunned' && <Star size={32} className={STATUS_DESCRIPTIONS[showStatusDetail].color} fill="currentColor" />}
+                {showStatusDetail === 'strength' && <Swords size={32} className={STATUS_DESCRIPTIONS[showStatusDetail].color} />}
+                {showStatusDetail === 'vulnerable' && <Percent size={32} className={STATUS_DESCRIPTIONS[showStatusDetail].color} />}
+                {showStatusDetail === 'weak' && <ArrowLeft size={32} className={`${STATUS_DESCRIPTIONS[showStatusDetail].color} rotate-[-45deg]`} />}
+              </div>
+              <div>
+                <h3 className="font-pixel-kr text-lg font-bold text-white" style={{ textShadow: '2px 2px 0 #000' }}>
+                  {STATUS_DESCRIPTIONS[showStatusDetail].name}
+                </h3>
+                {enemy.statuses && enemy.statuses[showStatusDetail as keyof typeof enemy.statuses] > 0 && (
+                  <p className="font-pixel text-xl text-yellow-300">
+                    {enemy.statuses[showStatusDetail as keyof typeof enemy.statuses]}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Description */}
+            <div className="bg-black/40 pixel-border border-2 border-black/50 p-3">
+              <p className="font-pixel-kr text-sm text-stone-200 leading-relaxed">
+                {STATUS_DESCRIPTIONS[showStatusDetail].description}
+              </p>
+            </div>
+
+            {/* Close hint */}
+            <p className="text-center mt-4 text-[10px] font-pixel-kr text-stone-400">
+              화면을 터치하여 닫기
+            </p>
+          </div>
+        </div>,
+        document.body
+      )}
+
       {/* --- Top: Enemy Section (Horizontal Layout) --- */}
       <div className="flex-[0_0_auto] h-[28%] min-h-[180px] flex justify-center items-center relative border-b border-stone-800 bg-stone-900/50 px-2">
         
@@ -2149,40 +2259,61 @@ if (enemy.statuses.poison > 0) {
             </div>
           </div>
 
-          {/* Right: Status Effects (Vertical) */}
+          {/* Right: Status Effects (Vertical) - Clickable for details */}
           <div className="flex flex-col gap-1 flex-shrink-0">
             {enemy.statuses?.poison > 0 && (
-              <div className="flex items-center gap-1 bg-green-900/60 pixel-border border-2 border-green-600 px-1.5 py-0.5 text-[9px] text-green-400 font-pixel">
+              <div 
+                className="flex items-center gap-1 bg-green-900/60 pixel-border border-2 border-green-600 px-1.5 py-0.5 text-[9px] text-green-400 font-pixel cursor-help hover:bg-green-800/80 transition-colors"
+                onClick={() => setShowStatusDetail('poison')}
+              >
                 <Droplets size={10} fill="currentColor" /> {enemy.statuses.poison}
               </div>
             )}
             {enemy.statuses?.bleed > 0 && (
-              <div className="flex items-center gap-1 bg-red-900/60 pixel-border border-2 border-red-600 px-1.5 py-0.5 text-[9px] text-red-400 font-pixel">
+              <div 
+                className="flex items-center gap-1 bg-red-900/60 pixel-border border-2 border-red-600 px-1.5 py-0.5 text-[9px] text-red-400 font-pixel cursor-help hover:bg-red-800/80 transition-colors"
+                onClick={() => setShowStatusDetail('bleed')}
+              >
                 <Activity size={10} /> {enemy.statuses.bleed}
               </div>
             )}
             {enemy.statuses?.burn > 0 && (
-              <div className="flex items-center gap-1 bg-orange-900/60 pixel-border border-2 border-orange-600 px-1.5 py-0.5 text-[9px] text-orange-400 font-pixel">
+              <div 
+                className="flex items-center gap-1 bg-orange-900/60 pixel-border border-2 border-orange-600 px-1.5 py-0.5 text-[9px] text-orange-400 font-pixel cursor-help hover:bg-orange-800/80 transition-colors"
+                onClick={() => setShowStatusDetail('burn')}
+              >
                 <Flame size={10} /> {enemy.statuses.burn}
               </div>
             )}
             {enemy.statuses?.stunned > 0 && (
-              <div className="flex items-center gap-1 bg-yellow-900/60 pixel-border border-2 border-yellow-600 px-1.5 py-0.5 text-[9px] text-yellow-400 font-pixel">
+              <div 
+                className="flex items-center gap-1 bg-yellow-900/60 pixel-border border-2 border-yellow-600 px-1.5 py-0.5 text-[9px] text-yellow-400 font-pixel cursor-help hover:bg-yellow-800/80 transition-colors"
+                onClick={() => setShowStatusDetail('stunned')}
+              >
                 <Star size={10} fill="currentColor" /> {enemy.statuses.stunned}
               </div>
             )}
             {enemy.statuses?.strength > 0 && (
-              <div className="flex items-center gap-1 bg-red-900/60 pixel-border border-2 border-red-600 px-1.5 py-0.5 text-[9px] text-red-400 font-pixel">
+              <div 
+                className="flex items-center gap-1 bg-red-900/60 pixel-border border-2 border-red-600 px-1.5 py-0.5 text-[9px] text-red-400 font-pixel cursor-help hover:bg-red-800/80 transition-colors"
+                onClick={() => setShowStatusDetail('strength')}
+              >
                 <Swords size={10} /> +{enemy.statuses.strength}
               </div>
             )}
             {enemy.statuses?.vulnerable > 0 && (
-              <div className="flex items-center gap-1 bg-purple-900/60 pixel-border border-2 border-purple-600 px-1.5 py-0.5 text-[9px] text-purple-400 font-pixel">
+              <div 
+                className="flex items-center gap-1 bg-purple-900/60 pixel-border border-2 border-purple-600 px-1.5 py-0.5 text-[9px] text-purple-400 font-pixel cursor-help hover:bg-purple-800/80 transition-colors"
+                onClick={() => setShowStatusDetail('vulnerable')}
+              >
                 <Percent size={10} /> {enemy.statuses.vulnerable}
               </div>
             )}
             {enemy.statuses?.weak > 0 && (
-              <div className="flex items-center gap-1 bg-stone-700/60 pixel-border border-2 border-stone-500 px-1.5 py-0.5 text-[9px] text-stone-300 font-pixel">
+              <div 
+                className="flex items-center gap-1 bg-stone-700/60 pixel-border border-2 border-stone-500 px-1.5 py-0.5 text-[9px] text-stone-300 font-pixel cursor-help hover:bg-stone-600/80 transition-colors"
+                onClick={() => setShowStatusDetail('weak')}
+              >
                 <ArrowLeft size={10} className="rotate-[-45deg]" /> {enemy.statuses.weak}
               </div>
             )}

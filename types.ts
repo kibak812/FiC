@@ -50,7 +50,6 @@ export enum EnemyTrait {
   DAMAGE_CAP_15 = 'DAMAGE_CAP_15', // Rock Crusher
   THORNS_5 = 'THORNS_5', // Automaton
   RESURRECT = 'RESURRECT', // Phoenix/Machine
-  REACTIVE_RARE = 'REACTIVE_RARE', // Kobold
   THIEVERY = 'THIEVERY' // Goblin: Steals gold on hit
 }
 

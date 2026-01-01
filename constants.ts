@@ -106,8 +106,8 @@ RUST_SLIME: { // Balance Patch v1.0: Debuff moved to 3rd intent for better new p
       { type: IntentType.DEBUFF, value: 1, description: '덱에 [녹슨 덩어리] 추가' },
     ]
   },
-  KOBOLD_SCRAPPER: {
-    id: 'kobold_scrapper', name: '코볼트 수집가', tier: EnemyTier.COMMON, maxHp: 45, currentHp: 45, block: 0, currentIntentIndex: 0, traits: [EnemyTrait.REACTIVE_RARE], statuses: { ...DEFAULT_STATUS },
+  KOBOLD_SCRAPPER: { // Balance Patch v1.2: HP 45 -> 36, removed REACTIVE_RARE (too complex for Floor 1)
+    id: 'kobold_scrapper', name: '코볼트 수집가', tier: EnemyTier.COMMON, maxHp: 36, currentHp: 36, block: 0, currentIntentIndex: 0, traits: [], statuses: { ...DEFAULT_STATUS },
     damageTakenThisTurn: 0,
     intents: [
       { type: IntentType.ATTACK, value: 5, description: '할퀴기' },

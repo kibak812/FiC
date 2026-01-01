@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.2.1] - 2026-01-01
+
+### Added
+- **Status Effect Tooltips**: Click/tap on any status effect icon to see detailed explanation
+  - Shows status name (Korean), current stack count, and full description
+  - Modal UI consistent with existing Intent Detail modal
+  - Supported statuses: Poison, Bleed, Burn, Stun, Strength, Vulnerable, Weak
+
+### Changed
+- **Kobold Scrapper**: HP 45 -> 36 (was too high for Floor 1 enemies)
+  - For reference: Rust Slime has 30 HP, Skeleton Warrior has 32 HP
+
+### Removed
+- **REACTIVE_RARE trait**: Removed from Kobold Scrapper and codebase
+  - Was too complex for Floor 1 (triggered when player used Rare cards, permanently buffed enemy attacks)
+  - Poor discoverability (no UI indicator, confusing for new players)
+
+### Design Notes
+- Status effect tooltips improve new player experience by explaining mechanics on-demand
+- Kobold Scrapper's HP was ~40% higher than other Floor 1 enemies with similar damage output
+
+---
+
 ## [1.2.0] - 2026-01-01
 
 ### Changed
