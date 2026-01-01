@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { createPortal } from 'react-dom';
 import { 
   CardInstance, CardType, CombatState, PlayerStats, EnemyData, 
   IntentType, CraftedWeapon, CardRarity, EnemyTrait, EnemyTier
@@ -7,11 +6,10 @@ import {
 import { CARD_DATABASE, INITIAL_DECK_IDS, ENEMIES, ENEMY_POOLS } from './constants';
 import CardComponent from './components/CardComponent';
 import Anvil from './components/Anvil';
-import { Heart, Shield, Zap, RefreshCw, Skull, Trophy, Hammer, Flame, ArrowLeft, Check, Layers, Droplets, Activity, Star, Swords, Percent, Store, Sparkles, ChevronRight } from 'lucide-react';
+import { Shield, Zap, Layers } from 'lucide-react';
 
 // --- Utilities ---
 import { generateId, createCardInstance, shuffle } from './utils/cardUtils';
-import { STATUS_DESCRIPTIONS } from './utils/statusDescriptions';
 
 // --- Hooks ---
 import { useAnimations } from './hooks/useAnimations';
@@ -28,6 +26,8 @@ import RemoveCardScreen from './screens/RemoveCardScreen';
 import DeckHUD from './components/DeckHUD';
 import PlayerHUD from './components/PlayerHUD';
 import EnemySection from './components/EnemySection';
+import IntentDetailModal from './components/IntentDetailModal';
+import StatusDetailModal from './components/StatusDetailModal';
 
 // --- Main App ---
 
@@ -1429,128 +1429,20 @@ if (enemy.statuses.poison > 0) {
       )}
 
       {/* Intent Detail Modal */}
-      {showIntentDetail && createPortal(
-        <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85"
-          onClick={() => setShowIntentDetail(false)}
-          onTouchStart={(e) => { e.preventDefault(); setShowIntentDetail(false); }}
-        >
-          <div
-            className={`
-              relative p-5 max-w-xs w-[90%]
-              pixel-border border-4
-              ${enemy.intents[enemy.currentIntentIndex].type === IntentType.ATTACK ? 'bg-red-900 border-red-500' :
-                enemy.intents[enemy.currentIntentIndex].type === IntentType.BUFF ? 'bg-green-900 border-green-500' :
-                enemy.intents[enemy.currentIntentIndex].type === IntentType.DEBUFF ? 'bg-purple-900 border-purple-500' :
-                enemy.intents[enemy.currentIntentIndex].type === IntentType.DEFEND ? 'bg-blue-900 border-blue-500' :
-                'bg-stone-800 border-stone-500'}
-            `}
-            style={{ boxShadow: '6px 6px 0 0 rgba(0,0,0,0.6)' }}
-            onClick={(e) => e.stopPropagation()}
-            onTouchStart={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="flex items-center gap-3 mb-4">
-              <div className={`
-                pixel-border border-3 p-3 flex items-center justify-center
-                ${enemy.intents[enemy.currentIntentIndex].type === IntentType.ATTACK ? 'bg-red-800 border-red-400' :
-                  enemy.intents[enemy.currentIntentIndex].type === IntentType.BUFF ? 'bg-green-800 border-green-400' :
-                  enemy.intents[enemy.currentIntentIndex].type === IntentType.DEBUFF ? 'bg-purple-800 border-purple-400' :
-                  'bg-blue-800 border-blue-400'}
-              `}>
-                {enemy.intents[enemy.currentIntentIndex].type === IntentType.ATTACK ? <Skull size={32} className="text-red-300" /> :
-                 enemy.intents[enemy.currentIntentIndex].type === IntentType.BUFF ? <RefreshCw size={32} className="text-green-300" /> :
-                 enemy.intents[enemy.currentIntentIndex].type === IntentType.DEBUFF ? <Zap size={32} className="text-purple-300" /> :
-                 <Shield size={32} className="text-blue-300" />}
-              </div>
-              <div>
-                <h3 className="font-pixel-kr text-lg font-bold text-white" style={{ textShadow: '2px 2px 0 #000' }}>
-                  {enemy.intents[enemy.currentIntentIndex].type === IntentType.ATTACK ? '공격' :
-                   enemy.intents[enemy.currentIntentIndex].type === IntentType.DEFEND ? '방어' :
-                   enemy.intents[enemy.currentIntentIndex].type === IntentType.BUFF ? '강화' :
-                   enemy.intents[enemy.currentIntentIndex].type === IntentType.DEBUFF ? '약화' : '특수'}
-                </h3>
-                {enemy.intents[enemy.currentIntentIndex].value > 0 && (
-                  <p className="font-pixel text-xl text-yellow-300">
-                    {enemy.intents[enemy.currentIntentIndex].value}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Description */}
-            <div className="bg-black/40 pixel-border border-2 border-black/50 p-3">
-              <p className="font-pixel-kr text-sm text-stone-200 leading-relaxed">
-                {enemy.intents[enemy.currentIntentIndex].description}
-              </p>
-            </div>
-
-            {/* Close hint */}
-            <p className="text-center mt-4 text-[10px] font-pixel-kr text-stone-400">
-              화면을 터치하여 닫기
-            </p>
-          </div>
-        </div>,
-        document.body
+      {showIntentDetail && (
+        <IntentDetailModal
+          intent={enemy.intents[enemy.currentIntentIndex]}
+          onClose={() => setShowIntentDetail(false)}
+        />
       )}
 
       {/* Status Effect Detail Modal */}
-      {showStatusDetail && STATUS_DESCRIPTIONS[showStatusDetail] && createPortal(
-        <div
-          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85"
-          onClick={() => setShowStatusDetail(null)}
-          onTouchStart={(e) => { e.preventDefault(); setShowStatusDetail(null); }}
-        >
-          <div
-            className={`
-              relative p-5 max-w-xs w-[90%]
-              pixel-border border-4
-              ${STATUS_DESCRIPTIONS[showStatusDetail].bgColor} ${STATUS_DESCRIPTIONS[showStatusDetail].borderColor}
-            `}
-            style={{ boxShadow: '6px 6px 0 0 rgba(0,0,0,0.6)' }}
-            onClick={(e) => e.stopPropagation()}
-            onTouchStart={(e) => e.stopPropagation()}
-          >
-            {/* Header */}
-            <div className="flex items-center gap-3 mb-4">
-              <div className={`
-                pixel-border border-3 p-3 flex items-center justify-center
-                ${STATUS_DESCRIPTIONS[showStatusDetail].bgColor} ${STATUS_DESCRIPTIONS[showStatusDetail].borderColor}
-              `}>
-                {showStatusDetail === 'poison' && <Droplets size={32} className={STATUS_DESCRIPTIONS[showStatusDetail].color} fill="currentColor" />}
-                {showStatusDetail === 'bleed' && <Activity size={32} className={STATUS_DESCRIPTIONS[showStatusDetail].color} />}
-                {showStatusDetail === 'burn' && <Flame size={32} className={STATUS_DESCRIPTIONS[showStatusDetail].color} />}
-                {showStatusDetail === 'stunned' && <Star size={32} className={STATUS_DESCRIPTIONS[showStatusDetail].color} fill="currentColor" />}
-                {showStatusDetail === 'strength' && <Swords size={32} className={STATUS_DESCRIPTIONS[showStatusDetail].color} />}
-                {showStatusDetail === 'vulnerable' && <Percent size={32} className={STATUS_DESCRIPTIONS[showStatusDetail].color} />}
-                {showStatusDetail === 'weak' && <ArrowLeft size={32} className={`${STATUS_DESCRIPTIONS[showStatusDetail].color} rotate-[-45deg]`} />}
-              </div>
-              <div>
-                <h3 className="font-pixel-kr text-lg font-bold text-white" style={{ textShadow: '2px 2px 0 #000' }}>
-                  {STATUS_DESCRIPTIONS[showStatusDetail].name}
-                </h3>
-                {enemy.statuses && enemy.statuses[showStatusDetail as keyof typeof enemy.statuses] > 0 && (
-                  <p className="font-pixel text-xl text-yellow-300">
-                    {enemy.statuses[showStatusDetail as keyof typeof enemy.statuses]}
-                  </p>
-                )}
-              </div>
-            </div>
-
-            {/* Description */}
-            <div className="bg-black/40 pixel-border border-2 border-black/50 p-3">
-              <p className="font-pixel-kr text-sm text-stone-200 leading-relaxed">
-                {STATUS_DESCRIPTIONS[showStatusDetail].description}
-              </p>
-            </div>
-
-            {/* Close hint */}
-            <p className="text-center mt-4 text-[10px] font-pixel-kr text-stone-400">
-              화면을 터치하여 닫기
-            </p>
-          </div>
-        </div>,
-        document.body
+      {showStatusDetail && (
+        <StatusDetailModal
+          statusKey={showStatusDetail}
+          statusValue={enemy.statuses?.[showStatusDetail as keyof typeof enemy.statuses] || 0}
+          onClose={() => setShowStatusDetail(null)}
+        />
       )}
 
       {/* Enemy Section */}
