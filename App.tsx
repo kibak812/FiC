@@ -38,8 +38,8 @@ export default function App() {
   const [acquiredCard, setAcquiredCard] = useState<CardInstance | null>(null); // New state for Shop feedback
   
   // Entities
-  const [player, setPlayer] = useState<PlayerStats>({
-    hp: 50, maxHp: 50, energy: 3, maxEnergy: 3, block: 0, gold: 0, costLimit: null, disarmed: false, nextTurnDraw: 0
+const [player, setPlayer] = useState<PlayerStats>({
+    hp: 50, maxHp: 50, energy: 3, maxEnergy: 3, block: 0, gold: 0, costLimit: null, disarmed: false, nextTurnDraw: 0, overheat: 0, weaponsUsedThisTurn: 0
   });
   
   const [enemy, setEnemy] = useState<EnemyData>(JSON.parse(JSON.stringify(ENEMIES.RUST_SLIME))); // Init with weak enemy
@@ -67,11 +67,15 @@ export default function App() {
     phase: 'PLAYER_DRAW'
   });
 
-  // Visuals
+// Visuals
   const [shake, setShake] = useState(false);
   const [shieldEffect, setShieldEffect] = useState(false); // New state for defense visual
   const [feedback, setFeedback] = useState<string | null>(null);
   const [discardingCardIds, setDiscardingCardIds] = useState<Set<string>>(new Set());
+
+  // Balance Patch v1.0 - New card states
+  const [growingCrystalBonus, setGrowingCrystalBonus] = useState(0); // 407: Permanent damage bonus per combat
+  const [infiniteLoopUsed, setInfiniteLoopUsed] = useState(false); // 405: Once per turn
 
   // --- Touch Drag State ---
   const [dragState, setDragState] = useState<{
@@ -123,16 +127,19 @@ export default function App() {
 
   // --- Progression Logic (Replaces Map) ---
 
-  const startCombat = (enemyData: EnemyData) => {
+const startCombat = (enemyData: EnemyData) => {
     // Reset Enemy Block to 0
     setEnemy({ ...enemyData, block: 0 });
     setDeck(prev => shuffle(prev));
     setHand([]);
     setDiscardPile([]);
     setSlots({ handle: null, head: null, deco: null });
-    setPlayer(prev => ({...prev, energy: prev.maxEnergy, block: 0, costLimit: null, disarmed: false, nextTurnDraw: 0}));
+    setPlayer(prev => ({...prev, energy: prev.maxEnergy, block: 0, costLimit: null, disarmed: false, nextTurnDraw: 0, overheat: 0, weaponsUsedThisTurn: 0}));
     setGameState('PLAYING');
     setCombatState({ turn: 1, phase: 'PLAYER_DRAW' });
+    // Reset combat-specific states
+    setGrowingCrystalBonus(0);
+    setInfiniteLoopUsed(false);
   };
 
   const advanceGame = () => {
@@ -189,7 +196,7 @@ export default function App() {
     setHand([]);
     setDiscardPile([]);
     
-    setPlayer({ hp: 50, maxHp: 50, energy: 3, maxEnergy: 3, block: 0, gold: 0, costLimit: null, disarmed: false, nextTurnDraw: 0 });
+    setPlayer({ hp: 50, maxHp: 50, energy: 3, maxEnergy: 3, block: 0, gold: 0, costLimit: null, disarmed: false, nextTurnDraw: 0, overheat: 0, weaponsUsedThisTurn: 0 });
     
     setFloor(1);
     setAct(1);
@@ -393,7 +400,7 @@ export default function App() {
     setHand(prev => [...prev, ...drawn]);
   };
 
-  const calculateWeaponStats = (): CraftedWeapon => {
+const calculateWeaponStats = (): CraftedWeapon => {
     const { handle, head, deco } = slots;
     if (!handle || !head) return { totalCost: 0, damage: 0, block: 0, effects: [], hitCount: 1 };
 
@@ -403,7 +410,13 @@ export default function App() {
     let baseValue = head.value;
     if (deco) baseValue += deco.value;
 
-    let finalValue = baseValue * handle.value;
+    // 309: Gambler's Handle - Random multiplier 1~3 (show average x2 for prediction)
+    let handleMultiplier = handle.value;
+    if (handle.id === 309) {
+        handleMultiplier = 2; // Average for display, actual random in handleForgeAndAttack
+    }
+
+    let finalValue = baseValue * handleMultiplier;
 
     // Handle "Cost 0" effect from Philosopher's Stone (ID 403)
     if (deco?.id === 403) totalCost = 0;
@@ -423,23 +436,53 @@ export default function App() {
       if (head.id !== 207) damage = 0; // Spiked Shield retains damage
     }
 
-    // Logic for Swift Dagger Hilt (201) -> DMG -2 (min 0)
-    if (handle.id === 201 && damage > 0) {
-        damage = Math.max(0, damage - 2);
-    }
+    // Logic for Swift Dagger Hilt (201) -> Now applies Weak instead of -2 damage
+    // Effect is applied in handleForgeAndAttack
 
     // Logic for Twin Fangs (306) -> Hit Count 2
     if (head.id === 306) {
         hitCount = 2;
     }
 
-    // Logic for Twin Handle (301) -> Handle Multiplier was applied, but effect might double hit count?
-    // "Head effect triggers twice". For damage heads, usually means dmg x2 (already calc in value) OR hits twice.
-    // Let's interpret it as hits twice if it's an attack, or value x2 if simple. 
-    // Current simple logic: value x2 (handled by handle.value). 
-    // But description says "Effect triggers twice". 
-    // Let's make it simple: if Handle 301 is used, hitCount +1
-    // (Wait, logic in existing code was `effectMultiplier`... let's keep consistent)
+    // === Balance Patch v1.0 - New Card Effects ===
+
+    // 209: Cogwheel - +1 damage per bleed stack
+    if (head.id === 209) {
+        damage += (enemy.statuses.bleed || 0);
+    }
+
+    // 210: Thorn Sigil (Deco) - Add 50% of current block as damage
+    if (deco?.id === 210) {
+        damage += Math.floor(player.block * 0.5);
+    }
+
+    // 211: Capacitor (Deco) - +4 damage per remaining energy (calculated at forge time)
+    // This is handled in handleForgeAndAttack since we need remaining energy after cost
+
+    // 213: Poison Needle - +damage equal to enemy poison stacks
+    if (head.id === 213) {
+        damage += (enemy.statuses.poison || 0);
+    }
+
+    // 310: Combo Strike - +2 damage per weapon used this turn
+    if (head.id === 310) {
+        damage += player.weaponsUsedThisTurn * 2;
+    }
+
+    // 311: Steel Plating (Deco) - Double block
+    if (deco?.id === 311 && block > 0) {
+        block *= 2;
+    }
+
+    // 406: Time Cog - No damage, just stun (handled in effects)
+    if (head.id === 406) {
+        damage = 0;
+    }
+
+    // 407: Growing Crystal - Add permanent bonus damage
+    if (deco?.id === 407) {
+        damage += growingCrystalBonus;
+    }
 
     return { totalCost, damage, block, effects: [], hitCount };
   };
@@ -570,24 +613,47 @@ export default function App() {
       return;
     }
 
-    const effectMultiplier = slots.handle?.id === 301 ? 2 : 1;
+const effectMultiplier = slots.handle?.id === 301 ? 2 : 1;
     const isRareUsed = [slots.handle, slots.head, slots.deco].some(c => c?.rarity === CardRarity.RARE);
 
-    setPlayer(prev => ({ ...prev, energy: prev.energy - stats.totalCost }));
+    // Calculate remaining energy after cost for 211 (Capacitor)
+    const remainingEnergyAfterCost = player.energy - stats.totalCost;
+
+    setPlayer(prev => ({ ...prev, energy: prev.energy - stats.totalCost, weaponsUsedThisTurn: prev.weaponsUsedThisTurn + 1 }));
     
-    if (stats.damage > 0) {
+    // === Balance Patch v1.0 - Pre-damage calculations ===
+    let finalDamage = stats.damage;
+    let finalBlock = stats.block;
+
+    // 309: Gambler's Handle - Random multiplier 1~3
+    if (slots.handle?.id === 309) {
+        const randomMultiplier = Math.floor(Math.random() * 3) + 1; // 1, 2, or 3
+        const { head, deco } = slots;
+        let baseValue = head!.value + (deco ? deco.value : 0);
+        finalDamage = baseValue * randomMultiplier;
+        showFeedback(`도박! x${randomMultiplier} 배율!`);
+    }
+
+    // 211: Capacitor - +4 damage per remaining energy
+    if (slots.deco?.id === 211) {
+        const bonusDmg = remainingEnergyAfterCost * 4;
+        finalDamage += bonusDmg;
+        if (bonusDmg > 0) showFeedback(`축전지 보너스 +${bonusDmg}!`);
+    }
+
+    if (finalDamage > 0) {
         triggerShake();
-    } else if (stats.block > 0) {
+    } else if (finalBlock > 0) {
         triggerShieldEffect();
     }
     
     // --- DAMAGE LOGIC (Multi-hit Support) ---
-    if (stats.damage > 0) {
+    if (finalDamage > 0) {
       let loops = stats.hitCount;
       if (slots.handle?.id === 301) loops *= 2; // Twin Handle effect
 
       for (let i = 0; i < loops; i++) {
-          let actualDmg = stats.damage;
+          let actualDmg = finalDamage;
 
           // Vulnerable Calculation
           if (enemy.statuses.vulnerable > 0) {
@@ -647,12 +713,21 @@ export default function App() {
       }
     }
 
-    if (stats.block > 0) {
-      setPlayer(prev => ({ ...prev, block: prev.block + stats.block }));
-      showFeedback(`+${stats.block} 방어도`);
+if (finalBlock > 0) {
+      setPlayer(prev => ({ ...prev, block: prev.block + finalBlock }));
+      showFeedback(`+${finalBlock} 방어도`);
     }
 
     // --- EFFECT LOGIC ---
+
+// 201: Swift Dagger Hilt - Apply Weak (reworked from -2 damage)
+    if (slots.handle?.id === 201) {
+        setEnemy(prev => ({
+            ...prev,
+            statuses: { ...prev.statuses, weak: (prev.statuses.weak || 0) + 1 }
+        }));
+        showFeedback("약화 부여!");
+    }
 
     // 206: Bone Handle - Apply Vulnerable
     if (slots.handle?.id === 206) {
@@ -675,7 +750,7 @@ export default function App() {
         showFeedback("반동 피해 -5 HP");
     }
 
-    if (slots.head?.id === 203 && stats.damage > 0) {
+if (slots.head?.id === 203 && stats.damage > 0) {
         const bleedAmt = 3 * effectMultiplier;
         setEnemy(prev => ({
             ...prev,
@@ -684,23 +759,32 @@ export default function App() {
         showFeedback(`출혈 ${bleedAmt} 부여!`);
     }
 
-    if (slots.deco?.id === 205) {
-        const POISON_AMT = 3;
-        const POISON_CAP = 6;
+    // 303: Flamethrower - Apply Burn (reworked from unimplemented AoE)
+    if (slots.head?.id === 303) {
+        const burnAmt = 3 * effectMultiplier;
+        setEnemy(prev => ({
+            ...prev,
+            statuses: { ...prev.statuses, burn: (prev.statuses.burn || 0) + burnAmt }
+        }));
+        showFeedback(`화상 ${burnAmt} 부여!`);
+    }
+
+if (slots.deco?.id === 205) {
+        const POISON_AMT = 4; // Buffed from 3 to 4, cap removed
         setEnemy(prev => {
             const current = prev.statuses.poison || 0;
-            const next = Math.min(current + POISON_AMT, POISON_CAP);
             return {
                 ...prev,
-                statuses: { ...prev.statuses, poison: next }
+                statuses: { ...prev.statuses, poison: current + POISON_AMT }
             };
         });
         showFeedback(`독 ${POISON_AMT} 부여!`);
     }
 
-    if (slots.handle?.id === 302 && stats.damage > 0) {
-        const heal = Math.floor(stats.damage * 0.5);
+if (slots.handle?.id === 302 && finalDamage > 0) {
+        const heal = Math.floor(finalDamage * 0.5);
         setPlayer(prev => ({...prev, hp: Math.min(prev.maxHp, prev.hp + heal)}));
+        showFeedback(`흡혈! +${heal} HP`);
     }
 
     if (slots.head?.id === 304) {
@@ -723,7 +807,7 @@ export default function App() {
         showFeedback(`방어도 -${debuff} (부족 시 반동)`);
     }
 
-    if (slots.handle?.id === 401 && stats.damage > 0) {
+if (slots.handle?.id === 401 && finalDamage > 0) {
         setEnemy(prev => ({
             ...prev,
             statuses: { ...prev.statuses, stunned: 1 } // Stun for 1 turn
@@ -731,26 +815,90 @@ export default function App() {
         showFeedback("적 기절!");
     }
 
-    if (slots.deco?.id === 204) {
+if (slots.deco?.id === 204 || slots.deco?.id === 106) {
         setPlayer(prev => ({ ...prev, nextTurnDraw: prev.nextTurnDraw + 1 }));
         showFeedback("다음 턴 드로우 +1 예약!");
     }
 
-    if (slots.deco?.id === 305) {
+if (slots.deco?.id === 305) {
         const replica = createCardInstance(801); 
-        replica.value = stats.damage;
-        replica.description = `복제된 무기. 피해량 ${stats.damage}. 비용 0.`;
+        replica.value = finalDamage;
+        replica.description = `복제된 무기. 피해량 ${finalDamage}. 비용 0.`;
         setDeck(prev => [...prev, replica]);
         showFeedback("덱 맨 위로 복제!");
     }
 
-    const isExhaust = slots.head?.id === 402;
+    // === Balance Patch v1.0 - New Card Effects ===
+
+    // 212: Lightweight Handle - Draw 1 if total cost <= 1
+    if (slots.handle?.id === 212 && stats.totalCost <= 1) {
+        drawCards(1);
+        showFeedback("경량 보너스: 카드 1장 드로우!");
+    }
+
+    // 214: Blunt Club - Apply Weak 1
+    if (slots.head?.id === 214) {
+        setEnemy(prev => ({
+            ...prev,
+            statuses: { ...prev.statuses, weak: (prev.statuses.weak || 0) + 1 }
+        }));
+        showFeedback("약화 부여!");
+    }
+
+    // 308: Furnace Core - Apply Overheat 1
+    if (slots.head?.id === 308) {
+        setPlayer(prev => ({ ...prev, overheat: prev.overheat + 1 }));
+        showFeedback("과열 1 획득! (다음 턴 에너지 -1)");
+    }
+
+    // 312: Lava Blade - Apply Burn 4
+    if (slots.head?.id === 312) {
+        const burnAmt = 4 * effectMultiplier;
+        setEnemy(prev => ({
+            ...prev,
+            statuses: { ...prev.statuses, burn: (prev.statuses.burn || 0) + burnAmt }
+        }));
+        showFeedback(`화상 ${burnAmt} 부여!`);
+    }
+
+    // 406: Time Cog - Stun 1 + Skip next intent
+    if (slots.head?.id === 406) {
+        setEnemy(prev => ({
+            ...prev,
+            statuses: { ...prev.statuses, stunned: 1 },
+            currentIntentIndex: (prev.currentIntentIndex + 1) % prev.intents.length // Skip intent
+        }));
+        showFeedback("시간 정지! 적 기절 + 의도 스킵!");
+    }
+
+    // 407: Growing Crystal - Add permanent +2 damage bonus (max 16)
+    if (slots.deco?.id === 407) {
+        if (growingCrystalBonus < 16) {
+            setGrowingCrystalBonus(prev => Math.min(16, prev + 2));
+            showFeedback(`결정 성장! 영구 피해 +2 (현재: ${Math.min(16, growingCrystalBonus + 2)})`);
+        }
+    }
+
+const isExhaust = slots.head?.id === 402;
     if (isExhaust) {
         showFeedback("공허의 수정 소멸!");
     }
 
+    // 405: Infinite Loop - Return to hand (once per turn)
+    let infiniteLoopCard: CardInstance | null = null;
+    if (slots.handle?.id === 405 && !infiniteLoopUsed) {
+        infiniteLoopCard = slots.handle;
+        setInfiniteLoopUsed(true);
+        showFeedback("무한 회귀: 손으로 귀환!");
+    }
+
     const usedCards = [slots.handle, slots.head, slots.deco]
-        .filter(c => c && c.id !== 402) as CardInstance[];
+        .filter(c => c && c.id !== 402 && c.id !== 405) as CardInstance[];
+
+    // Handle 405 returning to hand
+    if (infiniteLoopCard) {
+        setHand(prev => [...prev, infiniteLoopCard!]);
+    }
 
     setDiscardPile(prev => [...prev, ...usedCards]);
     setSlots({ handle: null, head: null, deco: null });
@@ -781,17 +929,24 @@ export default function App() {
 
     const runPhase = async () => {
       switch (combatState.phase) {
-        case 'PLAYER_DRAW':
+case 'PLAYER_DRAW':
           const drawCount = 5 + player.nextTurnDraw;
+          const overheatPenalty = player.overheat;
+          const actualEnergy = Math.max(0, player.maxEnergy - overheatPenalty);
+          
           setPlayer(p => ({ 
               ...p, 
-              energy: p.maxEnergy, 
+              energy: actualEnergy, 
               block: 0,
-              nextTurnDraw: 0 
+              nextTurnDraw: 0,
+              overheat: 0,
+              weaponsUsedThisTurn: 0
           })); 
           setEnemy(prev => ({ ...prev, damageTakenThisTurn: 0 })); 
+          setInfiniteLoopUsed(false); // Reset 405 usage
           drawCards(drawCount);
-          if (drawCount > 5) showFeedback(`추가 드로우 +${drawCount - 5}!`);
+          if (overheatPenalty > 0) showFeedback(`과열! 에너지 -${overheatPenalty}`);
+          else if (drawCount > 5) showFeedback(`추가 드로우 +${drawCount - 5}!`);
           setCombatState(prev => ({ ...prev, phase: 'PLAYER_ACTION' }));
           break;
 
@@ -845,7 +1000,7 @@ export default function App() {
               return;
           }
 
-          if (enemy.statuses.poison > 0) {
+if (enemy.statuses.poison > 0) {
               const pDmg = enemy.statuses.poison;
               setEnemy(prev => ({
                   ...prev,
@@ -854,6 +1009,19 @@ export default function App() {
               }));
               triggerShake();
               showFeedback(`독 피해 ${pDmg}!`);
+              await new Promise(r => setTimeout(r, 800));
+          }
+
+          // Burn damage (does NOT decay unlike poison)
+          if (enemy.statuses.burn > 0) {
+              const burnDmg = enemy.statuses.burn;
+              setEnemy(prev => ({
+                  ...prev,
+                  currentHp: Math.max(0, prev.currentHp - burnDmg)
+                  // burn does NOT decrease
+              }));
+              triggerShake();
+              showFeedback(`화상 피해 ${burnDmg}!`);
               await new Promise(r => setTimeout(r, 800));
           }
 
@@ -1608,24 +1776,27 @@ export default function App() {
                 enemy.intents[enemy.currentIntentIndex].type === IntentType.DEBUFF ? <Zap size={32} className="md:w-10 md:h-10 text-purple-400" /> :
                 <Shield size={32} className="md:w-10 md:h-10 text-blue-400" />}
              </div>
-             <div className={`
-               -mt-2 px-2 py-0.5 pixel-border border-2 font-pixel text-xs md:text-sm flex items-center gap-1
-               ${enemy.intents[enemy.currentIntentIndex].type === IntentType.ATTACK ? 'bg-red-800 border-red-400 text-red-200' :
-                 enemy.intents[enemy.currentIntentIndex].type === IntentType.DEFEND ? 'bg-blue-800 border-blue-400 text-blue-200' :
-                 enemy.intents[enemy.currentIntentIndex].type === IntentType.BUFF ? 'bg-green-800 border-green-400 text-green-200' :
-                 enemy.intents[enemy.currentIntentIndex].type === IntentType.DEBUFF ? 'bg-purple-800 border-purple-400 text-purple-200' :
-                 'bg-stone-800 border-stone-500 text-stone-200'}
-             `}>
-               <span className="font-pixel-kr text-[10px] md:text-xs">
-                 {enemy.intents[enemy.currentIntentIndex].type === IntentType.ATTACK ? '공격' :
-                  enemy.intents[enemy.currentIntentIndex].type === IntentType.DEFEND ? '방어' :
-                  enemy.intents[enemy.currentIntentIndex].type === IntentType.BUFF ? '강화' :
-                  enemy.intents[enemy.currentIntentIndex].type === IntentType.DEBUFF ? '약화' : '?'}
-               </span>
-               {enemy.intents[enemy.currentIntentIndex].value > 0 && (
-                 <span>{enemy.intents[enemy.currentIntentIndex].value}</span>
-               )}
-             </div>
+<div 
+                className={`
+                  -mt-2 px-2 py-0.5 pixel-border border-2 font-pixel text-xs md:text-sm flex items-center gap-1 cursor-help
+                  ${enemy.intents[enemy.currentIntentIndex].type === IntentType.ATTACK ? 'bg-red-800 border-red-400 text-red-200' :
+                    enemy.intents[enemy.currentIntentIndex].type === IntentType.DEFEND ? 'bg-blue-800 border-blue-400 text-blue-200' :
+                    enemy.intents[enemy.currentIntentIndex].type === IntentType.BUFF ? 'bg-green-800 border-green-400 text-green-200' :
+                    enemy.intents[enemy.currentIntentIndex].type === IntentType.DEBUFF ? 'bg-purple-800 border-purple-400 text-purple-200' :
+                    'bg-stone-800 border-stone-500 text-stone-200'}
+                `}
+                title={enemy.intents[enemy.currentIntentIndex].description}
+              >
+                <span className="font-pixel-kr text-[10px] md:text-xs">
+                  {enemy.intents[enemy.currentIntentIndex].type === IntentType.ATTACK ? '공격' :
+                   enemy.intents[enemy.currentIntentIndex].type === IntentType.DEFEND ? '방어' :
+                   enemy.intents[enemy.currentIntentIndex].type === IntentType.BUFF ? '강화' :
+                   enemy.intents[enemy.currentIntentIndex].type === IntentType.DEBUFF ? '약화' : '?'}
+                </span>
+                {enemy.intents[enemy.currentIntentIndex].value > 0 && (
+                  <span>{enemy.intents[enemy.currentIntentIndex].value}</span>
+                )}
+              </div>
            </div>
 
            {/* Enemy Sprite - Pixel Frame */}
@@ -1688,39 +1859,44 @@ export default function App() {
 
            <h2 className="mt-2 font-pixel-kr font-bold text-stone-200 text-sm md:text-base mb-1 bg-black/50 px-2 py-0.5 pixel-border border border-stone-600">{enemy.name}</h2>
            
-           {/* Status Effects Row */}
-           <div className="flex items-center justify-center gap-2">
-               {enemy.statuses?.poison > 0 && (
-                   <div className="flex items-center gap-1 bg-green-900/60 pixel-border border-2 border-green-600 px-1.5 py-0.5 text-[9px] text-green-400 font-pixel" title="턴 시작 시 피해">
-                       <Droplets size={10} fill="currentColor" /> {enemy.statuses.poison}
-                   </div>
-               )}
-               {enemy.statuses?.bleed > 0 && (
-                   <div className="flex items-center gap-1 bg-red-900/60 pixel-border border-2 border-red-600 px-1.5 py-0.5 text-[9px] text-red-400 font-pixel" title="공격 시 피해">
-                       <Activity size={10} /> {enemy.statuses.bleed}
-                   </div>
-               )}
-               {enemy.statuses?.stunned > 0 && (
-                   <div className="flex items-center gap-1 bg-yellow-900/60 pixel-border border-2 border-yellow-600 px-1.5 py-0.5 text-[9px] text-yellow-400 font-pixel" title="기절">
-                       <Star size={10} fill="currentColor" /> {enemy.statuses.stunned}
-                   </div>
-               )}
-               {enemy.statuses?.strength > 0 && (
-                   <div className="flex items-center gap-1 bg-red-900/60 pixel-border border-2 border-red-600 px-1.5 py-0.5 text-[9px] text-red-400 font-pixel" title="공격력 증가">
-                       <Swords size={10} /> +{enemy.statuses.strength}
-                   </div>
-               )}
-               {enemy.statuses?.vulnerable > 0 && (
-                   <div className="flex items-center gap-1 bg-purple-900/60 pixel-border border-2 border-purple-600 px-1.5 py-0.5 text-[9px] text-purple-400 font-pixel" title="취약: 받는 피해 50% 증가">
-                       <Percent size={10} /> {enemy.statuses.vulnerable}
-                   </div>
-               )}
-               {enemy.statuses?.weak > 0 && (
-                   <div className="flex items-center gap-1 bg-stone-700/60 pixel-border border-2 border-stone-500 px-1.5 py-0.5 text-[9px] text-stone-300 font-pixel" title="약화: 주는 피해 25% 감소">
-                       <ArrowLeft size={10} className="rotate-[-45deg]" /> {enemy.statuses.weak}
-                   </div>
-               )}
-           </div>
+{/* Status Effects Row - Balance Patch v1.0: Improved tooltips */}
+            <div className="flex items-center justify-center gap-2 flex-wrap">
+                {enemy.statuses?.poison > 0 && (
+                    <div className="flex items-center gap-1 bg-green-900/60 pixel-border border-2 border-green-600 px-1.5 py-0.5 text-[9px] text-green-400 font-pixel cursor-help" title={`[독] 턴 시작 시 ${enemy.statuses.poison} 피해, 매 턴 1씩 감소`}>
+                        <Droplets size={10} fill="currentColor" /> {enemy.statuses.poison}
+                    </div>
+                )}
+                {enemy.statuses?.bleed > 0 && (
+                    <div className="flex items-center gap-1 bg-red-900/60 pixel-border border-2 border-red-600 px-1.5 py-0.5 text-[9px] text-red-400 font-pixel cursor-help" title={`[출혈] 적 공격 시 ${enemy.statuses.bleed} 피해, 매 턴 1씩 감소`}>
+                        <Activity size={10} /> {enemy.statuses.bleed}
+                    </div>
+                )}
+                {enemy.statuses?.stunned > 0 && (
+                    <div className="flex items-center gap-1 bg-yellow-900/60 pixel-border border-2 border-yellow-600 px-1.5 py-0.5 text-[9px] text-yellow-400 font-pixel cursor-help" title={`[기절] ${enemy.statuses.stunned}턴간 행동 불가`}>
+                        <Star size={10} fill="currentColor" /> {enemy.statuses.stunned}
+                    </div>
+                )}
+                {enemy.statuses?.strength > 0 && (
+                    <div className="flex items-center gap-1 bg-red-900/60 pixel-border border-2 border-red-600 px-1.5 py-0.5 text-[9px] text-red-400 font-pixel cursor-help" title={`[힘] 공격력 +${enemy.statuses.strength} (일시적)`}>
+                        <Swords size={10} /> +{enemy.statuses.strength}
+                    </div>
+                )}
+                {enemy.statuses?.vulnerable > 0 && (
+                    <div className="flex items-center gap-1 bg-purple-900/60 pixel-border border-2 border-purple-600 px-1.5 py-0.5 text-[9px] text-purple-400 font-pixel cursor-help" title={`[취약] ${enemy.statuses.vulnerable}턴간 받는 피해 50% 증가`}>
+                        <Percent size={10} /> {enemy.statuses.vulnerable}
+                    </div>
+                )}
+                {enemy.statuses?.weak > 0 && (
+                    <div className="flex items-center gap-1 bg-stone-700/60 pixel-border border-2 border-stone-500 px-1.5 py-0.5 text-[9px] text-stone-300 font-pixel cursor-help" title={`[약화] ${enemy.statuses.weak}턴간 주는 피해 25% 감소`}>
+                        <ArrowLeft size={10} className="rotate-[-45deg]" /> {enemy.statuses.weak}
+                    </div>
+                )}
+                {enemy.statuses?.burn > 0 && (
+                    <div className="flex items-center gap-1 bg-orange-900/60 pixel-border border-2 border-orange-600 px-1.5 py-0.5 text-[9px] text-orange-400 font-pixel cursor-help" title={`[화상] 매 턴 종료 시 ${enemy.statuses.burn} 피해 (지속, 감소 안 함)`}>
+                        <Flame size={10} /> {enemy.statuses.burn}
+                    </div>
+                )}
+            </div>
         </div>
       </div>
 

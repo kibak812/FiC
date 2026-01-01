@@ -9,38 +9,59 @@ export const CARD_DATABASE: CardData[] = [
   { id: 102, name: '패링 가드', type: CardType.HANDLE, cost: 1, value: 1, rarity: CardRarity.STARTER, description: '[방어] 머리의 공격력을 방어도로 전환' },
   { id: 103, name: '녹슨 철 칼날', type: CardType.HEAD, cost: 1, value: 6, rarity: CardRarity.STARTER, description: '피해 6' },
   { id: 104, name: '냄비 뚜껑', type: CardType.HEAD, cost: 1, value: 5, rarity: CardRarity.STARTER, description: '방어도 5 (방어형 머리)' },
-  { id: 105, name: '거친 숫돌', type: CardType.DECO, cost: 0, value: 3, rarity: CardRarity.STARTER, description: '피해량 +3' },
+{ id: 105, name: '거친 숫돌', type: CardType.DECO, cost: 0, value: 3, rarity: CardRarity.STARTER, description: '피해량 +3' },
+  { id: 106, name: '낡은 끈', type: CardType.DECO, cost: 0, value: 0, rarity: CardRarity.STARTER, description: '다음 턴 카드 1장 추가 드로우' },
 
   // Common
-  { id: 201, name: '날렵한 단검 자루', type: CardType.HANDLE, cost: 0, value: 1, rarity: CardRarity.COMMON, description: '피해량 -2. 비용 0.' },
+  { id: 201, name: '날렵한 단검 자루', type: CardType.HANDLE, cost: 0, value: 1, rarity: CardRarity.COMMON, description: '약화 1 부여. 비용 0.' },
   { id: 202, name: '강철 롱소드', type: CardType.HEAD, cost: 1, value: 9, rarity: CardRarity.COMMON, description: '피해 9' },
   { id: 203, name: '톱날', type: CardType.HEAD, cost: 1, value: 3, rarity: CardRarity.COMMON, description: '피해 3, 출혈 3 부여 (적 공격 시 피해)' },
   { id: 204, name: '가벼운 깃털', type: CardType.DECO, cost: 0, value: 0, rarity: CardRarity.COMMON, description: '다음 턴에 카드 1장 추가 뽑기' },
-  { id: 205, name: '독 묻은 헝겊', type: CardType.DECO, cost: 1, value: 0, rarity: CardRarity.COMMON, description: '독 3 부여 (최대 6 중첩)' },
+  { id: 205, name: '독 묻은 헝겊', type: CardType.DECO, cost: 1, value: 0, rarity: CardRarity.COMMON, description: '독 4 부여' },
   
-  // New Common
+// New Common
   { id: 206, name: '뼈 손잡이', type: CardType.HANDLE, cost: 1, value: 1, rarity: CardRarity.COMMON, description: '취약 2 부여 (받는 피해 50% 증가)' },
   { id: 207, name: '스파이크 쉴드', type: CardType.HEAD, cost: 1, value: 0, rarity: CardRarity.COMMON, description: '현재 방어도만큼 피해를 입힙니다.' },
   { id: 208, name: '충전된 보석', type: CardType.DECO, cost: 0, value: 0, rarity: CardRarity.COMMON, description: '에너지 1 회복' },
 
+  // Balance Patch v1.0 - New Common
+  { id: 209, name: '톱니 바퀴', type: CardType.HEAD, cost: 1, value: 5, rarity: CardRarity.COMMON, description: '피해 5. 출혈 스택당 +1 피해.' },
+  { id: 210, name: '가시 문양', type: CardType.DECO, cost: 0, value: 0, rarity: CardRarity.COMMON, description: '현재 방어도의 50%를 추가 피해로 전환.' },
+  { id: 211, name: '축전지', type: CardType.DECO, cost: 0, value: 0, rarity: CardRarity.COMMON, description: '남은 에너지 1당 +4 피해.' },
+  { id: 212, name: '경량 손잡이', type: CardType.HANDLE, cost: 0, value: 1, rarity: CardRarity.COMMON, description: '총 비용 1 이하 시 카드 1장 드로우.' },
+  { id: 213, name: '독침', type: CardType.HEAD, cost: 1, value: 3, rarity: CardRarity.COMMON, description: '피해 3. 적 독 스택만큼 추가 피해.' },
+  { id: 214, name: '무딘 곤봉', type: CardType.HEAD, cost: 1, value: 8, rarity: CardRarity.COMMON, description: '피해 8. 약화 1 부여.' },
+
   // Rare
   { id: 301, name: '쌍둥이 손잡이', type: CardType.HANDLE, cost: 2, value: 2, rarity: CardRarity.RARE, description: '머리 효과 2회 발동 (피해량 2배 아님)' },
   { id: 302, name: '흡혈 덩굴', type: CardType.HANDLE, cost: 2, value: 1, rarity: CardRarity.RARE, description: '입힌 피해의 50% 회복' },
-  { id: 303, name: '화염 방사기', type: CardType.HEAD, cost: 2, value: 6, rarity: CardRarity.RARE, description: '[광역] 모든 적에게 피해 6 (구현 예정)' },
+  { id: 303, name: '화염 방사기', type: CardType.HEAD, cost: 2, value: 8, rarity: CardRarity.RARE, description: '피해 8. 화상 3 부여.' },
   { id: 304, name: '육중한 전쟁망치', type: CardType.HEAD, cost: 2, value: 18, rarity: CardRarity.RARE, description: '피해 18. 방어도 -5 (부족 시 HP 감소).' },
   { id: 305, name: '복제의 거울', type: CardType.DECO, cost: 2, value: 0, rarity: CardRarity.RARE, description: '완성된 무기(머리)를 덱 맨 위로 복제 (비용 0)' },
 
-  // New Rare
+// New Rare
   { id: 306, name: '쌍둥이 송곳니', type: CardType.HEAD, cost: 1, value: 4, rarity: CardRarity.RARE, description: '피해 4, 2회 공격' },
   { id: 307, name: '마이더스의 손', type: CardType.HANDLE, cost: 1, value: 1, rarity: CardRarity.RARE, description: '피해량 100%. 적중 시 5골드 획득.' },
+
+  // Balance Patch v1.0 - New Rare
+  { id: 308, name: '용광로 코어', type: CardType.HEAD, cost: 1, value: 15, rarity: CardRarity.RARE, description: '피해 15. 과열 1 (다음 턴 에너지 -1).' },
+  { id: 309, name: '도박사의 손잡이', type: CardType.HANDLE, cost: 1, value: 0, rarity: CardRarity.RARE, description: '배율 1~3 (무작위).' },
+  { id: 310, name: '연속 타격', type: CardType.HEAD, cost: 0, value: 4, rarity: CardRarity.RARE, description: '피해 4. 이번 턴 사용한 무기 수 x2 추가 피해.' },
+  { id: 311, name: '강철 도금', type: CardType.DECO, cost: 1, value: 0, rarity: CardRarity.RARE, description: '이 무기의 방어도 2배.' },
+  { id: 312, name: '용암 칼날', type: CardType.HEAD, cost: 2, value: 10, rarity: CardRarity.RARE, description: '피해 10. 화상 4 부여.' },
 
   // Legend
   { id: 401, name: '거인의 악력', type: CardType.HANDLE, cost: 3, value: 3, rarity: CardRarity.LEGEND, description: '피해량 3배. 적 기절.' },
   { id: 402, name: '공허의 수정', type: CardType.HEAD, cost: 3, value: 30, rarity: CardRarity.LEGEND, description: '피해 30. 소멸.' },
   { id: 403, name: '현자의 돌', type: CardType.DECO, cost: 0, value: 0, rarity: CardRarity.LEGEND, description: '무기 비용을 0으로 설정' },
   
-  // New Legend
+// New Legend
   { id: 404, name: '운석 파편', type: CardType.HEAD, cost: 2, value: 40, rarity: CardRarity.LEGEND, description: '피해 40. 내 체력 5 감소.' },
+
+  // Balance Patch v1.0 - New Legend
+  { id: 405, name: '무한 회귀', type: CardType.HANDLE, cost: 2, value: 1, rarity: CardRarity.LEGEND, description: '사용 후 손으로 귀환. 턴당 1회.' },
+  { id: 406, name: '시간의 톱니', type: CardType.HEAD, cost: 2, value: 0, rarity: CardRarity.LEGEND, description: '적 기절 1. 다음 의도 건너뜀.' },
+  { id: 407, name: '성장하는 결정', type: CardType.DECO, cost: 0, value: 2, rarity: CardRarity.LEGEND, description: '영구 피해 +2. 전투 중 중첩 (최대 16).' },
 
   // Special / Generated
   { id: 801, name: '그림자 무기', type: CardType.HEAD, cost: 0, value: 0, rarity: CardRarity.SPECIAL, description: '복제된 무기의 힘을 담은 그림자입니다.' },
@@ -49,21 +70,21 @@ export const CARD_DATABASE: CardData[] = [
   { id: 901, name: '녹슨 덩어리', type: CardType.JUNK, cost: 1, value: 0, rarity: CardRarity.JUNK, description: '사용 불가. 손패를 차지합니다.', unplayable: true },
 ];
 
-export const INITIAL_DECK_IDS = [101, 101, 102, 103, 103, 104, 105, 204];
+export const INITIAL_DECK_IDS = [101, 101, 102, 103, 103, 104, 105, 106];
 
-const DEFAULT_STATUS = { poison: 0, bleed: 0, stunned: 0, strength: 0, vulnerable: 0, weak: 0 };
+const DEFAULT_STATUS = { poison: 0, bleed: 0, stunned: 0, strength: 0, vulnerable: 0, weak: 0, burn: 0 };
 
 // --- Enemies ---
 
 export const ENEMIES: Record<string, EnemyData> = {
   // Floor 1: The Abandoned Mine
-  RUST_SLIME: {
+RUST_SLIME: { // Balance Patch v1.0: Debuff moved to 3rd intent for better new player experience
     id: 'rust_slime', name: '녹슨 슬라임', tier: EnemyTier.COMMON, maxHp: 30, currentHp: 30, block: 0, currentIntentIndex: 0, traits: [], statuses: { ...DEFAULT_STATUS },
     damageTakenThisTurn: 0,
     intents: [
-      { type: IntentType.ATTACK, value: 6, description: '몸통 박치기' },
+      { type: IntentType.ATTACK, value: 5, description: '몸통 박치기' },
+      { type: IntentType.ATTACK, value: 7, description: '녹슨 돌진' },
       { type: IntentType.DEBUFF, value: 1, description: '덱에 [녹슨 덩어리] 추가' },
-      { type: IntentType.BUFF, value: 4, description: '점성 회복 (HP 4 회복)' },
     ]
   },
   KOBOLD_SCRAPPER: {
@@ -138,8 +159,8 @@ export const ENEMIES: Record<string, EnemyData> = {
       { type: IntentType.ATTACK, value: 0, description: '받은 피해 반사' },
     ]
   },
-  CORRUPTED_SMITH: { // Boss 2
-    id: 'corrupted_smith', name: '타락한 대장장이 (보스)', tier: EnemyTier.BOSS, maxHp: 250, currentHp: 250, block: 0, currentIntentIndex: 0, traits: [], statuses: { ...DEFAULT_STATUS },
+CORRUPTED_SMITH: { // Boss 2 - Balance Patch v1.0: HP 250 -> 220
+    id: 'corrupted_smith', name: '타락한 대장장이 (보스)', tier: EnemyTier.BOSS, maxHp: 220, currentHp: 220, block: 0, currentIntentIndex: 0, traits: [], statuses: { ...DEFAULT_STATUS },
     damageTakenThisTurn: 0,
     intents: [
       { type: IntentType.ATTACK, value: 20, description: '달궈진 망치' },
@@ -167,8 +188,8 @@ export const ENEMIES: Record<string, EnemyData> = {
           { type: IntentType.BUFF, value: 5, description: '칼날 연마 (공격력 +5)' }
       ]
   },
-  CHIMERA_ENGINE: { // Elite
-    id: 'chimera_engine', name: '키메라 엔진 (정예)', tier: EnemyTier.ELITE, maxHp: 180, currentHp: 180, block: 0, currentIntentIndex: 0, traits: [], statuses: { ...DEFAULT_STATUS },
+CHIMERA_ENGINE: { // Elite - Balance Patch v1.0: HP 180 -> 150
+    id: 'chimera_engine', name: '키메라 엔진 (정예)', tier: EnemyTier.ELITE, maxHp: 150, currentHp: 150, block: 0, currentIntentIndex: 0, traits: [], statuses: { ...DEFAULT_STATUS },
     damageTakenThisTurn: 0,
     intents: [
       { type: IntentType.ATTACK, value: 5, description: '기관총 (x3)' },
@@ -176,8 +197,8 @@ export const ENEMIES: Record<string, EnemyData> = {
       { type: IntentType.ATTACK, value: 5, description: '기관총 (x3)' },
     ]
   },
-  DEUS_EX_MACHINA: { // Final Boss
-    id: 'deus_ex_machina', name: '데우스 엑스 마키나', tier: EnemyTier.BOSS, maxHp: 500, currentHp: 500, block: 0, currentIntentIndex: 0, traits: [], statuses: { ...DEFAULT_STATUS },
+DEUS_EX_MACHINA: { // Final Boss - Balance Patch v1.0: HP 500 -> 400
+    id: 'deus_ex_machina', name: '데우스 엑스 마키나', tier: EnemyTier.BOSS, maxHp: 400, currentHp: 400, block: 0, currentIntentIndex: 0, traits: [], statuses: { ...DEFAULT_STATUS },
     damageTakenThisTurn: 0,
     intents: [
       { type: IntentType.ATTACK, value: 10, description: '창조의 모방' },

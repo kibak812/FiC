@@ -67,6 +67,7 @@ export interface EnemyStatus {
     strength: number;
     vulnerable: number; // Takes 50% more damage
     weak: number; // Deals 25% less damage
+    burn: number; // Burn: damage at turn end, does NOT decay
 }
 
 export interface EnemyData {
@@ -94,6 +95,8 @@ export interface PlayerStats {
   costLimit: number | null; // For Deus Ex Machina logic
   disarmed: boolean; // For Corrupted Smith logic (Cannot slot Head)
   nextTurnDraw: number; // Stores extra draw count for the next turn
+  overheat: number; // Overheat: reduces energy next turn
+  weaponsUsedThisTurn: number; // Counter for combo cards like 310
 }
 
 export interface CombatState {
