@@ -16,6 +16,7 @@ import { STATUS_DESCRIPTIONS } from './utils/statusDescriptions';
 
 // --- Hooks ---
 import { useAnimations } from './hooks/useAnimations';
+import { useToast } from './hooks/useToast';
 
 // --- Main App ---
 
@@ -64,11 +65,9 @@ const [player, setPlayer] = useState<PlayerStats>({
 // Visuals - Animation hook
   const [animations, animationTriggers] = useAnimations();
   
-  // Toast messages - split by sentiment (good vs bad for player)
-  const [goodToastQueue, setGoodToastQueue] = useState<string[]>([]);
-  const [badToastQueue, setBadToastQueue] = useState<string[]>([]);
-  const [currentGoodToast, setCurrentGoodToast] = useState<string | null>(null);
-  const [currentBadToast, setCurrentBadToast] = useState<string | null>(null);
+  // Toast messages - using useToast hook
+  const { showFeedback, currentGoodToast, currentBadToast } = useToast();
+  
   const [discardingCardIds, setDiscardingCardIds] = useState<Set<string>>(new Set());
 
   // Balance Patch v1.0 - New card states
@@ -118,35 +117,6 @@ const [player, setPlayer] = useState<PlayerStats>({
     playerBlocking, 
     enemyAttacking 
   } = animations;
-
-  // Show feedback - 'good' for positive effects (blue), 'bad' for negative effects (red)
-  const showFeedback = (text: string, sentiment: 'good' | 'bad' = 'good') => {
-    if (sentiment === 'good') {
-      setGoodToastQueue(prev => [...prev, text]);
-    } else {
-      setBadToastQueue(prev => [...prev, text]);
-    }
-  };
-
-  // Process good toast queue (blue - player benefits)
-  useEffect(() => {
-    if (goodToastQueue.length > 0 && currentGoodToast === null) {
-      const [next, ...rest] = goodToastQueue;
-      setCurrentGoodToast(next);
-      setGoodToastQueue(rest);
-      setTimeout(() => setCurrentGoodToast(null), 1200);
-    }
-  }, [goodToastQueue, currentGoodToast]);
-
-  // Process bad toast queue (red - player suffers)
-  useEffect(() => {
-    if (badToastQueue.length > 0 && currentBadToast === null) {
-      const [next, ...rest] = badToastQueue;
-      setCurrentBadToast(next);
-      setBadToastQueue(rest);
-      setTimeout(() => setCurrentBadToast(null), 1200);
-    }
-  }, [badToastQueue, currentBadToast]);
 
   // Helper to gather all cards and strip junk
   const cleanAndConsolidateDeck = () => {
