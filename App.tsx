@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
+import { createPortal } from 'react-dom';
 import { 
   CardInstance, CardType, CombatState, PlayerStats, EnemyData, 
   IntentType, CraftedWeapon, CardRarity, EnemyTrait, EnemyTier
@@ -70,12 +71,29 @@ const [player, setPlayer] = useState<PlayerStats>({
 // Visuals
   const [shake, setShake] = useState(false);
   const [shieldEffect, setShieldEffect] = useState(false); // New state for defense visual
-  const [feedback, setFeedback] = useState<string | null>(null);
+  // Toast messages - split by sentiment (good vs bad for player)
+  const [goodToastQueue, setGoodToastQueue] = useState<string[]>([]);
+  const [badToastQueue, setBadToastQueue] = useState<string[]>([]);
+  const [currentGoodToast, setCurrentGoodToast] = useState<string | null>(null);
+  const [currentBadToast, setCurrentBadToast] = useState<string | null>(null);
   const [discardingCardIds, setDiscardingCardIds] = useState<Set<string>>(new Set());
+  
+  // Animation states for differentiated effects
+  const [playerHit, setPlayerHit] = useState(false);
+  const [enemyPoisoned, setEnemyPoisoned] = useState(false);
+  const [enemyBurning, setEnemyBurning] = useState(false);
+  const [enemyBleeding, setEnemyBleeding] = useState(false);
+  const [playerHealing, setPlayerHealing] = useState(false);
+  const [playerBlocking, setPlayerBlocking] = useState(false);
+  const [enemyAttacking, setEnemyAttacking] = useState(false);
 
   // Balance Patch v1.0 - New card states
   const [growingCrystalBonus, setGrowingCrystalBonus] = useState(0); // 407: Permanent damage bonus per combat
   const [infiniteLoopUsed, setInfiniteLoopUsed] = useState(false); // 405: Once per turn
+
+  // Intent detail modal (long-press on mobile)
+  const [showIntentDetail, setShowIntentDetail] = useState(false);
+  const intentLongPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   // --- Touch Drag State ---
   const [dragState, setDragState] = useState<{
@@ -98,10 +116,69 @@ const [player, setPlayer] = useState<PlayerStats>({
     setTimeout(() => setShieldEffect(false), 600);
   };
 
-  const showFeedback = (text: string) => {
-    setFeedback(text);
-    setTimeout(() => setFeedback(null), 1500);
+  const triggerPlayerHit = () => {
+    setPlayerHit(true);
+    setTimeout(() => setPlayerHit(false), 400);
   };
+
+  const triggerEnemyPoison = () => {
+    setEnemyPoisoned(true);
+    setTimeout(() => setEnemyPoisoned(false), 600);
+  };
+
+  const triggerEnemyBurn = () => {
+    setEnemyBurning(true);
+    setTimeout(() => setEnemyBurning(false), 500);
+  };
+
+  const triggerEnemyBleed = () => {
+    setEnemyBleeding(true);
+    setTimeout(() => setEnemyBleeding(false), 500);
+  };
+
+  const triggerPlayerHeal = () => {
+    setPlayerHealing(true);
+    setTimeout(() => setPlayerHealing(false), 600);
+  };
+
+  const triggerPlayerBlock = () => {
+    setPlayerBlocking(true);
+    setTimeout(() => setPlayerBlocking(false), 400);
+  };
+
+  const triggerEnemyAttack = () => {
+    setEnemyAttacking(true);
+    setTimeout(() => setEnemyAttacking(false), 400);
+  };
+
+  // Show feedback - 'good' for positive effects (blue), 'bad' for negative effects (red)
+  const showFeedback = (text: string, sentiment: 'good' | 'bad' = 'good') => {
+    if (sentiment === 'good') {
+      setGoodToastQueue(prev => [...prev, text]);
+    } else {
+      setBadToastQueue(prev => [...prev, text]);
+    }
+  };
+
+  // Process good toast queue (blue - player benefits)
+  useEffect(() => {
+    if (goodToastQueue.length > 0 && currentGoodToast === null) {
+      const [next, ...rest] = goodToastQueue;
+      setCurrentGoodToast(next);
+      setGoodToastQueue(rest);
+      setTimeout(() => setCurrentGoodToast(null), 1200);
+    }
+  }, [goodToastQueue, currentGoodToast]);
+
+  // Process bad toast queue (red - player suffers)
+  useEffect(() => {
+    if (badToastQueue.length > 0 && currentBadToast === null) {
+      const [next, ...rest] = badToastQueue;
+      setCurrentBadToast(next);
+      setBadToastQueue(rest);
+      setTimeout(() => setCurrentBadToast(null), 1200);
+    }
+  }, [badToastQueue, currentBadToast]);
 
   // Helper to gather all cards and strip junk
   const cleanAndConsolidateDeck = () => {
@@ -638,7 +715,7 @@ const effectMultiplier = slots.handle?.id === 301 ? 2 : 1;
     if (slots.deco?.id === 211) {
         const bonusDmg = remainingEnergyAfterCost * 4;
         finalDamage += bonusDmg;
-        if (bonusDmg > 0) showFeedback(`축전지 보너스 +${bonusDmg}!`);
+        if (bonusDmg > 0) showFeedback(`축전지 보너스 +${bonusDmg}!`, 'good');
     }
 
     if (finalDamage > 0) {
@@ -669,7 +746,7 @@ const effectMultiplier = slots.handle?.id === 301 ? 2 : 1;
 
           if (enemy.traits.includes(EnemyTrait.THORNS_5)) {
               setPlayer(prev => ({ ...prev, hp: Math.max(0, prev.hp - 5) }));
-              showFeedback("가시 반사! -5 HP");
+              showFeedback("가시 반사! -5 HP", 'bad');
           }
           
           if (enemy.traits.includes(EnemyTrait.REACTIVE_RARE) && isRareUsed) {
@@ -705,7 +782,7 @@ const effectMultiplier = slots.handle?.id === 301 ? 2 : 1;
           // Midas Touch (307)
           if (slots.handle?.id === 307 && damageDealt > 0) {
               setPlayer(prev => ({ ...prev, gold: prev.gold + 5 }));
-              showFeedback("+5 골드");
+              showFeedback("+5 골드", 'good');
           }
           
           // Small delay between hits for visual feedback
@@ -715,7 +792,8 @@ const effectMultiplier = slots.handle?.id === 301 ? 2 : 1;
 
 if (finalBlock > 0) {
       setPlayer(prev => ({ ...prev, block: prev.block + finalBlock }));
-      showFeedback(`+${finalBlock} 방어도`);
+      triggerPlayerBlock();
+      showFeedback(`+${finalBlock} 방어도`, 'good');
     }
 
     // --- EFFECT LOGIC ---
@@ -741,13 +819,13 @@ if (finalBlock > 0) {
     // 208: Charged Gem - Restore Energy
     if (slots.deco?.id === 208) {
         setPlayer(prev => ({ ...prev, energy: Math.min(prev.maxEnergy, prev.energy + 1) }));
-        showFeedback("에너지 +1");
+        showFeedback("에너지 +1", 'good');
     }
 
     // 404: Meteor Shard - Self Damage
     if (slots.head?.id === 404) {
         setPlayer(prev => ({ ...prev, hp: Math.max(0, prev.hp - 5) }));
-        showFeedback("반동 피해 -5 HP");
+        showFeedback("반동 피해 -5 HP", 'bad');
     }
 
 if (slots.head?.id === 203 && stats.damage > 0) {
@@ -784,7 +862,8 @@ if (slots.deco?.id === 205) {
 if (slots.handle?.id === 302 && finalDamage > 0) {
         const heal = Math.floor(finalDamage * 0.5);
         setPlayer(prev => ({...prev, hp: Math.min(prev.maxHp, prev.hp + heal)}));
-        showFeedback(`흡혈! +${heal} HP`);
+        triggerPlayerHeal();
+        showFeedback(`흡혈! +${heal} HP`, 'good');
     }
 
     if (slots.head?.id === 304) {
@@ -804,7 +883,7 @@ if (slots.handle?.id === 302 && finalDamage > 0) {
                 block: remainingBlock
             };
         });
-        showFeedback(`방어도 -${debuff} (부족 시 반동)`);
+        showFeedback(`방어도 -${debuff} (부족 시 반동)`, 'bad');
     }
 
 if (slots.handle?.id === 401 && finalDamage > 0) {
@@ -817,7 +896,7 @@ if (slots.handle?.id === 401 && finalDamage > 0) {
 
 if (slots.deco?.id === 204 || slots.deco?.id === 106) {
         setPlayer(prev => ({ ...prev, nextTurnDraw: prev.nextTurnDraw + 1 }));
-        showFeedback("다음 턴 드로우 +1 예약!");
+        showFeedback("다음 턴 드로우 +1 예약!", 'good');
     }
 
 if (slots.deco?.id === 305) {
@@ -825,7 +904,7 @@ if (slots.deco?.id === 305) {
         replica.value = finalDamage;
         replica.description = `복제된 무기. 피해량 ${finalDamage}. 비용 0.`;
         setDeck(prev => [...prev, replica]);
-        showFeedback("덱 맨 위로 복제!");
+        showFeedback("덱 맨 위로 복제!", 'good');
     }
 
     // === Balance Patch v1.0 - New Card Effects ===
@@ -833,7 +912,7 @@ if (slots.deco?.id === 305) {
     // 212: Lightweight Handle - Draw 1 if total cost <= 1
     if (slots.handle?.id === 212 && stats.totalCost <= 1) {
         drawCards(1);
-        showFeedback("경량 보너스: 카드 1장 드로우!");
+        showFeedback("경량 보너스: 카드 1장 드로우!", 'good');
     }
 
     // 214: Blunt Club - Apply Weak 1
@@ -848,7 +927,7 @@ if (slots.deco?.id === 305) {
     // 308: Furnace Core - Apply Overheat 1
     if (slots.head?.id === 308) {
         setPlayer(prev => ({ ...prev, overheat: prev.overheat + 1 }));
-        showFeedback("과열 1 획득! (다음 턴 에너지 -1)");
+        showFeedback("과열 1 획득! (다음 턴 에너지 -1)", 'bad');
     }
 
     // 312: Lava Blade - Apply Burn 4
@@ -889,7 +968,7 @@ const isExhaust = slots.head?.id === 402;
     if (slots.handle?.id === 405 && !infiniteLoopUsed) {
         infiniteLoopCard = slots.handle;
         setInfiniteLoopUsed(true);
-        showFeedback("무한 회귀: 손으로 귀환!");
+        showFeedback("무한 회귀: 손으로 귀환!", 'good');
     }
 
     const usedCards = [slots.handle, slots.head, slots.deco]
@@ -945,8 +1024,8 @@ case 'PLAYER_DRAW':
           setEnemy(prev => ({ ...prev, damageTakenThisTurn: 0 })); 
           setInfiniteLoopUsed(false); // Reset 405 usage
           drawCards(drawCount);
-          if (overheatPenalty > 0) showFeedback(`과열! 에너지 -${overheatPenalty}`);
-          else if (drawCount > 5) showFeedback(`추가 드로우 +${drawCount - 5}!`);
+          if (overheatPenalty > 0) showFeedback(`과열! 에너지 -${overheatPenalty}`, 'bad');
+          else if (drawCount > 5) showFeedback(`추가 드로우 +${drawCount - 5}!`, 'good');
           setCombatState(prev => ({ ...prev, phase: 'PLAYER_ACTION' }));
           break;
 
@@ -1007,7 +1086,7 @@ if (enemy.statuses.poison > 0) {
                   currentHp: Math.max(0, prev.currentHp - pDmg),
                   statuses: { ...prev.statuses, poison: Math.max(0, prev.statuses.poison - 1) }
               }));
-              triggerShake();
+              triggerEnemyPoison();
               showFeedback(`독 피해 ${pDmg}!`);
               await new Promise(r => setTimeout(r, 800));
           }
@@ -1020,7 +1099,7 @@ if (enemy.statuses.poison > 0) {
                   currentHp: Math.max(0, prev.currentHp - burnDmg)
                   // burn does NOT decrease
               }));
-              triggerShake();
+              triggerEnemyBurn();
               showFeedback(`화상 피해 ${burnDmg}!`);
               await new Promise(r => setTimeout(r, 800));
           }
@@ -1035,18 +1114,18 @@ if (enemy.statuses.poison > 0) {
              if (allHandles.length > 0) {
                  const target = allHandles[Math.floor(Math.random() * allHandles.length)];
                  target.cost += 1;
-                 showFeedback(`[${target.name}] 비용 +1`);
+                 showFeedback(`[${target.name}] 비용 +1`, 'bad');
              }
           }
 
           if (enemy.id === 'deus_ex_machina' && intent.description.includes('코스트 제한')) {
              setPlayer(prev => ({ ...prev, costLimit: 2 }));
-             showFeedback("과부하: 다음 턴 비용 제한 2");
+             showFeedback("과부하: 다음 턴 비용 제한 2", 'bad');
           }
 
           if (enemy.id === 'corrupted_smith' && intent.type === IntentType.SPECIAL) {
              setPlayer(prev => ({ ...prev, disarmed: true }));
-             showFeedback("무장 해제: 다음 턴 머리 사용 불가");
+             showFeedback("무장 해제: 다음 턴 머리 사용 불가", 'bad');
           }
 
           if (enemy.id === 'mimic_anvil' && intent.description.includes('반사')) {
@@ -1067,37 +1146,40 @@ if (enemy.statuses.poison > 0) {
           const attackCount = intent.description.includes('(x3)') ? 3 : 1;
 
           if (intent.type === IntentType.ATTACK || (enemy.id === 'mimic_anvil' && intent.description.includes('반사'))) {
+             triggerEnemyAttack();
              for (let i = 0; i < attackCount; i++) {
-                 if (enemy.statuses.bleed > 0) {
-                     const bDmg = enemy.statuses.bleed;
-                     setEnemy(prev => ({
-                        ...prev,
-                        currentHp: Math.max(0, prev.currentHp - bDmg),
-                        statuses: { ...prev.statuses, bleed: Math.max(0, prev.statuses.bleed - 1) }
-                     }));
-                     showFeedback(`출혈 피해 ${bDmg}!`);
-                     await new Promise(r => setTimeout(r, 400));
-                 }
+                  if (enemy.statuses.bleed > 0) {
+                      const bDmg = enemy.statuses.bleed;
+                      setEnemy(prev => ({
+                         ...prev,
+                         currentHp: Math.max(0, prev.currentHp - bDmg),
+                         statuses: { ...prev.statuses, bleed: Math.max(0, prev.statuses.bleed - 1) }
+                      }));
+                      triggerEnemyBleed();
+                      showFeedback(`출혈 피해 ${bDmg}!`);
+                      await new Promise(r => setTimeout(r, 400));
+                  }
                  if (enemy.currentHp <= 0) break;
 
                  const unblockedDmg = Math.max(0, dmg - player.block);
                  setPlayer(p => ({ ...p, hp: Math.max(0, p.hp - unblockedDmg), block: Math.max(0, p.block - dmg) }));
                  
-                 // Thievery Logic
-                 if (enemy.traits.includes(EnemyTrait.THIEVERY) && unblockedDmg > 0) {
-                     const stolen = Math.min(player.gold, 5);
-                     if (stolen > 0) {
-                         setPlayer(p => ({ ...p, gold: p.gold - stolen }));
-                         showFeedback(`-${stolen} 골드 강탈!`);
-                     }
-                 }
+                  // Thievery Logic
+                  if (enemy.traits.includes(EnemyTrait.THIEVERY) && unblockedDmg > 0) {
+                      const stolen = Math.min(player.gold, 5);
+                      if (stolen > 0) {
+                          setPlayer(p => ({ ...p, gold: p.gold - stolen }));
+                          showFeedback(`-${stolen} 골드 강탈!`, 'bad');
+                      }
+                  }
 
-                 if (unblockedDmg > 0) {
-                   triggerShake();
-                   showFeedback(`${unblockedDmg} 피해!`);
-                 } else {
-                   showFeedback("방어 성공!");
-                 }
+                  if (unblockedDmg > 0) {
+                    triggerPlayerHit();
+                    showFeedback(`${unblockedDmg} 피해!`, 'bad');
+                  } else {
+                    triggerPlayerBlock();
+                    showFeedback("방어 성공!", 'good');
+                  }
                  
                  if (i < attackCount - 1) await new Promise(r => setTimeout(r, 400));
              }
@@ -1121,7 +1203,7 @@ if (enemy.statuses.poison > 0) {
                  if (enemy.id === 'shadow_assassin') {
                      // Assassin stacks block too
                      setEnemy(e => ({ ...e, statuses: { ...e.statuses, strength: (e.statuses.strength || 0) + gain } }));
-                     showFeedback(`칼날 연마!`);
+                     showFeedback(`적 칼날 연마!`, 'bad');
                  } else {
                      setEnemy(prev => ({
                          ...prev,
@@ -1130,23 +1212,19 @@ if (enemy.statuses.poison > 0) {
                  }
                  
                  if (enemy.id === 'kobold_scrapper') {
-                     showFeedback(`일시적 공격력 +${gain} 증가!`);
+                     showFeedback(`적 공격력 +${gain} 증가!`, 'bad');
                  } else if (enemy.id !== 'shadow_assassin') {
-                     showFeedback(`공격력 +${gain} 증가!`);
+                     showFeedback(`적 공격력 +${gain} 증가!`, 'bad');
                  }
              } else {
                  setEnemy(e => ({ ...e, currentHp: Math.min(e.maxHp, e.currentHp + intent.value) }));
-                 showFeedback(`적 회복 +${intent.value} HP`);
+                 showFeedback(`적 회복 +${intent.value} HP`, 'bad');
              }
           } else if (intent.type === IntentType.DEBUFF && enemy.id !== 'hammerhead' && enemy.id !== 'deus_ex_machina') {
              const count = intent.value || 1;
              const junkCards: CardInstance[] = Array(count).fill(null).map(() => createCardInstance(901));
              setDiscardPile(prev => [...prev, ...junkCards]);
-             showFeedback(`녹슨 덩어리 ${count}장 추가!`);
-          } else if (intent.type === IntentType.DEFEND) {
-             // Basic enemy logic doesn't support enemy block visually yet, but we can simulate intent success
-             setEnemy(prev => ({ ...prev, block: (prev.block || 0) + intent.value }));
-             showFeedback(`적 방어 +${intent.value}`);
+             showFeedback(`녹슨 덩어리 ${count}장 추가!`, 'bad');
           }
 
           setEnemy(prev => ({
@@ -1694,7 +1772,7 @@ if (enemy.statuses.poison > 0) {
 
   // --- Main Gameplay Screen ---
   return (
-    <div className={`w-full h-screen-safe flex flex-col bg-stone-950 text-stone-200 overflow-hidden relative ${shake ? 'animate-shake' : ''} ${shieldEffect ? 'animate-shield-pulse' : ''}`}>
+    <div className={`w-full h-screen-safe flex flex-col bg-stone-950 text-stone-200 overflow-hidden relative ${shake ? 'animate-shake' : ''} ${shieldEffect ? 'animate-shield-pulse' : ''} ${playerHit ? 'animate-player-hit' : ''}`}>
       
       {/* Acquired Card Overlay - Pixel Style */}
       {acquiredCard && (
@@ -1734,107 +1812,195 @@ if (enemy.statuses.poison > 0) {
         </div>
       )}
 
-      {/* Feedback Toast - Above card hand area */}
-      {feedback && (
-        <div className="absolute bottom-44 md:bottom-72 left-1/2 transform -translate-x-1/2 z-50 max-w-[90%] text-center pointer-events-none">
+      {/* Good Toast - Blue (player benefits: damage dealt, heal, block, etc.) */}
+      {currentGoodToast && (
+        <div className="absolute top-[30%] left-1/2 transform -translate-x-1/2 z-50 max-w-[90%] text-center pointer-events-none">
           <span
-            className="inline-block px-4 py-2 bg-black/80 border-2 border-stone-600 text-sm md:text-base font-pixel-kr text-white animate-bounce"
-            style={{ textShadow: '2px 2px 0 #000' }}
+            className="inline-block px-5 py-2.5 bg-gradient-to-b from-blue-600 to-cyan-700 pixel-border border-4 border-blue-400 text-sm md:text-base font-pixel-kr text-white animate-toast-pop"
+            style={{ textShadow: '2px 2px 0 #000', boxShadow: '0 4px 0 0 #0e7490, 0 0 20px rgba(59,130,246,0.5)' }}
           >
-            {feedback}
+            {currentGoodToast}
           </span>
         </div>
       )}
 
-      {/* --- Top: Enemy Section --- */}
-      <div className="flex-[0_0_auto] h-[35%] min-h-[240px] flex justify-center items-center relative border-b border-stone-800 bg-stone-900/50 pb-2">
+      {/* Bad Toast - Red (player suffers: damage taken, debuffs, etc.) */}
+      {currentBadToast && (
+        <div className="absolute bottom-44 md:bottom-72 left-1/2 transform -translate-x-1/2 z-50 max-w-[90%] text-center pointer-events-none">
+          <span
+            className="inline-block px-5 py-2.5 bg-gradient-to-b from-red-600 to-orange-700 pixel-border border-4 border-red-400 text-sm md:text-base font-pixel-kr text-white animate-toast-pop"
+            style={{ textShadow: '2px 2px 0 #000', boxShadow: '0 4px 0 0 #7c2d12, 0 0 20px rgba(239,68,68,0.5)' }}
+          >
+            {currentBadToast}
+          </span>
+        </div>
+      )}
+
+      {/* Intent Detail Modal */}
+      {showIntentDetail && createPortal(
+        <div
+          className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/85"
+          onClick={() => setShowIntentDetail(false)}
+          onTouchStart={(e) => { e.preventDefault(); setShowIntentDetail(false); }}
+        >
+          <div
+            className={`
+              relative p-5 max-w-xs w-[90%]
+              pixel-border border-4
+              ${enemy.intents[enemy.currentIntentIndex].type === IntentType.ATTACK ? 'bg-red-900 border-red-500' :
+                enemy.intents[enemy.currentIntentIndex].type === IntentType.BUFF ? 'bg-green-900 border-green-500' :
+                enemy.intents[enemy.currentIntentIndex].type === IntentType.DEBUFF ? 'bg-purple-900 border-purple-500' :
+                enemy.intents[enemy.currentIntentIndex].type === IntentType.DEFEND ? 'bg-blue-900 border-blue-500' :
+                'bg-stone-800 border-stone-500'}
+            `}
+            style={{ boxShadow: '6px 6px 0 0 rgba(0,0,0,0.6)' }}
+            onClick={(e) => e.stopPropagation()}
+            onTouchStart={(e) => e.stopPropagation()}
+          >
+            {/* Header */}
+            <div className="flex items-center gap-3 mb-4">
+              <div className={`
+                pixel-border border-3 p-3 flex items-center justify-center
+                ${enemy.intents[enemy.currentIntentIndex].type === IntentType.ATTACK ? 'bg-red-800 border-red-400' :
+                  enemy.intents[enemy.currentIntentIndex].type === IntentType.BUFF ? 'bg-green-800 border-green-400' :
+                  enemy.intents[enemy.currentIntentIndex].type === IntentType.DEBUFF ? 'bg-purple-800 border-purple-400' :
+                  'bg-blue-800 border-blue-400'}
+              `}>
+                {enemy.intents[enemy.currentIntentIndex].type === IntentType.ATTACK ? <Skull size={32} className="text-red-300" /> :
+                 enemy.intents[enemy.currentIntentIndex].type === IntentType.BUFF ? <RefreshCw size={32} className="text-green-300" /> :
+                 enemy.intents[enemy.currentIntentIndex].type === IntentType.DEBUFF ? <Zap size={32} className="text-purple-300" /> :
+                 <Shield size={32} className="text-blue-300" />}
+              </div>
+              <div>
+                <h3 className="font-pixel-kr text-lg font-bold text-white" style={{ textShadow: '2px 2px 0 #000' }}>
+                  {enemy.intents[enemy.currentIntentIndex].type === IntentType.ATTACK ? '공격' :
+                   enemy.intents[enemy.currentIntentIndex].type === IntentType.DEFEND ? '방어' :
+                   enemy.intents[enemy.currentIntentIndex].type === IntentType.BUFF ? '강화' :
+                   enemy.intents[enemy.currentIntentIndex].type === IntentType.DEBUFF ? '약화' : '특수'}
+                </h3>
+                {enemy.intents[enemy.currentIntentIndex].value > 0 && (
+                  <p className="font-pixel text-xl text-yellow-300">
+                    {enemy.intents[enemy.currentIntentIndex].value}
+                  </p>
+                )}
+              </div>
+            </div>
+
+            {/* Description */}
+            <div className="bg-black/40 pixel-border border-2 border-black/50 p-3">
+              <p className="font-pixel-kr text-sm text-stone-200 leading-relaxed">
+                {enemy.intents[enemy.currentIntentIndex].description}
+              </p>
+            </div>
+
+            {/* Close hint */}
+            <p className="text-center mt-4 text-[10px] font-pixel-kr text-stone-400">
+              화면을 터치하여 닫기
+            </p>
+          </div>
+        </div>,
+        document.body
+      )}
+
+      {/* --- Top: Enemy Section (Horizontal Layout) --- */}
+      <div className="flex-[0_0_auto] h-[28%] min-h-[180px] flex justify-center items-center relative border-b border-stone-800 bg-stone-900/50 px-2">
         
         {/* Stage Indicator - Pixel Style */}
-        <div className="absolute top-2 left-2 md:top-4 md:left-4 font-pixel text-[10px] md:text-xs text-stone-400 flex items-center gap-1 bg-black/50 px-2 py-1 pixel-border border-2 border-stone-700">
+        <div className="absolute top-2 left-2 font-pixel text-[10px] text-stone-400 flex items-center gap-1 bg-black/50 px-2 py-1 pixel-border border-2 border-stone-700 z-10">
             <MapIcon size={12} />
             {act}-{floor}
         </div>
 
         {/* Gold Indicator - Pixel Style */}
-        <div className="absolute top-2 right-2 md:top-4 md:right-4 flex items-center gap-1 font-pixel text-[10px] md:text-xs text-yellow-400 bg-black/60 px-2 py-1 pixel-border border-2 border-yellow-700">
+        <div className="absolute top-2 right-2 flex items-center gap-1 font-pixel text-[10px] text-yellow-400 bg-black/60 px-2 py-1 pixel-border border-2 border-yellow-700 z-10">
             <Coins size={12} />
             {player.gold}
         </div>
 
-        <div className="relative flex flex-col items-center scale-90 md:scale-100">
-           {/* Intent Icon - Pixel Style */}
-           <div className="mb-2 md:mb-3 flex flex-col items-center animate-intent-drop">
-             <div className={`
-               pixel-border border-4 p-2 md:p-3 flex items-center justify-center
-               ${enemy.intents[enemy.currentIntentIndex].type === IntentType.ATTACK ? 'bg-red-900/80 border-red-500' :
-                 enemy.intents[enemy.currentIntentIndex].type === IntentType.BUFF ? 'bg-green-900/80 border-green-500' :
-                 enemy.intents[enemy.currentIntentIndex].type === IntentType.DEBUFF ? 'bg-purple-900/80 border-purple-500' :
-                 'bg-blue-900/80 border-blue-500'}
-             `}>
-               {enemy.intents[enemy.currentIntentIndex].type === IntentType.ATTACK ? <Skull size={32} className="md:w-10 md:h-10 text-red-400" /> :
-                enemy.intents[enemy.currentIntentIndex].type === IntentType.BUFF ? <RefreshCw size={32} className="md:w-10 md:h-10 text-green-400" /> :
-                enemy.intents[enemy.currentIntentIndex].type === IntentType.DEBUFF ? <Zap size={32} className="md:w-10 md:h-10 text-purple-400" /> :
-                <Shield size={32} className="md:w-10 md:h-10 text-blue-400" />}
-             </div>
-<div 
-                className={`
-                  -mt-2 px-2 py-0.5 pixel-border border-2 font-pixel text-xs md:text-sm flex items-center gap-1 cursor-help
-                  ${enemy.intents[enemy.currentIntentIndex].type === IntentType.ATTACK ? 'bg-red-800 border-red-400 text-red-200' :
-                    enemy.intents[enemy.currentIntentIndex].type === IntentType.DEFEND ? 'bg-blue-800 border-blue-400 text-blue-200' :
-                    enemy.intents[enemy.currentIntentIndex].type === IntentType.BUFF ? 'bg-green-800 border-green-400 text-green-200' :
-                    enemy.intents[enemy.currentIntentIndex].type === IntentType.DEBUFF ? 'bg-purple-800 border-purple-400 text-purple-200' :
-                    'bg-stone-800 border-stone-500 text-stone-200'}
-                `}
-                title={enemy.intents[enemy.currentIntentIndex].description}
-              >
-                <span className="font-pixel-kr text-[10px] md:text-xs">
-                  {enemy.intents[enemy.currentIntentIndex].type === IntentType.ATTACK ? '공격' :
-                   enemy.intents[enemy.currentIntentIndex].type === IntentType.DEFEND ? '방어' :
-                   enemy.intents[enemy.currentIntentIndex].type === IntentType.BUFF ? '강화' :
-                   enemy.intents[enemy.currentIntentIndex].type === IntentType.DEBUFF ? '약화' : '?'}
-                </span>
-                {enemy.intents[enemy.currentIntentIndex].value > 0 && (
-                  <span>{enemy.intents[enemy.currentIntentIndex].value}</span>
-                )}
-              </div>
-           </div>
+        {/* Horizontal Enemy Layout */}
+        <div className="flex items-center justify-center gap-3 md:gap-6 w-full max-w-xl mt-6">
+          
+          {/* Left: Intent (with long-press for mobile) */}
+          <div 
+            className="flex flex-col items-center animate-intent-drop flex-shrink-0 cursor-help"
+            onTouchStart={(e) => {
+              if (showIntentDetail) return;
+              intentLongPressTimer.current = setTimeout(() => {
+                setShowIntentDetail(true);
+              }, 400);
+            }}
+            onTouchMove={() => {
+              if (intentLongPressTimer.current) {
+                clearTimeout(intentLongPressTimer.current);
+                intentLongPressTimer.current = null;
+              }
+            }}
+            onTouchEnd={() => {
+              if (intentLongPressTimer.current) {
+                clearTimeout(intentLongPressTimer.current);
+                intentLongPressTimer.current = null;
+              }
+            }}
+            onClick={() => setShowIntentDetail(true)}
+          >
+            <div className={`
+              pixel-border border-3 p-2 flex items-center justify-center
+              ${enemy.intents[enemy.currentIntentIndex].type === IntentType.ATTACK ? 'bg-red-900/80 border-red-500' :
+                enemy.intents[enemy.currentIntentIndex].type === IntentType.BUFF ? 'bg-green-900/80 border-green-500' :
+                enemy.intents[enemy.currentIntentIndex].type === IntentType.DEBUFF ? 'bg-purple-900/80 border-purple-500' :
+                'bg-blue-900/80 border-blue-500'}
+            `}>
+              {enemy.intents[enemy.currentIntentIndex].type === IntentType.ATTACK ? <Skull size={24} className="text-red-400" /> :
+               enemy.intents[enemy.currentIntentIndex].type === IntentType.BUFF ? <RefreshCw size={24} className="text-green-400" /> :
+               enemy.intents[enemy.currentIntentIndex].type === IntentType.DEBUFF ? <Zap size={24} className="text-purple-400" /> :
+               <Shield size={24} className="text-blue-400" />}
+            </div>
+            <div 
+              className={`
+                mt-1 px-2 py-0.5 pixel-border border-2 font-pixel text-xs flex items-center gap-1
+                ${enemy.intents[enemy.currentIntentIndex].type === IntentType.ATTACK ? 'bg-red-800 border-red-400 text-red-200' :
+                  enemy.intents[enemy.currentIntentIndex].type === IntentType.DEFEND ? 'bg-blue-800 border-blue-400 text-blue-200' :
+                  enemy.intents[enemy.currentIntentIndex].type === IntentType.BUFF ? 'bg-green-800 border-green-400 text-green-200' :
+                  enemy.intents[enemy.currentIntentIndex].type === IntentType.DEBUFF ? 'bg-purple-800 border-purple-400 text-purple-200' :
+                  'bg-stone-800 border-stone-500 text-stone-200'}
+              `}
+            >
+              {enemy.intents[enemy.currentIntentIndex].value > 0 && (
+                <span className="font-bold">{enemy.intents[enemy.currentIntentIndex].value}</span>
+              )}
+            </div>
+            {/* Hint for tap */}
+            <div className="text-[7px] text-stone-500 mt-0.5 font-pixel-kr">TAP</div>
+          </div>
 
-           {/* Enemy Sprite - Pixel Frame */}
-           <div className={`
-             w-32 h-32 md:w-40 md:h-40
-             pixel-border border-4
-             flex items-center justify-center
-             relative overflow-hidden
-             transition-all duration-150
-             ${shake ? 'border-red-500 animate-hit-flash animate-knockback bg-red-900/30' : 'border-stone-600 bg-stone-800'}
-           `}>
-              {/* Unique Pixel Enemy Sprite */}
-              {React.createElement(getMonsterSprite(enemy.id), { className: 'w-24 h-24 md:w-32 md:h-32' })}
-
-              {/* Enemy Traits - Pixel Badges */}
-              <div className="absolute bottom-1 right-1 flex flex-col gap-0.5">
-                {enemy.traits.includes(EnemyTrait.THORNS_5) && (
-                  <div className="text-[8px] md:text-[10px] bg-green-900 border border-green-600 px-1 pixel-border font-pixel-kr text-green-300">가시</div>
-                )}
-                {enemy.traits.includes(EnemyTrait.DAMAGE_CAP_15) && (
-                  <div className="text-[8px] md:text-[10px] bg-stone-700 border border-stone-500 px-1 pixel-border font-pixel-kr">MAX15</div>
-                )}
-                {enemy.traits.includes(EnemyTrait.THIEVERY) && (
-                  <div className="text-[8px] md:text-[10px] bg-yellow-900 border border-yellow-600 px-1 pixel-border font-pixel-kr text-yellow-300">탐욕</div>
-                )}
-              </div>
-           </div>
-           
-           {/* Enemy HP & Block - Pixel Style */}
-           <div className="w-40 md:w-56 relative mt-2 md:mt-3">
+          {/* Center: Sprite + HP + Name */}
+          <div className={`flex flex-col items-center flex-shrink-0 ${enemyAttacking ? 'animate-enemy-attack' : ''}`}>
+            {/* Enemy Sprite */}
+            <div className={`
+              w-24 h-24 md:w-32 md:h-32
+              pixel-border border-3
+              flex items-center justify-center
+              relative overflow-hidden
+              transition-all duration-150
+              ${shake ? 'border-red-500 animate-hit-flash animate-knockback bg-red-900/30' : 
+                enemyPoisoned ? 'border-green-500 animate-poison bg-green-900/30' :
+                enemyBurning ? 'border-orange-500 animate-burn bg-orange-900/30' :
+                enemyBleeding ? 'border-red-600 animate-bleed bg-red-900/30' :
+                'border-stone-600 bg-stone-800'}
+            `}>
+              {React.createElement(getMonsterSprite(enemy.id), { className: 'w-20 h-20 md:w-28 md:h-28' })}
+              
+              {/* Block indicator on sprite */}
               {enemy.block > 0 && (
-                <div className="absolute -top-3 -right-2 flex items-center gap-1 bg-blue-900 border-2 border-blue-400 text-blue-200 px-2 py-0.5 pixel-border z-10 text-xs font-pixel">
-                    <Shield size={12} fill="currentColor" /> {enemy.block}
+                <div className="absolute top-0 right-0 flex items-center gap-0.5 bg-blue-900 border-2 border-blue-400 text-blue-200 px-1 py-0.5 pixel-border text-[10px] font-pixel">
+                    <Shield size={10} fill="currentColor" /> {enemy.block}
                 </div>
               )}
-              {/* Segmented HP Bar */}
-              <div className="h-5 bg-stone-900 pixel-border border-2 border-stone-600 overflow-hidden relative flex">
-                {/* HP Segments */}
+            </div>
+            
+            {/* HP Bar - Compact */}
+            <div className="w-28 md:w-36 relative mt-1">
+              <div className="h-4 bg-stone-900 pixel-border border-2 border-stone-600 overflow-hidden relative flex">
                 {Array.from({ length: 10 }).map((_, i) => {
                   const segmentPercent = (i + 1) * 10;
                   const hpPercent = (enemy.currentHp / enemy.maxHp) * 100;
@@ -1843,60 +2009,70 @@ if (enemy.statuses.poison > 0) {
                     <div
                       key={i}
                       className={`flex-1 border-r border-black/30 last:border-r-0 transition-colors duration-150 ${
-                        isFilled
-                          ? 'bg-gradient-to-b from-red-400 via-red-600 to-red-800'
-                          : 'bg-stone-800'
+                        isFilled ? 'bg-gradient-to-b from-red-400 via-red-600 to-red-800' : 'bg-stone-800'
                       }`}
                     />
                   );
                 })}
-                {/* HP Text Overlay */}
-                <div className="absolute inset-0 flex items-center justify-center font-pixel text-[10px] md:text-xs text-white" style={{ textShadow: '1px 1px 0 #000, -1px -1px 0 #000' }}>
+                <div className="absolute inset-0 flex items-center justify-center font-pixel text-[9px] text-white" style={{ textShadow: '1px 1px 0 #000' }}>
                   {enemy.currentHp}/{enemy.maxHp}
                 </div>
               </div>
-           </div>
-
-           <h2 className="mt-2 font-pixel-kr font-bold text-stone-200 text-sm md:text-base mb-1 bg-black/50 px-2 py-0.5 pixel-border border border-stone-600">{enemy.name}</h2>
-           
-{/* Status Effects Row - Balance Patch v1.0: Improved tooltips */}
-            <div className="flex items-center justify-center gap-2 flex-wrap">
-                {enemy.statuses?.poison > 0 && (
-                    <div className="flex items-center gap-1 bg-green-900/60 pixel-border border-2 border-green-600 px-1.5 py-0.5 text-[9px] text-green-400 font-pixel cursor-help" title={`[독] 턴 시작 시 ${enemy.statuses.poison} 피해, 매 턴 1씩 감소`}>
-                        <Droplets size={10} fill="currentColor" /> {enemy.statuses.poison}
-                    </div>
-                )}
-                {enemy.statuses?.bleed > 0 && (
-                    <div className="flex items-center gap-1 bg-red-900/60 pixel-border border-2 border-red-600 px-1.5 py-0.5 text-[9px] text-red-400 font-pixel cursor-help" title={`[출혈] 적 공격 시 ${enemy.statuses.bleed} 피해, 매 턴 1씩 감소`}>
-                        <Activity size={10} /> {enemy.statuses.bleed}
-                    </div>
-                )}
-                {enemy.statuses?.stunned > 0 && (
-                    <div className="flex items-center gap-1 bg-yellow-900/60 pixel-border border-2 border-yellow-600 px-1.5 py-0.5 text-[9px] text-yellow-400 font-pixel cursor-help" title={`[기절] ${enemy.statuses.stunned}턴간 행동 불가`}>
-                        <Star size={10} fill="currentColor" /> {enemy.statuses.stunned}
-                    </div>
-                )}
-                {enemy.statuses?.strength > 0 && (
-                    <div className="flex items-center gap-1 bg-red-900/60 pixel-border border-2 border-red-600 px-1.5 py-0.5 text-[9px] text-red-400 font-pixel cursor-help" title={`[힘] 공격력 +${enemy.statuses.strength} (일시적)`}>
-                        <Swords size={10} /> +{enemy.statuses.strength}
-                    </div>
-                )}
-                {enemy.statuses?.vulnerable > 0 && (
-                    <div className="flex items-center gap-1 bg-purple-900/60 pixel-border border-2 border-purple-600 px-1.5 py-0.5 text-[9px] text-purple-400 font-pixel cursor-help" title={`[취약] ${enemy.statuses.vulnerable}턴간 받는 피해 50% 증가`}>
-                        <Percent size={10} /> {enemy.statuses.vulnerable}
-                    </div>
-                )}
-                {enemy.statuses?.weak > 0 && (
-                    <div className="flex items-center gap-1 bg-stone-700/60 pixel-border border-2 border-stone-500 px-1.5 py-0.5 text-[9px] text-stone-300 font-pixel cursor-help" title={`[약화] ${enemy.statuses.weak}턴간 주는 피해 25% 감소`}>
-                        <ArrowLeft size={10} className="rotate-[-45deg]" /> {enemy.statuses.weak}
-                    </div>
-                )}
-                {enemy.statuses?.burn > 0 && (
-                    <div className="flex items-center gap-1 bg-orange-900/60 pixel-border border-2 border-orange-600 px-1.5 py-0.5 text-[9px] text-orange-400 font-pixel cursor-help" title={`[화상] 매 턴 종료 시 ${enemy.statuses.burn} 피해 (지속, 감소 안 함)`}>
-                        <Flame size={10} /> {enemy.statuses.burn}
-                    </div>
-                )}
             </div>
+
+            {/* Name + Traits inline */}
+            <div className="mt-1 flex items-center gap-1 flex-wrap justify-center">
+              <span className="font-pixel-kr font-bold text-stone-200 text-xs bg-black/50 px-1.5 py-0.5 pixel-border border border-stone-600">{enemy.name}</span>
+              {enemy.traits.includes(EnemyTrait.THORNS_5) && (
+                <span className="text-[8px] bg-green-900 border border-green-600 px-1 pixel-border font-pixel-kr text-green-300">가시</span>
+              )}
+              {enemy.traits.includes(EnemyTrait.DAMAGE_CAP_15) && (
+                <span className="text-[8px] bg-stone-700 border border-stone-500 px-1 pixel-border font-pixel-kr text-stone-300">MAX15</span>
+              )}
+              {enemy.traits.includes(EnemyTrait.THIEVERY) && (
+                <span className="text-[8px] bg-yellow-900 border border-yellow-600 px-1 pixel-border font-pixel-kr text-yellow-300">탐욕</span>
+              )}
+            </div>
+          </div>
+
+          {/* Right: Status Effects (Vertical) */}
+          <div className="flex flex-col gap-1 flex-shrink-0">
+            {enemy.statuses?.poison > 0 && (
+              <div className="flex items-center gap-1 bg-green-900/60 pixel-border border-2 border-green-600 px-1.5 py-0.5 text-[9px] text-green-400 font-pixel">
+                <Droplets size={10} fill="currentColor" /> {enemy.statuses.poison}
+              </div>
+            )}
+            {enemy.statuses?.bleed > 0 && (
+              <div className="flex items-center gap-1 bg-red-900/60 pixel-border border-2 border-red-600 px-1.5 py-0.5 text-[9px] text-red-400 font-pixel">
+                <Activity size={10} /> {enemy.statuses.bleed}
+              </div>
+            )}
+            {enemy.statuses?.burn > 0 && (
+              <div className="flex items-center gap-1 bg-orange-900/60 pixel-border border-2 border-orange-600 px-1.5 py-0.5 text-[9px] text-orange-400 font-pixel">
+                <Flame size={10} /> {enemy.statuses.burn}
+              </div>
+            )}
+            {enemy.statuses?.stunned > 0 && (
+              <div className="flex items-center gap-1 bg-yellow-900/60 pixel-border border-2 border-yellow-600 px-1.5 py-0.5 text-[9px] text-yellow-400 font-pixel">
+                <Star size={10} fill="currentColor" /> {enemy.statuses.stunned}
+              </div>
+            )}
+            {enemy.statuses?.strength > 0 && (
+              <div className="flex items-center gap-1 bg-red-900/60 pixel-border border-2 border-red-600 px-1.5 py-0.5 text-[9px] text-red-400 font-pixel">
+                <Swords size={10} /> +{enemy.statuses.strength}
+              </div>
+            )}
+            {enemy.statuses?.vulnerable > 0 && (
+              <div className="flex items-center gap-1 bg-purple-900/60 pixel-border border-2 border-purple-600 px-1.5 py-0.5 text-[9px] text-purple-400 font-pixel">
+                <Percent size={10} /> {enemy.statuses.vulnerable}
+              </div>
+            )}
+            {enemy.statuses?.weak > 0 && (
+              <div className="flex items-center gap-1 bg-stone-700/60 pixel-border border-2 border-stone-500 px-1.5 py-0.5 text-[9px] text-stone-300 font-pixel">
+                <ArrowLeft size={10} className="rotate-[-45deg]" /> {enemy.statuses.weak}
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
@@ -1905,10 +2081,10 @@ if (enemy.statuses.poison > 0) {
 
         {/* Player Stats HUD - Pixel Style */}
         <div className="absolute left-2 top-2 md:left-4 md:top-4 flex flex-col gap-1 md:gap-2 z-20 pointer-events-none">
-           <div className="flex items-center gap-2 font-pixel text-sm md:text-base text-pixel-hp bg-black/50 px-2 py-1 pixel-border border-2 border-red-800">
-              <Heart className="w-4 h-4 md:w-5 md:h-5 fill-current" /> {player.hp}
+           <div className={`flex items-center gap-2 font-pixel text-sm md:text-base text-pixel-hp bg-black/50 px-2 py-1 pixel-border border-2 border-red-800 transition-all ${playerHealing ? 'animate-heal' : ''} ${playerHit ? 'animate-hp-flash border-red-400' : ''}`}>
+              <Heart className={`w-4 h-4 md:w-5 md:h-5 fill-current ${playerHit ? 'animate-pulse' : ''}`} /> {player.hp}
            </div>
-           <div className="flex items-center gap-2 font-pixel text-sm md:text-base text-pixel-block bg-black/50 px-2 py-1 pixel-border border-2 border-blue-800">
+           <div className={`flex items-center gap-2 font-pixel text-sm md:text-base text-pixel-block bg-black/50 px-2 py-1 pixel-border border-2 border-blue-800 transition-all ${playerBlocking ? 'animate-block-gain' : ''}`}>
               <Shield className="w-4 h-4 md:w-5 md:h-5 fill-current" /> {player.block}
            </div>
            <div className="flex items-center gap-2 font-pixel text-xs md:text-sm text-pixel-energy bg-black/50 px-2 py-1 pixel-border border-2 border-yellow-800">

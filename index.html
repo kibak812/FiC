@@ -246,7 +246,7 @@
         animation: hit-flash 0.3s ease-out;
       }
 
-      /* Knockback */
+      /* Knockback (enemy hit) */
       @keyframes knockback {
         0% { transform: translateX(0); }
         30% { transform: translateX(15px); }
@@ -254,6 +254,99 @@
       }
       .animate-knockback {
         animation: knockback 0.3s ease-out;
+      }
+
+      /* Player Hit (red border flash instead of full screen) */
+      @keyframes player-hit {
+        0% { box-shadow: inset 0 0 0 0 rgba(220, 38, 38, 0); }
+        20% { box-shadow: inset 0 0 0 8px rgba(220, 38, 38, 0.8); }
+        100% { box-shadow: inset 0 0 0 0 rgba(220, 38, 38, 0); }
+      }
+      .animate-player-hit {
+        animation: player-hit 0.4s ease-out;
+      }
+
+      /* HP Bar Flash (when taking damage) */
+      @keyframes hp-flash {
+        0%, 100% { filter: brightness(1); }
+        25% { filter: brightness(2) saturate(1.5); }
+        50% { filter: brightness(0.8); }
+        75% { filter: brightness(1.5); }
+      }
+      .animate-hp-flash {
+        animation: hp-flash 0.4s ease-out;
+      }
+
+      /* Enemy Attack (lunge forward) */
+      @keyframes enemy-attack {
+        0% { transform: translateY(0) scale(1); }
+        30% { transform: translateY(20px) scale(1.1); }
+        60% { transform: translateY(15px) scale(1.05); }
+        100% { transform: translateY(0) scale(1); }
+      }
+      .animate-enemy-attack {
+        animation: enemy-attack 0.4s ease-out;
+      }
+
+      /* Player Attack (slash effect toward enemy) */
+      @keyframes player-attack {
+        0% { opacity: 0; transform: translateY(100px) rotate(-45deg) scale(0.5); }
+        30% { opacity: 1; transform: translateY(0) rotate(-45deg) scale(1.2); }
+        60% { opacity: 0.8; transform: translateY(-20px) rotate(-45deg) scale(1); }
+        100% { opacity: 0; transform: translateY(-40px) rotate(-45deg) scale(0.8); }
+      }
+      .animate-player-attack-slash {
+        animation: player-attack 0.4s ease-out forwards;
+      }
+
+      /* Poison Effect (green pulse) */
+      @keyframes poison-pulse {
+        0%, 100% { box-shadow: inset 0 0 0 0 rgba(34, 197, 94, 0); }
+        50% { box-shadow: inset 0 0 30px 10px rgba(34, 197, 94, 0.4); }
+      }
+      .animate-poison {
+        animation: poison-pulse 0.6s ease-out;
+      }
+
+      /* Burn Effect (orange flicker) */
+      @keyframes burn-flicker {
+        0%, 100% { filter: brightness(1); box-shadow: inset 0 0 0 0 rgba(251, 146, 60, 0); }
+        25% { filter: brightness(1.3); box-shadow: inset 0 0 20px 5px rgba(251, 146, 60, 0.5); }
+        50% { filter: brightness(1.1); box-shadow: inset 0 0 30px 10px rgba(234, 88, 12, 0.4); }
+        75% { filter: brightness(1.2); box-shadow: inset 0 0 15px 5px rgba(251, 146, 60, 0.3); }
+      }
+      .animate-burn {
+        animation: burn-flicker 0.5s ease-out;
+      }
+
+      /* Bleed Effect (red drip) */
+      @keyframes bleed-pulse {
+        0%, 100% { box-shadow: inset 0 0 0 0 rgba(220, 38, 38, 0); }
+        30% { box-shadow: inset 0 -10px 20px 5px rgba(220, 38, 38, 0.5); }
+        60% { box-shadow: inset 0 -5px 15px 3px rgba(185, 28, 28, 0.3); }
+      }
+      .animate-bleed {
+        animation: bleed-pulse 0.5s ease-out;
+      }
+
+      /* Heal Effect (green glow) */
+      @keyframes heal-glow {
+        0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        50% { box-shadow: 0 0 30px 10px rgba(34, 197, 94, 0.6); }
+        100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+      }
+      .animate-heal {
+        animation: heal-glow 0.6s ease-out;
+      }
+
+      /* Block Gain (blue shield) */
+      @keyframes block-gain {
+        0% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); transform: scale(1); }
+        50% { box-shadow: 0 0 20px 5px rgba(59, 130, 246, 0.5); transform: scale(1.05); }
+        100% { box-shadow: 0 0 0 0 rgba(59, 130, 246, 0); transform: scale(1); }
+      }
+      .animate-block-gain {
+        animation: block-gain 0.4s ease-out;
       }
 
       /* Intent Drop In */
@@ -300,6 +393,32 @@
       }
       .animate-card-draw {
         animation: card-draw 0.3s ease-out;
+      }
+
+      /* Toast Pop (for feedback messages) */
+      @keyframes toast-pop {
+        0% {
+          opacity: 0;
+          transform: translateY(20px) scale(0.8);
+        }
+        15% {
+          opacity: 1;
+          transform: translateY(-5px) scale(1.05);
+        }
+        30% {
+          transform: translateY(0) scale(1);
+        }
+        85% {
+          opacity: 1;
+          transform: translateY(0) scale(1);
+        }
+        100% {
+          opacity: 0;
+          transform: translateY(-10px) scale(0.95);
+        }
+      }
+      .animate-toast-pop {
+        animation: toast-pop 1.2s ease-out forwards;
       }
 
       /* Pixel Utility Classes */
