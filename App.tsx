@@ -21,6 +21,11 @@ import { useToast } from './hooks/useToast';
 // --- Screens ---
 import MenuScreen from './screens/MenuScreen';
 import GameOverScreen from './screens/GameOverScreen';
+import BossRewardScreen from './screens/BossRewardScreen';
+import RewardScreen from './screens/RewardScreen';
+import ShopScreen from './screens/ShopScreen';
+import RestScreen from './screens/RestScreen';
+import RemoveCardScreen from './screens/RemoveCardScreen';
 
 // --- Main App ---
 
@@ -1313,406 +1318,45 @@ if (enemy.statuses.poison > 0) {
     );
   }
 
-  // --- Boss Reward Screen (Forge Upgrade) ---
   if (gameState === 'BOSS_REWARD') {
-      return (
-        <div className="w-full h-screen-safe flex flex-col items-center justify-center bg-pixel-bg-dark text-stone-100 p-4">
-            <h2 className="text-xl md:text-2xl font-pixel mb-3 text-yellow-400 flex items-center gap-3" style={{ textShadow: '0 0 15px rgba(250,204,21,0.5)' }}>
-                <Hammer size={24} /> FORGE UPGRADE
-            </h2>
-            <p className="text-stone-400 font-pixel-kr text-sm mb-8 text-center">보스를 물리쳤습니다! 대장간을 업그레이드할 기회입니다.</p>
-
-            <div className="flex flex-col md:flex-row gap-4 md:gap-6 mb-8">
-                {/* Max Energy Option */}
-                <button
-                    onClick={() => confirmBossReward('ENERGY')}
-                    className="w-full md:w-56 p-5
-                      bg-gradient-to-b from-stone-700 to-stone-800
-                      pixel-border border-4 border-yellow-700
-                      flex flex-col items-center gap-3
-                      hover:border-yellow-500 hover:from-stone-600 hover:to-stone-700
-                      transition-all active:translate-y-1"
-                    style={{ boxShadow: '0 4px 0 0 #1c1917' }}
-                >
-                    <div className="p-3 pixel-border border-2 bg-yellow-900/50 border-yellow-600 text-yellow-400">
-                        <Zap size={32} fill="currentColor" />
-                    </div>
-                    <div className="text-center">
-                        <h3 className="font-pixel-kr text-base font-bold text-yellow-400">확장 풀무</h3>
-                        <p className="text-xs text-stone-400 font-pixel-kr mt-2">에너지 <span className="text-white font-pixel">+1</span></p>
-                    </div>
-                </button>
-
-                {/* Max HP Option */}
-                <button
-                    onClick={() => confirmBossReward('DRAW')}
-                    className="w-full md:w-56 p-5
-                      bg-gradient-to-b from-stone-700 to-stone-800
-                      pixel-border border-4 border-blue-700
-                      flex flex-col items-center gap-3
-                      hover:border-blue-500 hover:from-stone-600 hover:to-stone-700
-                      transition-all active:translate-y-1"
-                    style={{ boxShadow: '0 4px 0 0 #1c1917' }}
-                >
-                    <div className="p-3 pixel-border border-2 bg-blue-900/50 border-blue-600 text-blue-400">
-                        <Heart size={32} fill="currentColor" />
-                    </div>
-                    <div className="text-center">
-                        <h3 className="font-pixel-kr text-base font-bold text-blue-400">생명석 강화</h3>
-                        <p className="text-xs text-stone-400 font-pixel-kr mt-2">최대 HP <span className="text-white font-pixel">+30</span></p>
-                    </div>
-                </button>
-
-                {/* Gold Option */}
-                <button
-                    onClick={() => confirmBossReward('BLOCK')}
-                    className="w-full md:w-56 p-5
-                      bg-gradient-to-b from-stone-700 to-stone-800
-                      pixel-border border-4 border-stone-600
-                      flex flex-col items-center gap-3
-                      hover:border-stone-400 hover:from-stone-600 hover:to-stone-700
-                      transition-all active:translate-y-1"
-                    style={{ boxShadow: '0 4px 0 0 #1c1917' }}
-                >
-                    <div className="p-3 pixel-border border-2 bg-stone-800 border-stone-500 text-stone-200">
-                        <Coins size={32} />
-                    </div>
-                    <div className="text-center">
-                        <h3 className="font-pixel-kr text-base font-bold text-stone-200">지원금</h3>
-                        <p className="text-xs text-stone-400 font-pixel-kr mt-2">골드 <span className="text-yellow-400 font-pixel">+200</span></p>
-                    </div>
-                </button>
-            </div>
-        </div>
-      );
+    return <BossRewardScreen onSelectReward={confirmBossReward} />;
   }
 
-  // --- Shop Screen ---
   if (gameState === 'SHOP') {
-      return (
-          <div className="w-full h-screen-safe flex flex-col bg-pixel-bg-dark text-stone-100">
-             <div className="p-4 md:p-6 bg-pixel-bg-mid pixel-border border-b-4 border-stone-700 flex justify-between items-center">
-                 <h2 className="text-lg md:text-xl font-pixel flex items-center gap-2 text-yellow-400" style={{ textShadow: '0 0 10px rgba(250,204,21,0.5)' }}>
-                     <Store size={20} /> BLACK MARKET
-                 </h2>
-                 <div className="flex items-center gap-2 bg-black/60 px-3 py-1.5 pixel-border border-2 border-yellow-600">
-                     <Coins className="text-yellow-400" size={14} />
-                     <span className="font-pixel text-sm text-yellow-300">{player.gold}</span>
-                 </div>
-             </div>
-
-             <div className="flex-1 p-4 md:p-8 overflow-y-auto">
-                 <div className="grid grid-cols-2 md:grid-cols-4 gap-4 max-w-4xl mx-auto">
-                    {/* Card Removal */}
-                    <button
-                        onClick={() => handleShopBuyWithFlag('REMOVE')}
-                        className="aspect-square bg-gradient-to-b from-stone-700 to-stone-800
-                          pixel-border border-4 border-stone-600
-                          flex flex-col items-center justify-center p-2
-                          hover:border-red-500 hover:from-stone-600 hover:to-stone-700
-                          transition-all group active:translate-y-1"
-                        style={{ boxShadow: '0 4px 0 0 #1c1917' }}
-                    >
-                        <div className="p-2 pixel-border border-2 bg-red-900/40 border-red-700 mb-2 group-hover:bg-red-800/50">
-                          <Flame size={28} className="text-red-400 group-hover:text-red-300 transition-colors" />
-                        </div>
-                        <div className="font-pixel-kr text-xs font-bold">카드 정화</div>
-                        <div className="text-[8px] text-stone-400 font-pixel-kr text-center mb-1">카드 1장 제거</div>
-                        <div className={`font-pixel text-xs ${player.gold >= 50 ? 'text-yellow-400' : 'text-red-500'}`}>50 G</div>
-                    </button>
-
-                    {/* Heal */}
-                    <button
-                        onClick={() => handleShopBuyWithFlag('HEAL')}
-                        className="aspect-square bg-gradient-to-b from-stone-700 to-stone-800
-                          pixel-border border-4 border-stone-600
-                          flex flex-col items-center justify-center p-2
-                          hover:border-green-500 hover:from-stone-600 hover:to-stone-700
-                          transition-all group active:translate-y-1"
-                        style={{ boxShadow: '0 4px 0 0 #1c1917' }}
-                    >
-                        <div className="p-2 pixel-border border-2 bg-green-900/40 border-green-700 mb-2 group-hover:bg-green-800/50">
-                          <Heart size={28} className="text-green-400 group-hover:text-green-300 transition-colors" fill="currentColor" />
-                        </div>
-                        <div className="font-pixel-kr text-xs font-bold">긴급 수리</div>
-                        <div className="text-[8px] text-stone-400 font-pixel-kr text-center mb-1">체력 50% 회복</div>
-                        <div className={`font-pixel text-xs ${player.gold >= 40 ? 'text-yellow-400' : 'text-red-500'}`}>40 G</div>
-                    </button>
-
-                    {/* Rare Card */}
-                    <button
-                        onClick={() => handleShopBuyWithFlag('RARE')}
-                        className="aspect-square bg-gradient-to-b from-stone-700 to-stone-800
-                          pixel-border border-4 border-stone-600
-                          flex flex-col items-center justify-center p-2
-                          hover:border-purple-500 hover:from-stone-600 hover:to-stone-700
-                          transition-all group active:translate-y-1"
-                        style={{ boxShadow: '0 4px 0 0 #1c1917' }}
-                    >
-                        <div className="p-2 pixel-border border-2 bg-purple-900/40 border-purple-700 mb-2 group-hover:bg-purple-800/50">
-                          <Sparkles size={28} className="text-purple-400 group-hover:text-purple-300 transition-colors" />
-                        </div>
-                        <div className="font-pixel-kr text-xs font-bold">희귀 도면</div>
-                        <div className="text-[8px] text-stone-400 font-pixel-kr text-center mb-1">무작위 희귀</div>
-                        <div className={`font-pixel text-xs ${player.gold >= 75 ? 'text-yellow-400' : 'text-red-500'}`}>75 G</div>
-                    </button>
-
-                    {/* Max Energy (Expensive) */}
-                    <button
-                        onClick={() => handleShopBuyWithFlag('ENERGY')}
-                        className="aspect-square bg-gradient-to-b from-stone-700 to-stone-800
-                          pixel-border border-4 border-stone-600
-                          flex flex-col items-center justify-center p-2
-                          hover:border-yellow-400 hover:from-stone-600 hover:to-stone-700
-                          transition-all group relative overflow-hidden active:translate-y-1"
-                        style={{ boxShadow: '0 4px 0 0 #1c1917' }}
-                    >
-                        <div className="absolute top-0 right-0 bg-yellow-600 font-pixel text-[7px] px-1.5 py-0.5 text-white pixel-border border-l-2 border-b-2 border-yellow-400">LIMITED</div>
-                        <div className="p-2 pixel-border border-2 bg-yellow-900/40 border-yellow-700 mb-2 group-hover:bg-yellow-800/50">
-                          <Zap size={28} className="text-yellow-400 group-hover:text-yellow-300 transition-colors" fill="currentColor" />
-                        </div>
-                        <div className="font-pixel-kr text-xs font-bold">마나 수정</div>
-                        <div className="text-[8px] text-stone-400 font-pixel-kr text-center mb-1">에너지 +1</div>
-                        <div className={`font-pixel text-xs ${player.gold >= 200 ? 'text-yellow-400' : 'text-red-500'}`}>200 G</div>
-                    </button>
-                 </div>
-             </div>
-
-             <div className="p-4 pixel-border border-t-4 border-stone-700 flex justify-end bg-pixel-bg-mid">
-                 <button
-                    onClick={() => setGameState('REST')}
-                    className="px-5 py-2.5
-                      bg-gradient-to-b from-stone-600 to-stone-700
-                      pixel-border border-4 border-stone-500
-                      font-pixel-kr text-sm font-bold text-stone-200
-                      hover:from-stone-500 hover:to-stone-600
-                      transition-all active:translate-y-1
-                      flex items-center gap-2"
-                    style={{ boxShadow: '0 4px 0 0 #1c1917' }}
-                 >
-                    <ArrowLeft size={16} /> 나가기
-                 </button>
-             </div>
-          </div>
-      )
-  }
-
-  // --- Reward Screen (Pixel Style) ---
-  if (gameState === 'REWARD') {
-      return (
-        <div className="w-full h-screen-safe flex flex-col items-center justify-center bg-pixel-bg-dark text-stone-100 p-4">
-            <h2 className="text-xl md:text-2xl font-pixel mb-8 text-yellow-400 flex items-center gap-3" style={{ textShadow: '0 0 15px rgba(250,204,21,0.5)' }}>
-                <Trophy size={24} /> LOOT!
-            </h2>
-            <div className="flex flex-wrap justify-center gap-4 md:gap-6 mb-10">
-                {rewardOptions.map(card => (
-                    <CardComponent
-                        key={card.instanceId}
-                        card={card}
-                        onClick={() => handleSelectReward(card)}
-                        className="hover:scale-110 hover:-translate-y-2 transition-transform cursor-pointer"
-                    />
-                ))}
-            </div>
-            <button
-                onClick={() => handleSelectReward(null)}
-                className="px-5 py-2
-                  pixel-border border-4 border-stone-600
-                  bg-gradient-to-b from-stone-700 to-stone-800
-                  text-stone-400 hover:text-stone-200
-                  font-pixel-kr text-sm
-                  hover:from-stone-600 hover:to-stone-700
-                  transition-all active:translate-y-1"
-                style={{ boxShadow: '0 4px 0 0 #1c1917' }}
-            >
-                건너뛰기
-            </button>
-        </div>
-      );
-  }
-
-  // --- Rest Screen (Refactored for Responsiveness & Logic) ---
-  if (gameState === 'REST') {
-      return (
-        <div className="w-full h-screen-safe flex flex-col items-center justify-center bg-pixel-bg-dark text-stone-100 p-4 relative overflow-y-auto">
-            {/* Header info - Pixel Style */}
-            <div className="absolute top-4 right-4 flex items-center gap-2 bg-black/60 px-3 py-1.5 pixel-border border-2 border-yellow-600 z-10">
-                <Coins className="text-yellow-400" size={16} />
-                <span className="font-pixel text-sm text-yellow-300">{player.gold}</span>
-            </div>
-
-            <div className="flex-shrink-0 mb-8 text-center mt-16 md:mt-0">
-                <h2 className="text-xl md:text-2xl font-pixel mb-3 text-orange-400" style={{ textShadow: '0 0 10px rgba(251,146,60,0.5)' }}>
-                  REST STOP
-                </h2>
-                <p className="text-stone-400 font-pixel-kr text-sm">다음 전투를 준비하세요.</p>
-                {hasRested && <p className="text-red-400 font-pixel-kr text-xs mt-2">* 정비를 완료했습니다.</p>}
-            </div>
-
-            <div className="flex flex-wrap gap-4 w-full max-w-3xl justify-center items-center px-4 mb-8">
-                {/* Repair Option - Pixel Style */}
-                <button
-                    onClick={() => handleRestAction('REPAIR')}
-                    disabled={hasRested}
-                    className={`
-                        group relative w-32 h-44 md:w-40 md:h-56
-                        pixel-border border-4
-                        flex flex-col items-center justify-center
-                        transition-all
-                        ${hasRested
-                            ? 'bg-stone-800 border-stone-700 opacity-50 grayscale cursor-not-allowed'
-                            : 'bg-gradient-to-b from-stone-700 to-stone-800 border-stone-500 hover:border-green-500 hover:from-stone-600 hover:to-stone-700 active:translate-y-1'}
-                    `}
-                    style={{
-                      boxShadow: hasRested ? 'none' : '0 4px 0 0 #1c1917'
-                    }}
-                >
-                    <div className={`p-3 pixel-border border-2 mb-3 ${hasRested ? 'bg-stone-700 border-stone-600' : 'bg-green-900/50 border-green-700 group-hover:bg-green-800/50'}`}>
-                      <Hammer size={28} className={`transition-colors ${hasRested ? 'text-stone-600' : 'text-green-400 group-hover:text-green-300'}`} />
-                    </div>
-                    <h3 className="font-pixel-kr text-base font-bold mb-1">수리</h3>
-                    <p className="text-stone-400 font-pixel-kr text-[9px] px-2 text-center">체력 30% 회복</p>
-                    <div className={`mt-2 font-pixel text-xs flex items-center gap-1 ${hasRested ? 'text-stone-600' : 'text-green-400'}`}>
-                        <Heart size={12} fill="currentColor" /> +{Math.floor(player.maxHp * 0.3)}
-                    </div>
-                </button>
-
-                {/* Smelt Option - Pixel Style */}
-                <button
-                    onClick={() => handleRestAction('SMELT')}
-                    disabled={hasRested}
-                    className={`
-                        group relative w-32 h-44 md:w-40 md:h-56
-                        pixel-border border-4
-                        flex flex-col items-center justify-center
-                        transition-all
-                        ${hasRested
-                            ? 'bg-stone-800 border-stone-700 opacity-50 grayscale cursor-not-allowed'
-                            : 'bg-gradient-to-b from-stone-700 to-stone-800 border-stone-500 hover:border-red-500 hover:from-stone-600 hover:to-stone-700 active:translate-y-1'}
-                    `}
-                    style={{
-                      boxShadow: hasRested ? 'none' : '0 4px 0 0 #1c1917'
-                    }}
-                >
-                    <div className={`p-3 pixel-border border-2 mb-3 ${hasRested ? 'bg-stone-700 border-stone-600' : 'bg-red-900/50 border-red-700 group-hover:bg-red-800/50'}`}>
-                      <Flame size={28} className={`transition-colors ${hasRested ? 'text-stone-600' : 'text-red-400 group-hover:text-red-300'}`} />
-                    </div>
-                    <h3 className="font-pixel-kr text-base font-bold mb-1">제련</h3>
-                    <p className="text-stone-400 font-pixel-kr text-[9px] px-2 text-center">카드 1장 제거</p>
-                    <div className={`mt-2 font-pixel text-xs flex items-center gap-1 ${hasRested ? 'text-stone-600' : 'text-red-400'}`}>
-                        <Ban size={12} /> REMOVE
-                    </div>
-                </button>
-
-                 {/* Shop Option - Pixel Style */}
-                 <button
-                    onClick={() => handleRestAction('SHOP')}
-                    className="group relative w-32 h-44 md:w-40 md:h-56
-                        pixel-border border-4
-                        bg-gradient-to-b from-stone-700 to-stone-800 border-stone-500
-                        flex flex-col items-center justify-center
-                        hover:border-yellow-500 hover:from-stone-600 hover:to-stone-700
-                        transition-all active:translate-y-1"
-                    style={{
-                      boxShadow: '0 4px 0 0 #1c1917'
-                    }}
-                >
-                    <div className="p-3 pixel-border border-2 mb-3 bg-yellow-900/50 border-yellow-700 group-hover:bg-yellow-800/50">
-                      <Store size={28} className="text-yellow-400 group-hover:text-yellow-300 transition-colors" />
-                    </div>
-                    <h3 className="font-pixel-kr text-base font-bold mb-1">상점</h3>
-                    <p className="text-stone-400 font-pixel-kr text-[9px] px-2 text-center">아이템 구매</p>
-                    <div className="mt-2 text-yellow-400 font-pixel text-xs flex items-center gap-1">
-                        <Coins size={12} /> ENTER
-                    </div>
-                </button>
-            </div>
-
-            <div className="flex-shrink-0 pb-8">
-                 <button
-                    onClick={advanceGame}
-                    className="flex items-center gap-2 px-6 py-2.5
-                      bg-gradient-to-b from-stone-600 to-stone-700
-                      pixel-border border-4 border-stone-500
-                      text-stone-200 font-pixel-kr text-sm font-bold
-                      hover:from-stone-500 hover:to-stone-600
-                      transition-all active:translate-y-1"
-                    style={{
-                      boxShadow: '0 4px 0 0 #1c1917'
-                    }}
-                 >
-                     다음 층으로 이동 <ChevronRight size={18} />
-                 </button>
-            </div>
-        </div>
-      );
-  }
-
-  // --- Remove Card Screen (Pixel Style) ---
-  if (gameState === 'REMOVE_CARD') {
-    const allCards = [...deck].sort((a,b) => a.cost - b.cost || a.type.localeCompare(b.type));
-    const selectedName = allCards.find(c => c.instanceId === selectedCardId)?.name;
-
     return (
-        <div className="w-full h-screen-safe flex flex-col bg-pixel-bg-dark text-stone-100 overflow-hidden">
-            <div className="flex-shrink-0 text-center p-4 bg-pixel-bg-mid pixel-border border-b-4 border-stone-700 z-10">
-                <h2 className="text-lg md:text-xl font-pixel text-red-400 mb-2 flex items-center justify-center gap-2" style={{ textShadow: '0 0 10px rgba(248,113,113,0.5)' }}>
-                    <Flame size={20} /> SMELT CARD
-                </h2>
-                <p className="text-stone-400 font-pixel-kr text-xs">제거할 카드를 선택한 후 확인 버튼을 누르세요.</p>
-            </div>
+      <ShopScreen
+        gold={player.gold}
+        onBuyItem={handleShopBuyWithFlag}
+        onExit={() => setGameState('REST')}
+      />
+    );
+  }
 
-            <div className="flex-1 overflow-y-auto p-4 bg-pixel-bg-dark">
-                <div className="flex flex-wrap justify-center gap-4 pb-24">
-                    {allCards.map(card => (
-                        <div key={card.instanceId} className="relative group">
-                            <CardComponent
-                                card={card}
-                                onClick={handleCardClick}
-                                selected={selectedCardId === card.instanceId}
-                                className={`cursor-pointer transition-all ${selectedCardId === card.instanceId ? 'ring-4 ring-red-500 scale-105 z-10' : 'hover:scale-105 opacity-80 hover:opacity-100'}`}
-                            />
-                            {selectedCardId === card.instanceId && (
-                                <div className="absolute -top-2 -right-2 bg-red-500 text-white pixel-border border-2 border-red-300 p-1 z-20">
-                                    <Check size={14} strokeWidth={4} />
-                                </div>
-                            )}
-                        </div>
-                    ))}
-                </div>
-            </div>
+  if (gameState === 'REWARD') {
+    return <RewardScreen rewardOptions={rewardOptions} onSelectReward={handleSelectReward} />;
+  }
 
-            <div className="flex-shrink-0 p-4 bg-pixel-bg-mid pixel-border border-t-4 border-stone-700 flex items-center justify-between gap-4 safe-area-bottom">
-                <button
-                    onClick={handleCancelRemoval}
-                    className="flex items-center gap-2 px-4 py-2.5
-                      pixel-border border-4 border-stone-600
-                      bg-gradient-to-b from-stone-700 to-stone-800
-                      text-stone-400 hover:text-white hover:from-stone-600 hover:to-stone-700
-                      font-pixel-kr text-sm font-bold
-                      transition-all active:translate-y-1"
-                    style={{ boxShadow: '0 4px 0 0 #1c1917' }}
-                >
-                    <ArrowLeft size={16} /> 취소
-                </button>
+  if (gameState === 'REST') {
+    return (
+      <RestScreen
+        gold={player.gold}
+        maxHp={player.maxHp}
+        hasRested={hasRested}
+        onRestAction={handleRestAction}
+        onAdvance={advanceGame}
+      />
+    );
+  }
 
-                <button
-                    onClick={handleConfirmRemoval}
-                    disabled={!selectedCardId}
-                    className={`
-                        flex-1 flex items-center justify-center gap-2 px-4 py-2.5
-                        pixel-border border-4 font-pixel-kr text-sm font-bold
-                        transition-all
-                        ${selectedCardId
-                            ? 'bg-gradient-to-b from-red-600 to-red-700 border-red-400 text-white hover:from-red-500 hover:to-red-600 active:translate-y-1'
-                            : 'bg-stone-800 border-stone-700 text-stone-600 cursor-not-allowed'}
-                    `}
-                    style={{ boxShadow: selectedCardId ? '0 4px 0 0 #7f1d1d, 0 0 15px rgba(220,38,38,0.4)' : 'none' }}
-                >
-                    {selectedCardId ? `'${selectedName}' 제거` : '카드 선택 필요'} <Ban size={16} />
-                </button>
-            </div>
-        </div>
+  if (gameState === 'REMOVE_CARD') {
+    return (
+      <RemoveCardScreen
+        deck={deck}
+        selectedCardId={selectedCardId}
+        onCardClick={handleCardClick}
+        onCancel={handleCancelRemoval}
+        onConfirm={handleConfirmRemoval}
+      />
     );
   }
 
