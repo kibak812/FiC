@@ -507,6 +507,57 @@ class GeminiService {
 
 let serviceInstance: GeminiService | null = null;
 
+const STORAGE_KEY = 'fic_gemini_api_key';
+
+/**
+ * Get API key from localStorage
+ */
+function getApiKeyFromStorage(): string | undefined {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    const key = localStorage.getItem(STORAGE_KEY);
+    return key || undefined;
+  }
+  return undefined;
+}
+
+/**
+ * Save API key to localStorage
+ */
+export function saveApiKey(apiKey: string): void {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    localStorage.setItem(STORAGE_KEY, apiKey);
+    // Reset service instance to use new key
+    serviceInstance = null;
+    console.log('[GeminiService] API key saved to localStorage');
+  }
+}
+
+/**
+ * Clear API key from localStorage
+ */
+export function clearApiKey(): void {
+  if (typeof window !== 'undefined' && window.localStorage) {
+    localStorage.removeItem(STORAGE_KEY);
+    serviceInstance = null;
+    console.log('[GeminiService] API key cleared from localStorage');
+  }
+}
+
+/**
+ * Get the current API key (for display purposes, masked)
+ */
+export function getApiKeyStatus(): { hasKey: boolean; maskedKey?: string } {
+  const key = getApiKeyFromStorage() || getApiKeyFromEnv();
+  if (key) {
+    // Show first 4 and last 4 characters
+    const masked = key.length > 8
+      ? `${key.substring(0, 4)}...${key.substring(key.length - 4)}`
+      : '****';
+    return { hasKey: true, maskedKey: masked };
+  }
+  return { hasKey: false };
+}
+
 /**
  * Get API key from environment variable
  */
@@ -540,16 +591,21 @@ export function initGeminiService(apiKey?: string, options?: Partial<GeminiConfi
 
 /**
  * Get the current Gemini service instance
- * Auto-initializes with environment variable if not already initialized
+ * Auto-initializes with localStorage or environment variable
  */
 export function getGeminiService(): GeminiService | null {
   if (!serviceInstance) {
+    // Priority: localStorage > environment variable
+    const storageKey = getApiKeyFromStorage();
     const envKey = getApiKeyFromEnv();
-    if (envKey) {
-      console.log('[GeminiService] API key found, initializing service...');
-      serviceInstance = new GeminiService({ apiKey: envKey });
+    const apiKey = storageKey || envKey;
+
+    if (apiKey) {
+      const source = storageKey ? 'localStorage' : 'environment';
+      console.log(`[GeminiService] API key found from ${source}, initializing service...`);
+      serviceInstance = new GeminiService({ apiKey });
     } else {
-      console.warn('[GeminiService] No API key found. Set VITE_GEMINI_API_KEY in .env file');
+      console.warn('[GeminiService] No API key found. Enter key in game menu or set VITE_GEMINI_API_KEY');
     }
   }
   return serviceInstance;
