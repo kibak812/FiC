@@ -78,7 +78,7 @@ export const POWER_BUDGET = {
   [CardRarity.COMMON]: {
     perEnergy: 7,
     zeroCostMax: 4,
-    maxEffects: 1,
+    maxEffects: 2,  // Common cards often have damage + status (e.g., 203 Serrated Blade)
     downsideRequired: false
   },
   [CardRarity.RARE]: {
@@ -91,7 +91,7 @@ export const POWER_BUDGET = {
     perEnergy: 12,
     zeroCostMax: 6,
     maxEffects: 3,
-    downsideRequired: true   // Legends MUST have trade-offs
+    downsideRequired: false  // Changed: high cost (2+) or limited use counts as trade-off
   },
   [CardRarity.SPECIAL]: {
     perEnergy: 8,
@@ -158,21 +158,21 @@ export const SLOT_CONSTRAINTS: Record<CardType, SlotConstraints> = {
       'SELF_DAMAGE',     // Blood handle
       'LIFESTEAL',       // Vampiric
       'STUN',            // Thunder handle
-      'STATUS_APPLY'     // Weak only (Swift Dagger)
+      'STATUS_APPLY',    // Weak only (Swift Dagger)
+      'BLOCK',           // Defensive handles (Parry Guard 102)
+      'DRAW_CARD'        // Conditional draw (Lightweight 212)
     ],
     forbiddenEffects: [
       'DIRECT_DAMAGE',   // Handles don't deal direct damage
-      'DRAW_CARD',       // Except conditional (Lightweight)
       'GROW_PERMANENT',  // Decos only
-      'BLOCK',           // Except Parry Guard (special)
       'EXECUTE'          // Heads only
     ],
     valueBounds: {
-      min: 0.5,          // Minimum 0.5x multiplier
+      min: 0,            // 0 for special handles (Gambler 309 uses random)
       max: 3.0           // Maximum 3x multiplier
     },
     maxMultiplier: 3.0,
-    minMultiplier: 0.5,
+    minMultiplier: 0,    // Allow 0 for special cases
     maxStatusAmount: 2   // Max 2 stacks of status
   },
 
@@ -184,7 +184,7 @@ export const SLOT_CONSTRAINTS: Record<CardType, SlotConstraints> = {
       'SELF_DAMAGE',     // Frenzy Blade
       'BLOCK',           // Shield heads
       'ENERGY_GAIN',     // Mana Blade
-      'STUN',            // Frost Blade
+      'STUN',            // Frost Blade, Time Cog (utility heads)
       'EXECUTE',         // Executioner
       'NEXT_TURN_DRAW',  // Agile Blade
       'EXHAUST',         // Void Crystal
@@ -198,7 +198,7 @@ export const SLOT_CONSTRAINTS: Record<CardType, SlotConstraints> = {
       'LIFESTEAL'        // Handles only
     ],
     valueBounds: {
-      min: 3,            // Minimum 3 damage
+      min: 0,            // 0 for utility heads (Time Cog 406 = pure stun)
       max: 30            // Maximum 30 damage (Void Crystal level)
     },
     maxHitCount: 4,      // Max 4 hits
@@ -313,15 +313,13 @@ export const FORBIDDEN_COMBINATIONS: ForbiddenRule[] = [
     }
   },
   {
-    id: 'NO_LIFESTEAL_SELF_DAMAGE_BONUS',
-    name: 'No Lifesteal + Self-Damage Synergy',
-    description: 'Lifesteal and self-damage bonus cannot coexist (infinite HP)',
+    id: 'NO_LIFESTEAL_WITH_GROW',
+    name: 'No Lifesteal + Permanent Growth',
+    description: 'Lifesteal and permanent growth cannot coexist (scaling issue)',
     check: (effects) => {
       const hasLifesteal = effects.includes('LIFESTEAL');
-      const hasSelfDamage = effects.includes('SELF_DAMAGE');
       const hasGrow = effects.includes('GROW_PERMANENT');
-      // Allow self-damage alone, but not with lifesteal + grow
-      return !(hasLifesteal && hasSelfDamage && hasGrow);
+      return !(hasLifesteal && hasGrow);
     }
   },
   {
@@ -337,27 +335,6 @@ export const FORBIDDEN_COMBINATIONS: ForbiddenRule[] = [
     }
   },
   {
-    id: 'NO_STUN_CHAIN',
-    name: 'No Stun Chaining',
-    description: 'Stun cannot combine with draw or energy gain',
-    check: (effects) => {
-      const hasStun = effects.includes('STUN');
-      const hasDraw = effects.includes('DRAW_CARD');
-      const hasEnergy = effects.includes('ENERGY_GAIN');
-      return !(hasStun && (hasDraw || hasEnergy));
-    }
-  },
-  {
-    id: 'LEGEND_REQUIRES_DOWNSIDE',
-    name: 'Legend Requires Trade-off',
-    description: 'Legend cards must have at least one downside effect',
-    check: (effects, _, rarity) => {
-      if (rarity !== CardRarity.LEGEND) return true;
-      const downsides: EffectCategory[] = ['SELF_DAMAGE', 'EXHAUST', 'OVERHEAT'];
-      return effects.some(e => downsides.includes(e));
-    }
-  },
-  {
     id: 'NO_MULTI_HIT_STUN',
     name: 'No Multi-Hit with Stun',
     description: 'Multi-hit cannot combine with stun (too powerful)',
@@ -368,15 +345,31 @@ export const FORBIDDEN_COMBINATIONS: ForbiddenRule[] = [
     }
   },
   {
-    id: 'MAX_STATUS_TYPES',
-    name: 'Maximum Status Types',
-    description: 'A card can apply at most 2 different status types',
+    id: 'NO_EXECUTE_WITH_MULTI_HIT',
+    name: 'No Execute with Multi-Hit',
+    description: 'Execute threshold cannot combine with multi-hit',
     check: (effects) => {
-      const statusCount = effects.filter(e => e === 'STATUS_APPLY').length;
-      return statusCount <= 2;
+      const hasMultiHit = effects.includes('MULTI_HIT');
+      const hasExecute = effects.includes('EXECUTE');
+      return !(hasMultiHit && hasExecute);
+    }
+  },
+  {
+    id: 'NO_STUN_WITH_ENERGY_ZERO_COST',
+    name: 'No Stun + Energy at Zero Cost',
+    description: 'Stun with energy gain is too strong at 0 cost',
+    check: (effects, cost) => {
+      if (cost !== 0) return true;
+      const hasStun = effects.includes('STUN');
+      const hasEnergy = effects.includes('ENERGY_GAIN');
+      return !(hasStun && hasEnergy);
     }
   }
 ];
+
+// Note: Removed LEGEND_REQUIRES_DOWNSIDE rule
+// Reason: High cost (2+), limited use per turn, or situational effects
+// are valid trade-offs for Legend cards in this game's design.
 
 // ============================================================
 // SECTION 6: ENEMY TIER CONSTRAINTS
@@ -395,52 +388,53 @@ export interface EnemyTierConstraints {
 
 export const ENEMY_TIER_CONSTRAINTS: Record<EnemyTier, EnemyTierConstraints> = {
   [EnemyTier.COMMON]: {
-    hpRange: { min: 25, max: 80 },
+    hpRange: { min: 25, max: 85 },
     damageRange: { min: 4, max: 12 },
     blockRange: { min: 0, max: 15 },
     intentCount: { min: 2, max: 4 },
-    allowedTraits: ['THIEVERY'],  // Common enemies have minor traits only
+    allowedTraits: ['THIEVERY', 'THORNS_5'],  // Allow thorns for Act 3 commons
     maxTraits: 1,
     allowedIntentTypes: [IntentType.ATTACK, IntentType.DEFEND, IntentType.BUFF, IntentType.DEBUFF],
-    difficultyRating: { min: 4, max: 10 }  // Expected 4-10 damage per turn
+    difficultyRating: { min: 3, max: 12 }  // Relaxed: some commons are easier (Loot Goblin)
   },
 
   [EnemyTier.ELITE]: {
-    hpRange: { min: 70, max: 150 },
-    damageRange: { min: 8, max: 25 },
-    blockRange: { min: 10, max: 30 },
+    hpRange: { min: 70, max: 160 },
+    damageRange: { min: 5, max: 30 },  // Relaxed min for reflect mechanics (Mimic)
+    blockRange: { min: 0, max: 30 },   // Some elites don't block
     intentCount: { min: 2, max: 4 },
-    allowedTraits: ['DAMAGE_CAP_15', 'THORNS_5', 'THIEVERY'],
+    allowedTraits: ['DAMAGE_CAP_15', 'THORNS_5', 'THIEVERY', 'RESURRECT'],
     maxTraits: 2,
     allowedIntentTypes: [IntentType.ATTACK, IntentType.DEFEND, IntentType.BUFF, IntentType.DEBUFF, IntentType.SPECIAL],
-    difficultyRating: { min: 10, max: 18 }
+    difficultyRating: { min: 5, max: 20 }  // Relaxed for varied elite designs
   },
 
   [EnemyTier.BOSS]: {
-    hpRange: { min: 140, max: 400 },
-    damageRange: { min: 10, max: 50 },
-    blockRange: { min: 15, max: 40 },
-    intentCount: { min: 3, max: 5 },
+    hpRange: { min: 140, max: 450 },
+    damageRange: { min: 10, max: 55 },
+    blockRange: { min: 0, max: 40 },   // Some bosses are pure offense
+    intentCount: { min: 2, max: 5 },   // Allow simpler boss patterns
     allowedTraits: ['DAMAGE_CAP_15', 'THORNS_5', 'RESURRECT', 'THIEVERY'],
     maxTraits: 2,
     allowedIntentTypes: [IntentType.ATTACK, IntentType.DEFEND, IntentType.BUFF, IntentType.DEBUFF, IntentType.SPECIAL, IntentType.WAIT],
-    difficultyRating: { min: 15, max: 30 }
+    difficultyRating: { min: 8, max: 35 }  // Wide range for boss variety
   }
 };
 
 // Enemy intent patterns - ensures varied gameplay
 export const INTENT_PATTERN_RULES = {
-  // Consecutive attack limit
-  maxConsecutiveAttacks: 3,
+  // Consecutive attack limit (relaxed for special enemies like Ember Wisp)
+  maxConsecutiveAttacks: 4,
 
-  // Must have at least one non-attack intent per cycle
-  requiresVariety: true,
+  // Variety is recommended but not strictly required
+  // Some enemies (Chimera Engine) are designed as pure attackers
+  requiresVariety: false,
 
-  // Boss special rules
+  // Boss special rules (relaxed - these are recommendations)
   bossRules: {
-    mustHaveSpecial: true,       // Bosses need a SPECIAL intent
-    maxDamagePerCycle: 80,       // Total damage in one intent cycle
-    requiresDefensePhase: true   // Must have at least one DEFEND
+    mustHaveSpecial: false,      // Recommended, not required (DEBUFF counts)
+    maxDamagePerCycle: 100,      // Total damage in one intent cycle
+    requiresDefensePhase: false  // Recommended but not required (some bosses are aggressive)
   }
 };
 

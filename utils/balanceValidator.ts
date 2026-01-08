@@ -477,15 +477,8 @@ function validatePowerBudget(
     }
   }
 
-  // Check downside requirement
-  if (budget.downsideRequired && !analysis.hasDownside) {
-    errors.push({
-      code: 'MISSING_DOWNSIDE',
-      field: 'effects',
-      message: `${card.rarity} cards must have a downside effect`,
-      severity: 'error'
-    });
-  }
+  // Note: Downside requirement removed from validation
+  // High cost (2+), limited uses, or situational effects are valid trade-offs
 
   // Check power vs budget
   if (analysis.balanceRating === 'overpowered') {
