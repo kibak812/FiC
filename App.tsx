@@ -10,11 +10,20 @@ import { Shield, Zap, Layers } from 'lucide-react';
 
 // --- Utilities ---
 import { generateId, createCardInstance, shuffle } from './utils/cardUtils';
-import { 
+import {
   CardEffectContext, EffectModifiers, EffectAction,
   executeEffectsForPhase, applyModifierActions,
   isExhaustCard, isInfiniteLoopCard, isTwinHandle
 } from './utils/cardEffects';
+
+// --- WWM AI Generation Service ---
+import {
+  isGeminiAvailable,
+  generateCardWithFallback,
+  generateEnemyWithFallback,
+  CardGenerationContext,
+  EnemyGenerationContext
+} from './services/geminiService';
 
 // --- Hooks ---
 import { useAnimations } from './hooks/useAnimations';
@@ -96,6 +105,10 @@ const [player, setPlayer] = useState<PlayerStats>({
   // Status effect detail modal
   const [showStatusDetail, setShowStatusDetail] = useState<string | null>(null); // Status key or null
 
+  // WWM AI Generation State
+  const [isGeneratingContent, setIsGeneratingContent] = useState(false);
+  const [aiGeneratedCard, setAiGeneratedCard] = useState<CardInstance | null>(null); // Track AI-generated card in rewards
+
   // --- Touch Drag State ---
   const [dragState, setDragState] = useState<{
     card: CardInstance;
@@ -172,22 +185,20 @@ const startCombat = (enemyData: EnemyData) => {
     setInfiniteLoopUsed(false);
   };
 
-  const advanceGame = () => {
+  const advanceGame = async () => {
       let nextFloor = floor + 1;
       let nextAct = act;
-      let isActChange = false;
 
       // Check Act Completion
       if (nextFloor > ACT_LENGTH) {
           nextAct++;
           nextFloor = 1;
-          isActChange = true;
-          
+
           if (nextAct > 3) {
               setGameState('WIN');
               return;
           }
-          
+
           setAct(nextAct);
           showFeedback(`ACT ${nextAct} 시작!`);
       }
@@ -195,24 +206,67 @@ const startCombat = (enemyData: EnemyData) => {
       setFloor(nextFloor);
 
       // --- Fixed Level Structure ---
-      // Floor 15: Boss
+      // Floor 15: Boss - Always use predefined boss
       if (nextFloor === ACT_LENGTH) {
           const boss = ENEMY_POOLS[nextAct as 1|2|3][EnemyTier.BOSS];
           startCombat(JSON.parse(JSON.stringify(boss)));
           return;
       }
-      
-      // Removed Dedicated Rest Floors [5, 10, 14] as Rest is now every turn
 
-      // Floor 8: Elite
+      // Floor 8: Elite - Try AI generation
       if (nextFloor === 8) {
+          setIsGeneratingContent(true);
+          try {
+            // 50% chance to use AI-generated elite
+            if (isGeminiAvailable() && Math.random() > 0.5) {
+              const aiContext: EnemyGenerationContext = {
+                targetTier: 'Elite',
+                act: nextAct as 1 | 2 | 3,
+                theme: '강력한 정예 몬스터'
+              };
+              const result = await generateEnemyWithFallback(aiContext);
+              if (result.validationResult.valid) {
+                showFeedback('⚔️ AI가 새로운 적을 생성했습니다!', 'good');
+                startCombat(JSON.parse(JSON.stringify(result.enemy)));
+                setIsGeneratingContent(false);
+                return;
+              }
+            }
+          } catch (error) {
+            console.error('AI elite generation failed:', error);
+          }
+          setIsGeneratingContent(false);
+
+          // Fallback to pool
           const pool = ENEMY_POOLS[nextAct as 1|2|3][EnemyTier.ELITE];
           const enemy = pool[Math.floor(Math.random() * pool.length)];
           startCombat(JSON.parse(JSON.stringify(enemy)));
           return;
       }
 
-      // Default: Common Enemy
+      // Default: Common Enemy - Try AI generation
+      setIsGeneratingContent(true);
+      try {
+        // 30% chance to use AI-generated common enemy
+        if (isGeminiAvailable() && Math.random() > 0.7) {
+          const aiContext: EnemyGenerationContext = {
+            targetTier: 'Common',
+            act: nextAct as 1 | 2 | 3
+          };
+          const result = await generateEnemyWithFallback(aiContext);
+          if (result.validationResult.valid) {
+            showFeedback('🎲 새로운 적이 나타났습니다!', 'good');
+            startCombat(JSON.parse(JSON.stringify(result.enemy)));
+            setIsGeneratingContent(false);
+            return;
+          }
+        }
+      } catch (error) {
+        console.error('AI enemy generation failed:', error);
+      }
+      setIsGeneratingContent(false);
+
+      // Fallback to pool
       const pool = ENEMY_POOLS[nextAct as 1|2|3][EnemyTier.COMMON];
       const enemy = pool[Math.floor(Math.random() * pool.length)];
       startCombat(JSON.parse(JSON.stringify(enemy)));
@@ -237,37 +291,88 @@ const startCombat = (enemyData: EnemyData) => {
     startCombat(starterEnemy);
   };
 
-  const handleWinCombat = () => {
+  const handleWinCombat = async () => {
       cleanAndConsolidateDeck();
-      
+
       // Rewards
       const isEliteOrBoss = enemy.tier === EnemyTier.ELITE || enemy.tier === EnemyTier.BOSS;
       const goldReward = Math.floor(Math.random() * 20) + (isEliteOrBoss ? 30 : 15);
       setPlayer(prev => ({...prev, gold: prev.gold + goldReward}));
 
-      const pool = CARD_DATABASE.filter(c => 
-          c.rarity !== CardRarity.JUNK && 
-          c.rarity !== CardRarity.STARTER && 
+      // Base pool from database
+      const pool = CARD_DATABASE.filter(c =>
+          c.rarity !== CardRarity.JUNK &&
+          c.rarity !== CardRarity.STARTER &&
           c.rarity !== CardRarity.SPECIAL
       );
-      
+
       const shuffled = shuffle(pool);
       const count = isEliteOrBoss ? 4 : 3;
-      const options = shuffled.slice(0, count).map(data => ({...data, instanceId: generateId()}));
-      setRewardOptions(options);
+      let options = shuffled.slice(0, count - 1).map(data => ({...data, instanceId: generateId()}));
 
+      // WWM AI Generation: Try to add one AI-generated card to rewards
+      setIsGeneratingContent(true);
       showFeedback(`승리! ${goldReward} 골드 획득`);
+
+      try {
+        // Determine AI card parameters based on act progression
+        const rarityOptions: ('Common' | 'Rare' | 'Legend')[] =
+          act === 1 ? ['Common', 'Rare'] :
+          act === 2 ? ['Common', 'Rare', 'Legend'] :
+          ['Rare', 'Legend'];
+        const typeOptions: ('Handle' | 'Head' | 'Deco')[] = ['Handle', 'Head', 'Deco'];
+
+        const aiContext: CardGenerationContext = {
+          targetType: typeOptions[Math.floor(Math.random() * typeOptions.length)],
+          targetRarity: isEliteOrBoss
+            ? rarityOptions[Math.floor(Math.random() * rarityOptions.length)]
+            : rarityOptions[0], // Common for normal enemies
+          theme: isEliteOrBoss ? '강력한 보스 전리품' : undefined
+        };
+
+        const result = await generateCardWithFallback(aiContext);
+        const aiCard: CardInstance = {
+          ...result.card,
+          instanceId: generateId()
+        };
+
+        // Mark as AI-generated for UI highlighting
+        setAiGeneratedCard(aiCard);
+        options.push(aiCard);
+
+        if (isGeminiAvailable() && result.validationResult.valid) {
+          showFeedback('✨ AI가 새로운 카드를 생성했습니다!', 'good');
+        }
+      } catch (error) {
+        console.error('AI card generation failed:', error);
+        // Fallback: add one more card from database
+        const fallbackCard = shuffled[count - 1];
+        if (fallbackCard) {
+          options.push({...fallbackCard, instanceId: generateId()});
+        }
+      }
+
+      setIsGeneratingContent(false);
+      setRewardOptions(options);
       setGameState('REWARD');
   };
 
   const handleSelectReward = (card: CardInstance | null) => {
       if (card) {
           setDeck(prev => [...prev, card]);
-          showFeedback(`${card.name} 획득!`);
+          // Check if this was an AI-generated card
+          if (aiGeneratedCard && card.instanceId === aiGeneratedCard.instanceId) {
+            showFeedback(`✨ ${card.name} (AI 생성) 획득!`);
+          } else {
+            showFeedback(`${card.name} 획득!`);
+          }
       } else {
           showFeedback("보상 건너뛰기");
       }
-      
+
+      // Reset AI card state
+      setAiGeneratedCard(null);
+
       // Check if Boss was defeated
       if (enemy.tier === EnemyTier.BOSS && act < 4) {
           setupBossReward();
@@ -345,9 +450,9 @@ const startCombat = (enemyData: EnemyData) => {
   };
 
   // Shop Logic
-  const handleShopBuy = (item: 'HEAL' | 'REMOVE' | 'RARE' | 'ENERGY') => {
+  const handleShopBuy = async (item: 'HEAL' | 'REMOVE' | 'RARE' | 'ENERGY') => {
       const PRICES = { HEAL: 40, REMOVE: 50, RARE: 75, ENERGY: 200 };
-      
+
       if (player.gold < PRICES[item]) {
           showFeedback("골드가 부족합니다!");
           return;
@@ -361,12 +466,43 @@ const startCombat = (enemyData: EnemyData) => {
           setSelectedCardId(null);
           setGameState('REMOVE_CARD'); // Go to remove screen
       } else if (item === 'RARE') {
-          const rares = CARD_DATABASE.filter(c => c.rarity === CardRarity.RARE);
-          const randomRare = rares[Math.floor(Math.random() * rares.length)];
-          const newCard = { ...randomRare, instanceId: generateId() };
-          setDeck(prev => [...prev, newCard]);
           setPlayer(prev => ({ ...prev, gold: prev.gold - PRICES.RARE }));
-          // showFeedback(`${randomRare.name} 획득!`); // Replaced with modal
+          setIsGeneratingContent(true);
+
+          let newCard: CardInstance;
+
+          try {
+            // Try AI generation for rare card
+            if (isGeminiAvailable()) {
+              const typeOptions: ('Handle' | 'Head' | 'Deco')[] = ['Handle', 'Head', 'Deco'];
+              const aiContext: CardGenerationContext = {
+                targetType: typeOptions[Math.floor(Math.random() * typeOptions.length)],
+                targetRarity: 'Rare',
+                theme: '상점에서 판매하는 희귀한 설계도'
+              };
+
+              const result = await generateCardWithFallback(aiContext);
+              newCard = { ...result.card, instanceId: generateId() };
+
+              if (result.validationResult.valid) {
+                showFeedback('✨ AI가 희귀 설계도를 생성했습니다!', 'good');
+              }
+            } else {
+              // Fallback to database
+              const rares = CARD_DATABASE.filter(c => c.rarity === CardRarity.RARE);
+              const randomRare = rares[Math.floor(Math.random() * rares.length)];
+              newCard = { ...randomRare, instanceId: generateId() };
+            }
+          } catch (error) {
+            console.error('AI shop card generation failed:', error);
+            // Fallback to database
+            const rares = CARD_DATABASE.filter(c => c.rarity === CardRarity.RARE);
+            const randomRare = rares[Math.floor(Math.random() * rares.length)];
+            newCard = { ...randomRare, instanceId: generateId() };
+          }
+
+          setIsGeneratingContent(false);
+          setDeck(prev => [...prev, newCard]);
           setAcquiredCard(newCard); // Trigger Modal
       } else if (item === 'ENERGY') {
           setPlayer(prev => ({ ...prev, gold: prev.gold - PRICES.ENERGY, maxEnergy: prev.maxEnergy + 1 }));
@@ -1198,7 +1334,14 @@ if (enemy.statuses.poison > 0) {
   }
 
   if (gameState === 'REWARD') {
-    return <RewardScreen rewardOptions={rewardOptions} onSelectReward={handleSelectReward} />;
+    return (
+      <RewardScreen
+        rewardOptions={rewardOptions}
+        onSelectReward={handleSelectReward}
+        aiGeneratedCardId={aiGeneratedCard?.instanceId}
+        isLoading={isGeneratingContent}
+      />
+    );
   }
 
   if (gameState === 'REST') {
