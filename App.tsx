@@ -217,8 +217,8 @@ const startCombat = (enemyData: EnemyData) => {
       if (nextFloor === 8) {
           setIsGeneratingContent(true);
           try {
-            // 50% chance to use AI-generated elite
-            if (isGeminiAvailable() && Math.random() > 0.5) {
+            // 100% AI-generated elite for testing
+            if (isGeminiAvailable()) {
               const aiContext: EnemyGenerationContext = {
                 targetTier: 'Elite',
                 act: nextAct as 1 | 2 | 3,
@@ -247,8 +247,8 @@ const startCombat = (enemyData: EnemyData) => {
       // Default: Common Enemy - Try AI generation
       setIsGeneratingContent(true);
       try {
-        // 30% chance to use AI-generated common enemy
-        if (isGeminiAvailable() && Math.random() > 0.7) {
+        // 100% AI-generated common enemy for testing
+        if (isGeminiAvailable()) {
           const aiContext: EnemyGenerationContext = {
             targetTier: 'Common',
             act: nextAct as 1 | 2 | 3
