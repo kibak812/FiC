@@ -497,11 +497,31 @@ class GeminiService {
 let serviceInstance: GeminiService | null = null;
 
 /**
- * Initialize the Gemini service with API key
+ * Get API key from environment variable
  */
-export function initGeminiService(apiKey: string, options?: Partial<GeminiConfig>): GeminiService {
+function getApiKeyFromEnv(): string | undefined {
+  // Vite environment variable
+  if (typeof import.meta !== 'undefined' && (import.meta as any).env?.VITE_GEMINI_API_KEY) {
+    return (import.meta as any).env.VITE_GEMINI_API_KEY;
+  }
+  // Node.js environment variable
+  if (typeof process !== 'undefined' && process.env?.GEMINI_API_KEY) {
+    return process.env.GEMINI_API_KEY;
+  }
+  return undefined;
+}
+
+/**
+ * Initialize the Gemini service with API key
+ * If no API key provided, attempts to use environment variable
+ */
+export function initGeminiService(apiKey?: string, options?: Partial<GeminiConfig>): GeminiService {
+  const key = apiKey || getApiKeyFromEnv();
+  if (!key) {
+    throw new Error('Gemini API key not provided. Set VITE_GEMINI_API_KEY environment variable or pass apiKey parameter.');
+  }
   serviceInstance = new GeminiService({
-    apiKey,
+    apiKey: key,
     ...options
   });
   return serviceInstance;
@@ -509,8 +529,15 @@ export function initGeminiService(apiKey: string, options?: Partial<GeminiConfig
 
 /**
  * Get the current Gemini service instance
+ * Auto-initializes with environment variable if not already initialized
  */
 export function getGeminiService(): GeminiService | null {
+  if (!serviceInstance) {
+    const envKey = getApiKeyFromEnv();
+    if (envKey) {
+      serviceInstance = new GeminiService({ apiKey: envKey });
+    }
+  }
   return serviceInstance;
 }
 
@@ -518,7 +545,7 @@ export function getGeminiService(): GeminiService | null {
  * Check if Gemini service is available
  */
 export function isGeminiAvailable(): boolean {
-  return serviceInstance !== null;
+  return getGeminiService() !== null;
 }
 
 // ============================================================
