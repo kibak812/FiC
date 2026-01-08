@@ -23,6 +23,12 @@ import {
   calculateEffectPower
 } from './balanceSystem';
 
+// Helper to safely extract numeric values from union type
+const num = (v: number | boolean | number[] | undefined, defaultVal: number = 0): number => {
+  if (typeof v === 'number') return v;
+  return defaultVal;
+};
+
 // ============================================================
 // CARD EFFECT MAPPING
 // ============================================================
@@ -33,7 +39,7 @@ import {
  */
 const CARD_EFFECT_MAPPING: Record<number, {
   effects: EffectCategory[];
-  values: Record<string, number>;
+  values: Record<string, number | boolean | number[]>;
 }> = {
   // Starter
   101: { effects: ['DAMAGE_MULT'], values: { multiplier: 1 } },
@@ -230,8 +236,9 @@ function validateSlotConstraints(card: CardData, errors: ValidationError[], warn
 
   // Slot-specific limits
   if (card.type === CardType.HANDLE) {
-    const mult = effectMapping.values.multiplier;
-    if (mult !== undefined) {
+    const multRaw = effectMapping.values.multiplier;
+    if (multRaw !== undefined && typeof multRaw === 'number') {
+      const mult = multRaw;
       if (mult < (constraints.minMultiplier || 0.5) || mult > (constraints.maxMultiplier || 3.0)) {
         errors.push({
           code: 'MULTIPLIER_OUT_OF_BOUNDS',
@@ -251,20 +258,20 @@ function validateEffectBounds(card: CardData, errors: ValidationError[], warning
   const values = effectMapping.values;
 
   // Check each value against bounds
-  if (values.damage !== undefined) {
-    const bounds = EFFECT_BOUNDS.DAMAGE_BONUS_FLAT;
+  if (values.damage !== undefined && typeof values.damage === 'number') {
+    const damage = values.damage;
     // Direct damage has different bounds than bonus
-    if (card.type === CardType.HEAD && (values.damage < 3 || values.damage > 30)) {
+    if (card.type === CardType.HEAD && (damage < 3 || damage > 30)) {
       warnings.push({
         code: 'DAMAGE_UNUSUAL',
         field: 'value',
-        message: `Head damage ${values.damage} is outside typical range (3-30)`,
+        message: `Head damage ${damage} is outside typical range (3-30)`,
         suggestion: 'Consider adjusting for balance'
       });
     }
   }
 
-  if (values.weak !== undefined && !isWithinBounds(values.weak, 'WEAK_AMOUNT')) {
+  if (values.weak !== undefined && typeof values.weak === 'number' && !isWithinBounds(values.weak, 'WEAK_AMOUNT')) {
     errors.push({
       code: 'WEAK_OUT_OF_BOUNDS',
       field: 'effects',
@@ -273,7 +280,7 @@ function validateEffectBounds(card: CardData, errors: ValidationError[], warning
     });
   }
 
-  if (values.vulnerable !== undefined && !isWithinBounds(values.vulnerable, 'VULNERABLE_AMOUNT')) {
+  if (values.vulnerable !== undefined && typeof values.vulnerable === 'number' && !isWithinBounds(values.vulnerable, 'VULNERABLE_AMOUNT')) {
     errors.push({
       code: 'VULNERABLE_OUT_OF_BOUNDS',
       field: 'effects',
@@ -282,7 +289,7 @@ function validateEffectBounds(card: CardData, errors: ValidationError[], warning
     });
   }
 
-  if (values.poison !== undefined && !isWithinBounds(values.poison, 'POISON_AMOUNT')) {
+  if (values.poison !== undefined && typeof values.poison === 'number' && !isWithinBounds(values.poison, 'POISON_AMOUNT')) {
     warnings.push({
       code: 'POISON_UNUSUAL',
       field: 'effects',
@@ -291,7 +298,7 @@ function validateEffectBounds(card: CardData, errors: ValidationError[], warning
     });
   }
 
-  if (values.bleed !== undefined && !isWithinBounds(values.bleed, 'BLEED_AMOUNT')) {
+  if (values.bleed !== undefined && typeof values.bleed === 'number' && !isWithinBounds(values.bleed, 'BLEED_AMOUNT')) {
     warnings.push({
       code: 'BLEED_UNUSUAL',
       field: 'effects',
@@ -300,7 +307,7 @@ function validateEffectBounds(card: CardData, errors: ValidationError[], warning
     });
   }
 
-  if (values.burn !== undefined && !isWithinBounds(values.burn, 'BURN_AMOUNT')) {
+  if (values.burn !== undefined && typeof values.burn === 'number' && !isWithinBounds(values.burn, 'BURN_AMOUNT')) {
     warnings.push({
       code: 'BURN_UNUSUAL',
       field: 'effects',
@@ -309,7 +316,7 @@ function validateEffectBounds(card: CardData, errors: ValidationError[], warning
     });
   }
 
-  if (values.selfDamage !== undefined && !isWithinBounds(values.selfDamage, 'SELF_DAMAGE')) {
+  if (values.selfDamage !== undefined && typeof values.selfDamage === 'number' && !isWithinBounds(values.selfDamage, 'SELF_DAMAGE')) {
     errors.push({
       code: 'SELF_DAMAGE_OUT_OF_BOUNDS',
       field: 'effects',
@@ -318,7 +325,7 @@ function validateEffectBounds(card: CardData, errors: ValidationError[], warning
     });
   }
 
-  if (values.threshold !== undefined && !isWithinBounds(values.threshold, 'EXECUTE_THRESHOLD')) {
+  if (values.threshold !== undefined && typeof values.threshold === 'number' && !isWithinBounds(values.threshold, 'EXECUTE_THRESHOLD')) {
     errors.push({
       code: 'EXECUTE_THRESHOLD_OUT_OF_BOUNDS',
       field: 'effects',
@@ -354,41 +361,67 @@ function analyzeCardPower(card: CardData): PowerAnalysis {
   let downsideValue = 0;
   const values = effectMapping.values;
 
-  // Calculate power from base value
+  // Base damage estimate for multiplier calculations
+  const BASE_DAMAGE_ESTIMATE = 8;  // Average weapon damage
+
+  // Calculate power from base value based on card type
   if (card.type === CardType.HEAD) {
-    totalPower += values.damage || card.value || 0;
+    totalPower += num(values.damage) || card.value || 0;
   } else if (card.type === CardType.HANDLE) {
-    // Multiplier power: (mult - 1) * 6 (base damage estimate)
-    const mult = values.multiplier || card.value || 1;
-    totalPower += (mult - 1) * ENERGY_ECONOMY.DAMAGE_PER_ENERGY;
+    // Handle multiplier power calculation
+    let mult = num(values.multiplier, 1) || card.value || 1;
+
+    // Handle random multiplier (e.g., Gambler's Handle 309)
+    if (values.multiplierRandom && Array.isArray(values.multiplierRandom)) {
+      const [min, max] = values.multiplierRandom;
+      mult = (min + max) / 2;  // Use average
+    }
+
+    // Multiplier power: (mult - 1) * base damage estimate
+    totalPower += (mult - 1) * BASE_DAMAGE_ESTIMATE;
   } else if (card.type === CardType.DECO) {
-    totalPower += values.bonus || card.value || 0;
+    // Deco can have flat bonus OR multiplier
+    const multVal = num(values.multiplier, 1);
+    if (multVal && multVal !== 1) {
+      // Dragon Sigil (413) style: x2 multiplier
+      totalPower += (multVal - 1) * BASE_DAMAGE_ESTIMATE;
+    } else {
+      totalPower += num(values.bonus) || card.value || 0;
+    }
   }
 
   // Add effect power
   for (const effect of effectMapping.effects) {
     switch (effect) {
+      case 'DAMAGE_MULT':
+        // Already calculated in base value section above
+        break;
       case 'STATUS_APPLY':
-        if (values.weak) totalPower += values.weak * ENERGY_ECONOMY.STATUS_POWER_VALUE.weak;
-        if (values.vulnerable) totalPower += values.vulnerable * ENERGY_ECONOMY.STATUS_POWER_VALUE.vulnerable;
-        if (values.poison) totalPower += values.poison * ENERGY_ECONOMY.STATUS_POWER_VALUE.poison;
-        if (values.bleed) totalPower += values.bleed * ENERGY_ECONOMY.STATUS_POWER_VALUE.bleed;
-        if (values.burn) totalPower += values.burn * ENERGY_ECONOMY.STATUS_POWER_VALUE.burn;
+        if (values.weak) totalPower += num(values.weak) * ENERGY_ECONOMY.STATUS_POWER_VALUE.weak;
+        if (values.vulnerable) totalPower += num(values.vulnerable) * ENERGY_ECONOMY.STATUS_POWER_VALUE.vulnerable;
+        if (values.poison) totalPower += num(values.poison) * ENERGY_ECONOMY.STATUS_POWER_VALUE.poison;
+        if (values.bleed) totalPower += num(values.bleed) * ENERGY_ECONOMY.STATUS_POWER_VALUE.bleed;
+        if (values.burn) totalPower += num(values.burn) * ENERGY_ECONOMY.STATUS_POWER_VALUE.burn;
+        // Scaling effects get bonus power
+        if (values.bleedScaling) totalPower += 4;  // Estimated scaling value
+        if (values.poisonScaling) totalPower += 4;
         break;
       case 'STUN':
-        totalPower += (values.stun || 1) * ENERGY_ECONOMY.STATUS_POWER_VALUE.stun;
+        totalPower += num(values.stun, 1) * ENERGY_ECONOMY.STATUS_POWER_VALUE.stun;
+        // Skip intent is additional value
+        if (values.skipIntent) totalPower += 4;
         break;
       case 'ENERGY_GAIN':
-        totalPower += (values.energy || 1) * ENERGY_ECONOMY.SPECIAL_POWER_VALUE.energyGain;
+        totalPower += num(values.energy, 1) * ENERGY_ECONOMY.SPECIAL_POWER_VALUE.energyGain;
         break;
       case 'DRAW_CARD':
-        totalPower += (values.draw || 1) * ENERGY_ECONOMY.SPECIAL_POWER_VALUE.drawCard;
+        totalPower += num(values.draw, 1) * ENERGY_ECONOMY.SPECIAL_POWER_VALUE.drawCard;
         break;
       case 'NEXT_TURN_DRAW':
-        totalPower += (values.draw || 1) * ENERGY_ECONOMY.SPECIAL_POWER_VALUE.nextTurnDraw;
+        totalPower += num(values.draw, 1) * ENERGY_ECONOMY.SPECIAL_POWER_VALUE.nextTurnDraw;
         break;
       case 'LIFESTEAL':
-        totalPower += (values.lifesteal || 50) * ENERGY_ECONOMY.SPECIAL_POWER_VALUE.lifestealPercent;
+        totalPower += num(values.lifesteal, 50) * ENERGY_ECONOMY.SPECIAL_POWER_VALUE.lifestealPercent;
         break;
       case 'IGNORE_BLOCK':
         totalPower += ENERGY_ECONOMY.SPECIAL_POWER_VALUE.ignoreBlock;
@@ -397,19 +430,44 @@ function analyzeCardPower(card: CardData): PowerAnalysis {
         totalPower += ENERGY_ECONOMY.SPECIAL_POWER_VALUE.dodgeAttack;
         break;
       case 'EXECUTE':
-        totalPower += (values.threshold || 0.2) * 100 * 0.4;
+        totalPower += num(values.threshold, 0.2) * 100 * 0.4;
         break;
       case 'GOLD_GAIN':
-        totalPower += (values.gold || 5) * 0.5;
+        totalPower += num(values.gold, 5) * 0.5;
         break;
       case 'MULTI_HIT':
-        totalPower += (values.hits || 2) * 2;  // Multi-hit synergy bonus
+        // Multi-hit value: synergy with on-hit effects
+        const hitBonus = num(values.hits, 2) * 3;
+        totalPower += hitBonus;
+        // Effect double (Twin Handle 301) is very powerful
+        if (values.effectDouble) totalPower += 8;
         break;
       case 'GROW_PERMANENT':
-        totalPower += (values.grow || 2) * ENERGY_ECONOMY.SPECIAL_POWER_VALUE.permanentGrow * 5;
+        // Permanent growth: grow amount * estimated turns * value per point
+        const growValue = num(values.grow, 2) * ENERGY_ECONOMY.SPECIAL_POWER_VALUE.permanentGrow * 5;
+        totalPower += growValue;
+        break;
+      case 'BLOCK':
+        totalPower += num(values.block) * (ENERGY_ECONOMY.DAMAGE_PER_ENERGY / ENERGY_ECONOMY.BLOCK_PER_ENERGY);
+        // Block multiplier (311) is powerful
+        if (values.blockMultiplier) totalPower += 4;
+        break;
+      case 'BLOCK_CONVERT':
+        // Block to damage conversion
+        totalPower += num(values.percent, 0.5) * 6;  // Estimated block value
+        break;
+      case 'DAMAGE_ADD':
+        // Special damage add effects
+        if (values.createReplica) totalPower += 6;  // Mirror of Duplication
+        if (values.selfDamageBonus) totalPower += 5;  // Berserker synergy
+        if (values.zeroCost) totalPower += 6;  // Philosopher's Stone effect
+        if (values.comboScaling) totalPower += 4;  // Combo blade scaling
+        if (values.energyScaling) totalPower += 4;  // Capacitor scaling
         break;
       case 'SELF_DAMAGE':
-        downsideValue += (values.selfDamage || 0) * ENERGY_ECONOMY.DOWNSIDE_VALUE.selfDamagePerHp;
+        downsideValue += num(values.selfDamage) * ENERGY_ECONOMY.DOWNSIDE_VALUE.selfDamagePerHp;
+        // Block cost is a different downside
+        if (values.blockCost) downsideValue += num(values.blockCost) * -0.5;
         break;
       case 'EXHAUST':
         downsideValue += ENERGY_ECONOMY.DOWNSIDE_VALUE.exhaust;
@@ -420,6 +478,9 @@ function analyzeCardPower(card: CardData): PowerAnalysis {
     }
   }
 
+  // Special card effects that aren't in the standard effect list
+  if (values.returnToHand) totalPower += 4;  // Infinite Recursion (405)
+
   // Calculate budget
   const effectiveCost = Math.max(1, card.cost);  // 0-cost still has budget
   const expectedBudget = card.cost === 0 ? budget.zeroCostMax : budget.perEnergy * effectiveCost;
@@ -427,15 +488,15 @@ function analyzeCardPower(card: CardData): PowerAnalysis {
   const netPower = totalPower + downsideValue;  // downsideValue is negative
   const efficiency = effectiveCost > 0 ? netPower / effectiveCost : netPower;
 
-  // Determine balance rating
+  // Determine balance rating with adjusted thresholds
   let balanceRating: PowerAnalysis['balanceRating'];
-  const budgetRatio = netPower / expectedBudget;
+  const budgetRatio = expectedBudget > 0 ? netPower / expectedBudget : 1;
 
-  if (budgetRatio < 0.7) {
+  if (budgetRatio < 0.6) {
     balanceRating = 'underpowered';
-  } else if (budgetRatio <= 1.2) {
+  } else if (budgetRatio <= 1.3) {
     balanceRating = 'balanced';
-  } else if (budgetRatio <= 1.5) {
+  } else if (budgetRatio <= 1.6) {
     balanceRating = 'strong';
   } else {
     balanceRating = 'overpowered';
