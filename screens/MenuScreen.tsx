@@ -1,10 +1,35 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
+import { Sparkles, Key, X, Check } from 'lucide-react';
+import { saveApiKey, clearApiKey, getApiKeyStatus, isGeminiAvailable } from '../services/geminiService';
 
 interface MenuScreenProps {
   onStartGame: () => void;
 }
 
 const MenuScreen: React.FC<MenuScreenProps> = ({ onStartGame }) => {
+  const [showApiKeyInput, setShowApiKeyInput] = useState(false);
+  const [apiKeyInput, setApiKeyInput] = useState('');
+  const [apiKeyStatus, setApiKeyStatus] = useState<{ hasKey: boolean; maskedKey?: string }>({ hasKey: false });
+
+  useEffect(() => {
+    // Check API key status on mount
+    setApiKeyStatus(getApiKeyStatus());
+  }, []);
+
+  const handleSaveApiKey = () => {
+    if (apiKeyInput.trim()) {
+      saveApiKey(apiKeyInput.trim());
+      setApiKeyStatus(getApiKeyStatus());
+      setApiKeyInput('');
+      setShowApiKeyInput(false);
+    }
+  };
+
+  const handleClearApiKey = () => {
+    clearApiKey();
+    setApiKeyStatus({ hasKey: false });
+  };
+
   return (
     <div className="w-full h-screen-safe flex flex-col items-center justify-center bg-pixel-bg-dark text-stone-100 px-4 text-center relative overflow-hidden">
       {/* Animated Background Sparks */}
@@ -28,9 +53,83 @@ const MenuScreen: React.FC<MenuScreenProps> = ({ onStartGame }) => {
         혼돈의 대장간
       </h2>
 
-      <p className="mb-10 text-base md:text-lg text-stone-400 font-pixel-kr">
+      <p className="mb-6 text-base md:text-lg text-stone-400 font-pixel-kr">
         무기를 직접 제작하여 던전에서 살아남으세요.
       </p>
+
+      {/* AI Status Indicator */}
+      <div className="mb-6 flex flex-col items-center gap-2">
+        {apiKeyStatus.hasKey ? (
+          <div className="flex items-center gap-2 text-sm text-green-400 font-pixel-kr">
+            <Sparkles size={16} className="text-purple-400" />
+            <span>AI 기능 활성화됨</span>
+            <span className="text-stone-500">({apiKeyStatus.maskedKey})</span>
+          </div>
+        ) : (
+          <div className="flex items-center gap-2 text-sm text-stone-500 font-pixel-kr">
+            <Sparkles size={16} className="opacity-50" />
+            <span>AI 기능 비활성화</span>
+          </div>
+        )}
+
+        {/* API Key Toggle Button */}
+        <button
+          onClick={() => setShowApiKeyInput(!showApiKeyInput)}
+          className="flex items-center gap-1 px-3 py-1 text-xs font-pixel-kr text-stone-400 hover:text-orange-400 transition-colors"
+        >
+          <Key size={12} />
+          {apiKeyStatus.hasKey ? 'API 키 변경' : 'API 키 입력'}
+        </button>
+      </div>
+
+      {/* API Key Input Panel */}
+      {showApiKeyInput && (
+        <div className="mb-6 p-4 bg-stone-800/80 border-2 border-stone-600 rounded-lg max-w-md w-full">
+          <div className="flex items-center justify-between mb-3">
+            <span className="text-sm font-pixel-kr text-stone-300">Gemini API 키</span>
+            <button
+              onClick={() => setShowApiKeyInput(false)}
+              className="text-stone-500 hover:text-stone-300"
+            >
+              <X size={16} />
+            </button>
+          </div>
+
+          <div className="flex gap-2 mb-2">
+            <input
+              type="password"
+              value={apiKeyInput}
+              onChange={(e) => setApiKeyInput(e.target.value)}
+              placeholder="API 키를 입력하세요..."
+              className="flex-1 px-3 py-2 bg-stone-900 border border-stone-600 rounded text-sm text-stone-100 placeholder-stone-500 focus:outline-none focus:border-orange-500"
+              onKeyDown={(e) => {
+                if (e.key === 'Enter') handleSaveApiKey();
+              }}
+            />
+            <button
+              onClick={handleSaveApiKey}
+              disabled={!apiKeyInput.trim()}
+              className="px-3 py-2 bg-orange-600 hover:bg-orange-500 disabled:bg-stone-700 disabled:text-stone-500 rounded text-white transition-colors"
+            >
+              <Check size={16} />
+            </button>
+          </div>
+
+          {apiKeyStatus.hasKey && (
+            <button
+              onClick={handleClearApiKey}
+              className="text-xs text-red-400 hover:text-red-300 font-pixel-kr"
+            >
+              키 삭제
+            </button>
+          )}
+
+          <p className="mt-2 text-xs text-stone-500 font-pixel-kr">
+            AI 카드 생성 기능을 사용하려면 Google AI Studio에서<br/>
+            Gemini API 키를 발급받아 입력하세요.
+          </p>
+        </div>
+      )}
 
       {/* Start Button - 3D Pixel Style */}
       <button
