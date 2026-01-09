@@ -20,6 +20,7 @@ import {
   FORBIDDEN_COMBINATIONS,
   EffectCategory
 } from '../utils/balanceSystem';
+import { getEffectOptionsForAI, serializeAIEffect, AIEffectTemplate } from '../utils/aiEffects';
 
 // ============================================================
 // CONFIGURATION
@@ -64,9 +65,13 @@ const CARD_GENERATION_SCHEMA = {
     },
     hasDownside: { type: "boolean", description: "Whether card has a downside effect" },
     downsideType: { type: "string", enum: ["SELF_DAMAGE", "EXHAUST", "OVERHEAT", "NONE"], description: "Type of downside" },
-    downsideAmount: { type: "number", description: "Downside amount if applicable" }
+    downsideAmount: { type: "number", description: "Downside amount if applicable" },
+    effectType: { type: "string", description: "Effect type from the provided catalog (e.g., 'APPLY_WEAK', 'LIFESTEAL')" },
+    effectPhase: { type: "string", enum: ["SELF_DAMAGE", "PRE_DAMAGE", "ON_HIT", "POST_DAMAGE"], description: "When the effect executes" },
+    effectValue: { type: "integer", description: "Main effect value (damage, status amount, etc.)" },
+    effectPercentage: { type: "integer", description: "Percentage value for effects like lifesteal or execute threshold" }
   },
-  required: ["name", "type", "cost", "value", "rarity", "description", "effects"]
+  required: ["name", "type", "cost", "value", "rarity", "description", "effectType", "effectPhase"]
 };
 
 const ENEMY_GENERATION_SCHEMA = {
@@ -105,6 +110,10 @@ const ENEMY_GENERATION_SCHEMA = {
 function buildCardGenerationPrompt(context: CardGenerationContext): string {
   const slotConstraints = SLOT_CONSTRAINTS[context.targetType as CardType];
   const rarityBudget = POWER_BUDGET[context.targetRarity as CardRarity];
+  const effectOptions = getEffectOptionsForAI(
+    context.targetType as 'Handle' | 'Head' | 'Deco',
+    context.targetRarity as 'Common' | 'Rare' | 'Legend'
+  );
 
   return `You are a game designer for a Slay the Spire-like card game called "Forged in Chaos" (혼돈의 대장간).
 
@@ -128,24 +137,30 @@ POWER BUDGET FOR ${context.targetRarity.toUpperCase()}:
 - Zero cost max power: ${rarityBudget.zeroCostMax}
 - Max effects: ${rarityBudget.maxEffects}
 
-EFFECT CATEGORIES AND BOUNDS:
-- DAMAGE_MULT: 0.5 to 3.0 (Handle)
-- DAMAGE_ADD: 1 to 10 (Deco)
-- STATUS_APPLY: weak(1-3), vulnerable(1-3), poison(2-8), bleed(2-6), burn(2-6)
-- STUN: 1-2 turns
-- ENERGY_GAIN: 1-2
-- DRAW_CARD: 1-3 cards
-- LIFESTEAL: 25-75%
-- SELF_DAMAGE: 2-10 HP (downside)
+AVAILABLE EFFECTS FOR ${context.targetType.toUpperCase()} ${context.targetRarity.toUpperCase()}:
+${effectOptions}
+
+CHOOSE ONE EFFECT from the list above and specify:
+- effectType: The exact type string (e.g., "APPLY_WEAK", "LIFESTEAL")
+- effectPhase: The phase string (e.g., "POST_DAMAGE", "ON_HIT")
+- effectValue: The value shown in the list (if applicable)
+- effectPercentage: The percentage value (only for percentage-based effects like LIFESTEAL or EXECUTE)
+
+EFFECT PHASES:
+- SELF_DAMAGE: Runs before damage calculation (for self-harm effects)
+- PRE_DAMAGE: Modifies damage before dealing (multipliers, bonuses)
+- ON_HIT: Executes per damage instance (lifesteal, gold gain)
+- POST_DAMAGE: Applies after all damage (status effects, card draw)
 
 FORBIDDEN COMBINATIONS:
 ${FORBIDDEN_COMBINATIONS.map(f => `- ${f.name}: ${f.description}`).join('\n')}
 
 IMPORTANT:
 1. Card name MUST be in Korean, max 10 characters
-2. Description MUST be in Korean, max 50 characters
+2. Description MUST be in Korean, max 50 characters, describing the EXACT effect chosen
 3. Balance the card - don't make it too weak or too strong
 4. ${context.targetRarity === 'Legend' ? 'Legend cards should have a downside or high cost (2+)' : ''}
+5. The description should match the effectType you selected (e.g., if you choose APPLY_WEAK with value 2, description should mention "약화 2")
 
 Generate the card as a JSON object following the schema.`;
 }
@@ -329,6 +344,17 @@ class GeminiService {
 
         const generated = JSON.parse(responseText);
         console.log('[GeminiService] Parsed card data:', generated.name, generated.type, generated.rarity);
+        console.log('[GeminiService] Effect data:', generated.effectType, generated.effectPhase, generated.effectValue);
+
+        // Serialize AI effect template
+        const effectTemplate: AIEffectTemplate = {
+          type: generated.effectType,
+          phase: generated.effectPhase,
+          value: generated.effectValue,
+          percentage: generated.effectPercentage
+        };
+        const serializedEffect = serializeAIEffect(effectTemplate);
+        console.log('[GeminiService] Serialized effect:', serializedEffect);
 
         // Convert to CardData format
         const card: CardData = {
@@ -339,7 +365,7 @@ class GeminiService {
           value: generated.value,
           rarity: generated.rarity as CardRarity,
           description: generated.description,
-          effectId: `generated_${generated.nameEn?.toLowerCase().replace(/\s+/g, '_') || 'card'}`
+          effectId: serializedEffect  // Store serialized effect data
         };
 
         // Validate the generated card
