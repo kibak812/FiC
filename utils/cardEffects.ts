@@ -1,13 +1,18 @@
 /**
  * Card Effect System - Registry-based effect processing
- * 
+ *
  * Effects are categorized by execution phase:
  * - PRE_DAMAGE: Modify damage/stats before dealing (e.g., Gambler's multiplier)
  * - ON_HIT: Execute per hit during damage loop (e.g., lifesteal, gold gain)
  * - POST_DAMAGE: Apply after all damage dealt (e.g., status effects, draw)
+ *
+ * Supports both:
+ * 1. Static effects (database cards with hardcoded IDs)
+ * 2. Dynamic effects (AI-generated cards with effectId metadata)
  */
 
 import { CardInstance, PlayerStats, EnemyData, EnemyStatus } from '@/types';
+import { parseAIEffect, generateAIEffectActions } from './aiEffects';
 
 // --- Effect Context ---
 
@@ -455,17 +460,63 @@ export function executeEffectsForPhase(
   modifiers: EffectModifiers,
   phase: EffectPhase
 ): EffectAction[] {
-  const effects = getEffectsForPhase(ctx.slots, phase);
   const actions: EffectAction[] = [];
-  
-  for (const effect of effects) {
+
+  // 1. Execute static effects from registry (database cards)
+  const staticEffects = getEffectsForPhase(ctx.slots, phase);
+  for (const effect of staticEffects) {
     if (effect.condition && !effect.condition(ctx, modifiers)) {
       continue;
     }
     const effectActions = effect.execute(ctx, modifiers);
     actions.push(...effectActions);
   }
-  
+
+  // 2. Execute dynamic effects from AI cards
+  const aiActions = executeAIEffectsForPhase(ctx, modifiers, phase);
+  actions.push(...aiActions);
+
+  return actions;
+}
+
+/**
+ * Execute AI-generated card effects for a given phase
+ */
+function executeAIEffectsForPhase(
+  ctx: CardEffectContext,
+  modifiers: EffectModifiers,
+  phase: EffectPhase
+): EffectAction[] {
+  const actions: EffectAction[] = [];
+
+  // Check each slot for AI-generated cards
+  const slots: Array<{ card: CardInstance | null; slot: SlotType }> = [
+    { card: ctx.slots.handle, slot: 'handle' },
+    { card: ctx.slots.head, slot: 'head' },
+    { card: ctx.slots.deco, slot: 'deco' }
+  ];
+
+  for (const { card } of slots) {
+    if (!card || !card.effectId) {
+      continue;
+    }
+
+    // Parse AI effect metadata
+    const template = parseAIEffect(card.effectId);
+    if (!template) {
+      continue;
+    }
+
+    // Only execute effects for the current phase
+    if (template.phase !== phase) {
+      continue;
+    }
+
+    // Generate and add actions
+    const aiActions = generateAIEffectActions(template, ctx, modifiers);
+    actions.push(...aiActions);
+  }
+
   return actions;
 }
 
