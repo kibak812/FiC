@@ -12,7 +12,7 @@ import {
   isTwinHandle,
   WeaponSlots
 } from '../utils/cardEffects';
-import { calculateBlockedDamage, calculateEnemyIntentPlan, calculateEnemyStrengthGain, calculateWeaponStats, resolveEnemyTurnStartStatuses } from '../utils/combatEngine';
+import { applyCombatEffectActions, calculateBlockedDamage, calculateEnemyIntentPlan, calculateEnemyStrengthGain, calculateWeaponStats, resolveEnemyTurnStartStatuses } from '../utils/combatEngine';
 import { createActMap, getAvailableMapNodeIds } from '../utils/mapUtils';
 import { createInitialPlayerStats } from '../utils/playerUtils';
 import { createCombatCardRewards, createRandomCardReward, getCombatRewardRule, rollGoldReward } from '../utils/rewardUtils';
@@ -326,64 +326,30 @@ const processActions = (
   enemy: EnemyData,
   rng: () => number
 ): void => {
-  for (const action of actions) {
-    switch (action.type) {
-      case 'PLAYER_SELF_DAMAGE':
-        state.player.hp = Math.max(0, state.player.hp - action.amount);
-        state.player.selfDamageThisTurn += action.amount;
-        modifiers.selfDamage += action.amount;
-        break;
-      case 'PLAYER_HEAL':
-        state.player.hp = Math.min(state.player.maxHp, state.player.hp + action.amount);
-        break;
-      case 'PLAYER_GAIN_ENERGY':
-        state.player.energy += action.amount;
-        break;
-      case 'PLAYER_GAIN_BLOCK':
-        state.player.block += action.amount;
-        break;
-      case 'PLAYER_REDUCE_BLOCK': {
-        const hpDamage = Math.max(0, action.amount - state.player.block);
-        state.player.block = Math.max(0, state.player.block - action.amount);
-        state.player.hp = Math.max(0, state.player.hp - hpDamage);
-        break;
-      }
-      case 'PLAYER_GAIN_GOLD':
-        state.player.gold += action.amount;
-        break;
-      case 'PLAYER_SET_DODGE':
-        state.player.dodgeNextAttack = action.value;
-        break;
-      case 'PLAYER_OVERHEAT':
-        state.player.overheat += action.amount;
-        break;
-      case 'PLAYER_NEXT_TURN_DRAW':
-        state.player.nextTurnDraw += action.amount;
-        break;
-      case 'ENEMY_APPLY_STATUS':
-        enemy.statuses[action.status] += action.amount;
-        break;
-      case 'ENEMY_SKIP_INTENT':
-        enemy.currentIntentIndex = (enemy.currentIntentIndex + 1) % enemy.intents.length;
-        break;
-      case 'ENEMY_EXECUTE_THRESHOLD':
-        if (enemy.currentHp > 0 && enemy.currentHp <= enemy.maxHp * action.threshold) {
-          enemy.currentHp = 0;
-        }
-        break;
+  const result = applyCombatEffectActions({
+    player: state.player,
+    enemy,
+    modifiers,
+    growingCrystalBonus: state.growingCrystalBonus
+  }, actions);
+
+  state.player = result.player;
+  Object.assign(enemy, result.enemy, { statuses: { ...result.enemy.statuses } });
+  Object.assign(modifiers, result.modifiers);
+  state.growingCrystalBonus = result.growingCrystalBonus;
+
+  for (const sideEffect of result.sideEffects) {
+    switch (sideEffect.type) {
       case 'DRAW_CARDS':
-        drawCards(state, action.count, rng);
+        drawCards(state, sideEffect.count, rng);
         break;
       case 'CREATE_REPLICA': {
         const replica = createCardInstance(801, rng);
-        replica.value = action.baseDamage;
-        replica.description = `Simulated replica. Damage ${action.baseDamage}. Cost 0.`;
+        replica.value = sideEffect.baseDamage;
+        replica.description = `Simulated replica. Damage ${sideEffect.baseDamage}. Cost 0.`;
         state.deck.push(replica);
         break;
       }
-      case 'GROW_CRYSTAL':
-        state.growingCrystalBonus = Math.min(action.max, state.growingCrystalBonus + action.amount);
-        break;
     }
   }
 };

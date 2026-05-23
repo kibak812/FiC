@@ -366,11 +366,13 @@ section('Validation and CI gates', () => {
   const packageJson = readJsonRecord('package.json');
   const scripts = isRecord(packageJson.scripts) ? packageJson.scripts : {};
   const ciSource = readText('.github/workflows/ci.yml');
+  const combatEngineSource = readText('utils/combatEngine.ts');
 
   requireReady(exists('scripts/validateBalance.ts'), 'Balance validator script should exist.');
   requireReady(exists('scripts/testCore.ts'), 'Core combat and static data tests should exist.');
   requireReady(exists('scripts/simulateRuns.ts'), 'Seeded run simulation should exist.');
   requireReady(exists('tests/e2e/run-smoke.spec.ts'), 'Main UI e2e smoke test should exist.');
+  requireReady(combatEngineSource.includes('applyCombatEffectActions') && combatEngineSource.includes('CombatEffectSideEffect'), 'Combat engine should expose a UI-free effect action reducer and explicit deck side effects.');
   requireReady(typeof scripts['test:balance'] === 'string', 'package.json should expose test:balance.');
   requireReady(typeof scripts['test:logic'] === 'string' && String(scripts['test:logic']).includes('simulateRuns.ts'), 'package.json should expose logic tests with seeded simulation.');
   requireReady(typeof scripts['test:e2e'] === 'string', 'package.json should expose e2e tests.');

@@ -18,6 +18,7 @@ import {
   isTwinHandle
 } from '../utils/cardEffects';
 import {
+  applyCombatEffectActions,
   calculateBlockedDamage,
   calculateEnemyIntentPlan,
   calculateEnemyStrengthGain,
@@ -283,6 +284,64 @@ runSuite('Core combat tests', [
   test('blocked damage exposes unblocked damage and remaining block', () => {
     assertDeepEqual(calculateBlockedDamage(9, 4), { unblockedDamage: 5, nextBlock: 0 }, 'Damage above block should spill over');
     assertDeepEqual(calculateBlockedDamage(3, 8), { unblockedDamage: 0, nextBlock: 5 }, 'Damage below block should preserve the remainder');
+  }),
+
+  test('combat effect reducer applies card effects without UI state', () => {
+    const enemy = getEnemyById('rust_slime');
+    enemy.currentHp = 4;
+    const result = applyCombatEffectActions({
+      player: createPlayer({ hp: 20, maxHp: 30, energy: 2, maxEnergy: 3, block: 2 }),
+      enemy,
+      modifiers: {
+        finalDamage: 5,
+        finalBlock: 0,
+        ignoreBlock: false,
+        selfDamage: 0
+      },
+      growingCrystalBonus: 2
+    }, [
+      { type: 'MODIFY_DAMAGE', amount: 3, mode: 'add' },
+      { type: 'MODIFY_DAMAGE', amount: 2, mode: 'multiply' },
+      { type: 'MODIFY_BLOCK', amount: 4, mode: 'add' },
+      { type: 'MODIFY_BLOCK', amount: 2, mode: 'multiply' },
+      { type: 'SET_IGNORE_BLOCK', value: true },
+      { type: 'PLAYER_SELF_DAMAGE', amount: 4 },
+      { type: 'PLAYER_HEAL', amount: 20 },
+      { type: 'PLAYER_GAIN_ENERGY', amount: 5 },
+      { type: 'PLAYER_GAIN_BLOCK', amount: 3 },
+      { type: 'PLAYER_REDUCE_BLOCK', amount: 7 },
+      { type: 'PLAYER_GAIN_GOLD', amount: 9 },
+      { type: 'PLAYER_SET_DODGE', value: true },
+      { type: 'PLAYER_OVERHEAT', amount: 1 },
+      { type: 'PLAYER_NEXT_TURN_DRAW', amount: 2 },
+      { type: 'ENEMY_APPLY_STATUS', status: 'poison', amount: 3 },
+      { type: 'ENEMY_SKIP_INTENT' },
+      { type: 'ENEMY_EXECUTE_THRESHOLD', threshold: 0.2 },
+      { type: 'DRAW_CARDS', count: 2 },
+      { type: 'CREATE_REPLICA', baseDamage: 11 },
+      { type: 'GROW_CRYSTAL', amount: 2, max: 3 }
+    ]);
+
+    assertEqual(result.player.hp, 28, 'Block reduction overflow should damage HP after self-damage and healing');
+    assertEqual(result.player.energy, 3, 'Energy recovery should cap at max energy like runtime combat');
+    assertEqual(result.player.block, 0, 'Block reduction should consume all available block');
+    assertEqual(result.player.gold, 9, 'Gold gain should apply to the player');
+    assert(result.player.dodgeNextAttack, 'Dodge flag should be preserved on the player');
+    assertEqual(result.player.overheat, 1, 'Overheat should accumulate on the player');
+    assertEqual(result.player.nextTurnDraw, 2, 'Next-turn draw should accumulate on the player');
+    assertEqual(result.player.selfDamageThisTurn, 4, 'Self damage should be tracked for the turn');
+    assertEqual(result.modifiers.finalDamage, 16, 'Damage modifiers should be applied in order');
+    assertEqual(result.modifiers.finalBlock, 8, 'Block modifiers should be applied in order');
+    assert(result.modifiers.ignoreBlock, 'Ignore-block modifier should be preserved');
+    assertEqual(result.modifiers.selfDamage, 4, 'Self damage should update effect modifiers');
+    assertEqual(result.enemy.statuses.poison, 3, 'Enemy status application should be pure and inspectable');
+    assertEqual(result.enemy.currentIntentIndex, 1, 'Intent skip should advance the enemy intent');
+    assertEqual(result.enemy.currentHp, 0, 'Execute threshold should defeat low-HP enemies');
+    assertEqual(result.growingCrystalBonus, 3, 'Growing crystal should respect its maximum');
+    assertDeepEqual(result.sideEffects, [
+      { type: 'DRAW_CARDS', count: 2 },
+      { type: 'CREATE_REPLICA', baseDamage: 11 }
+    ], 'Deck-changing effects should be exposed as explicit side effects');
   })
 ]);
 

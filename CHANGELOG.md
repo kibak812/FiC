@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.11.5] - 2026-05-23
+
+### Added
+- UI-free combat effect reducer for applying card effect actions to player/enemy state with explicit deck side effects.
+- Core combat test coverage for effect action reduction, capped energy recovery, execute thresholds, crystal growth, and replica/draw side effects.
+
+### Changed
+- Seeded run simulation now uses the shared combat effect reducer, keeping card effect behavior aligned with runtime combat.
+- Product readiness now checks that the combat engine exposes this UI-free reducer.
+- Menu version updated to v1.11.5.
+
+### Design Notes
+- This continues the App.tsx combat-engine split by moving card effect state mutation into inspectable pure logic instead of leaving it hidden inside UI handlers.
+
+---
+
 ## [1.11.4] - 2026-05-23
 
 ### Changed

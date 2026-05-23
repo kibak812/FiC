@@ -7,7 +7,7 @@ import {
   IntentType,
   PlayerStats
 } from '@/types';
-import type { WeaponSlots } from './cardEffects';
+import type { EffectAction, EffectModifiers, WeaponSlots } from './cardEffects';
 
 const DEFENSIVE_HANDLE_IDS = new Set([102, 217, 322, 415]);
 const DEFENSIVE_HEAD_IDS = new Set([104, 227, 330, 419]);
@@ -92,6 +92,21 @@ export interface EnemyIntentPlan {
 export interface BlockedDamageResult {
   unblockedDamage: number;
   nextBlock: number;
+}
+
+export type CombatEffectSideEffect =
+  | { type: 'DRAW_CARDS'; count: number }
+  | { type: 'CREATE_REPLICA'; baseDamage: number };
+
+export interface CombatEffectState {
+  player: PlayerStats;
+  enemy: EnemyData;
+  modifiers: EffectModifiers;
+  growingCrystalBonus: number;
+}
+
+export interface CombatEffectApplyResult extends CombatEffectState {
+  sideEffects: CombatEffectSideEffect[];
 }
 
 export const isDefensiveWeapon = (handle: CardInstance, head: CardInstance): boolean => {
@@ -202,6 +217,125 @@ export const calculateBlockedDamage = (incomingDamage: number, currentBlock: num
     unblockedDamage: Math.max(0, incomingDamage - currentBlock),
     nextBlock: Math.max(0, currentBlock - incomingDamage)
   };
+};
+
+export const applyCombatEffectAction = (
+  state: CombatEffectState,
+  action: EffectAction
+): CombatEffectApplyResult => {
+  const player: PlayerStats = { ...state.player };
+  const enemy: EnemyData = {
+    ...state.enemy,
+    statuses: { ...state.enemy.statuses }
+  };
+  const modifiers: EffectModifiers = { ...state.modifiers };
+  let growingCrystalBonus = state.growingCrystalBonus;
+  const sideEffects: CombatEffectSideEffect[] = [];
+
+  switch (action.type) {
+    case 'MODIFY_DAMAGE':
+      if (action.mode === 'add') {
+        modifiers.finalDamage += action.amount;
+      } else if (action.mode === 'multiply') {
+        modifiers.finalDamage = Math.floor(modifiers.finalDamage * action.amount);
+      } else {
+        modifiers.finalDamage = action.amount;
+      }
+      break;
+    case 'MODIFY_BLOCK':
+      if (action.mode === 'add') {
+        modifiers.finalBlock += action.amount;
+      } else {
+        modifiers.finalBlock = Math.floor(modifiers.finalBlock * action.amount);
+      }
+      break;
+    case 'SET_IGNORE_BLOCK':
+      modifiers.ignoreBlock = action.value;
+      break;
+    case 'PLAYER_SELF_DAMAGE':
+      player.hp = Math.max(0, player.hp - action.amount);
+      player.selfDamageThisTurn += action.amount;
+      modifiers.selfDamage += action.amount;
+      break;
+    case 'PLAYER_HEAL':
+      player.hp = Math.min(player.maxHp, player.hp + action.amount);
+      break;
+    case 'PLAYER_GAIN_ENERGY':
+      player.energy = Math.min(player.maxEnergy, player.energy + action.amount);
+      break;
+    case 'PLAYER_GAIN_BLOCK':
+      player.block += action.amount;
+      break;
+    case 'PLAYER_REDUCE_BLOCK': {
+      const hpDamage = Math.max(0, action.amount - player.block);
+      player.block = Math.max(0, player.block - action.amount);
+      player.hp = Math.max(0, player.hp - hpDamage);
+      break;
+    }
+    case 'PLAYER_GAIN_GOLD':
+      player.gold += action.amount;
+      break;
+    case 'PLAYER_SET_DODGE':
+      player.dodgeNextAttack = action.value;
+      break;
+    case 'PLAYER_OVERHEAT':
+      player.overheat += action.amount;
+      break;
+    case 'PLAYER_NEXT_TURN_DRAW':
+      player.nextTurnDraw += action.amount;
+      break;
+    case 'ENEMY_APPLY_STATUS':
+      enemy.statuses[action.status] += action.amount;
+      break;
+    case 'ENEMY_SKIP_INTENT':
+      enemy.currentIntentIndex = (enemy.currentIntentIndex + 1) % enemy.intents.length;
+      break;
+    case 'ENEMY_EXECUTE_THRESHOLD':
+      if (enemy.currentHp > 0 && enemy.currentHp <= enemy.maxHp * action.threshold) {
+        enemy.currentHp = 0;
+      }
+      break;
+    case 'DRAW_CARDS':
+      sideEffects.push({ type: 'DRAW_CARDS', count: action.count });
+      break;
+    case 'CREATE_REPLICA':
+      sideEffects.push({ type: 'CREATE_REPLICA', baseDamage: action.baseDamage });
+      break;
+    case 'GROW_CRYSTAL':
+      growingCrystalBonus = Math.min(action.max, growingCrystalBonus + action.amount);
+      break;
+  }
+
+  return {
+    player,
+    enemy,
+    modifiers,
+    growingCrystalBonus,
+    sideEffects
+  };
+};
+
+export const applyCombatEffectActions = (
+  state: CombatEffectState,
+  actions: EffectAction[]
+): CombatEffectApplyResult => {
+  let current: CombatEffectApplyResult = {
+    ...state,
+    player: { ...state.player },
+    enemy: { ...state.enemy, statuses: { ...state.enemy.statuses } },
+    modifiers: { ...state.modifiers },
+    sideEffects: []
+  };
+
+  for (const action of actions) {
+    const next = applyCombatEffectAction(current, action);
+    current = {
+      ...next,
+      sideEffects: [...current.sideEffects, ...next.sideEffects]
+    };
+  }
+
+  return current;
 };
 
 export const calculateStatusCleanseStrengthGain = (enemy: EnemyData, intent: EnemyIntent): number => {
