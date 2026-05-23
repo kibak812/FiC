@@ -28,9 +28,12 @@ import {
   resolveEnemyTurnStartStatuses
 } from '../utils/combatEngine';
 import {
+  createCombatRewardBundle,
   createCombatCardRewards,
   createRandomCardReward,
   getCombatRewardRule,
+  resolveBossReward,
+  resolveShopPurchase,
   rollGoldReward
 } from '../utils/rewardUtils';
 import { createActMap } from '../utils/mapUtils';
@@ -674,13 +677,41 @@ runSuite('Static reward, map, and archetype tests', [
     const rule = getCombatRewardRule(EnemyTier.COMMON);
     const firstRng = createSeededRng('reward-seed');
     const secondRng = createSeededRng('reward-seed');
+    const firstBundle = createCombatRewardBundle(EnemyTier.ELITE, createSeededRng('reward-bundle'));
+    const secondBundle = createCombatRewardBundle(EnemyTier.ELITE, createSeededRng('reward-bundle'));
     const firstRewardIds = createCombatCardRewards(rule, firstRng).map(card => card.id);
     const secondRewardIds = createCombatCardRewards(rule, secondRng).map(card => card.id);
 
     assertDeepEqual(firstRewardIds, secondRewardIds, 'Seeded card rewards should be repeatable');
+    assertEqual(firstBundle.gold, secondBundle.gold, 'Seeded reward bundles should repeat gold');
+    assertDeepEqual(firstBundle.cardOptions.map(card => card.id), secondBundle.cardOptions.map(card => card.id), 'Seeded reward bundles should repeat card options');
     assertEqual(rollGoldReward(rule, () => 0), rule.gold.min, 'Gold reward should include minimum bound');
     assertEqual(rollGoldReward(rule, () => 0.999), rule.gold.max, 'Gold reward should include maximum bound');
     assertEqual(createRandomCardReward(CardRarity.RARE, CardType.HEAD, () => 0).type, CardType.HEAD, 'Random typed rewards should honor requested slot');
+  }),
+
+  test('shop and boss rewards resolve from static data without UI state', () => {
+    const brokePurchase = resolveShopPurchase(createPlayer({ gold: 10 }), 'HEAL', () => 0);
+    assertEqual(brokePurchase.event.type, 'INSUFFICIENT_GOLD', 'Shop resolver should reject unaffordable purchases');
+    assertEqual(brokePurchase.player.gold, 10, 'Rejected shop purchases should not spend gold');
+
+    const healPurchase = resolveShopPurchase(createPlayer({ hp: 20, maxHp: 80, gold: 100 }), 'HEAL', () => 0);
+    assertEqual(healPurchase.event.type, 'HEAL', 'Heal shop item should produce a heal event');
+    assertEqual(healPurchase.player.hp, 60, 'Heal shop item should restore 50% of max HP');
+    assertEqual(healPurchase.player.gold, 60, 'Heal shop item should charge its static price');
+
+    const rarePurchase = resolveShopPurchase(createPlayer({ gold: 100 }), 'RARE', createSeededRng('shop-rare'));
+    assertEqual(rarePurchase.event.type, 'GAIN_CARD', 'Rare shop item should generate a card side effect');
+    assertEqual(rarePurchase.player.gold, 25, 'Rare shop item should charge its static price');
+    assert(rarePurchase.event.type === 'GAIN_CARD' && rarePurchase.event.card.rarity === CardRarity.RARE, 'Rare shop item should generate a rare card');
+
+    const energyReward = resolveBossReward(createPlayer({ hp: 35, maxHp: 80, maxEnergy: 4 }), 'ENERGY', true);
+    assertEqual(energyReward.player.maxEnergy, 5, 'Boss energy reward should increase max energy');
+    assertEqual(energyReward.player.hp, 80, 'Boss reward full repair should restore to max HP');
+
+    const maxHpReward = resolveBossReward(createPlayer({ hp: 35, maxHp: 80 }), 'MAX_HP', true);
+    assertEqual(maxHpReward.player.maxHp, 110, 'Boss max HP reward should increase max HP');
+    assertEqual(maxHpReward.player.hp, 110, 'Boss max HP reward should full repair to the new max when requested');
   }),
 
   test('archetypes have entry, mid, late, and all slot connections', () => {

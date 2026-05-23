@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.11.10] - 2026-05-23
+
+### Added
+- UI-free reward resolvers for combat reward bundles, shop purchases, and boss rewards.
+- Core logic coverage for seeded reward bundles, static shop purchase outcomes, and boss reward repair behavior.
+
+### Changed
+- Runtime reward, shop, and boss reward flows now share the same static-data resolvers as the seeded simulation.
+- Product readiness now checks that App.tsx and the seeded simulation both route rewards through the shared reward utilities.
+- Menu version updated to v1.11.10.
+
+### Design Notes
+- Rewards are part of the offline core loop, so card options, gold, shop effects, and boss rewards now pass through one testable rule path instead of separate UI and simulation switches.
+
+---
+
 ## [1.11.9] - 2026-05-23
 
 ### Added

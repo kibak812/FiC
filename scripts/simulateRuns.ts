@@ -15,7 +15,7 @@ import {
 import { applyCombatEffectActions, calculateEnemyIntentPlan, calculateWeaponStats, resolveEnemyTurn, resolvePlayerWeaponAttack } from '../utils/combatEngine';
 import { createActMap, getAvailableMapNodeIds } from '../utils/mapUtils';
 import { createInitialPlayerStats } from '../utils/playerUtils';
-import { createCombatCardRewards, createRandomCardReward, getCombatRewardRule, rollGoldReward } from '../utils/rewardUtils';
+import { createCombatRewardBundle, createRandomCardReward, resolveBossReward, resolveShopPurchase } from '../utils/rewardUtils';
 import { assert, createSeededRng, pick } from './testUtils';
 
 const RUN_COUNT = Number(process.env.SIM_RUNS || 1000);
@@ -665,20 +665,20 @@ const applyEventOption = (state: SimState, option: EventOption, rng: () => numbe
 };
 
 const applyShopItem = (state: SimState, item: ShopItemDefinition, rng: () => number): void => {
-  state.player.gold -= item.price;
+  const result = resolveShopPurchase(state.player, item.id, rng);
+  state.player = result.player;
 
-  switch (item.effect.type) {
-    case 'HEAL_PERCENT':
-      state.player.hp = Math.min(state.player.maxHp, state.player.hp + Math.floor(state.player.maxHp * item.effect.percent));
+  switch (result.event.type) {
+    case 'INSUFFICIENT_GOLD':
       break;
     case 'REMOVE_CARD':
       removeLowestValueCard(state);
       break;
-    case 'GAIN_RANDOM_CARD':
-      state.deck.push(createRandomCardReward(item.effect.rarity, undefined, rng));
+    case 'GAIN_CARD':
+      state.deck.push(result.event.card);
       break;
+    case 'HEAL':
     case 'MAX_ENERGY':
-      state.player.maxEnergy += item.effect.amount;
       break;
   }
 };
@@ -748,9 +748,9 @@ const processNonCombatNode = (state: SimState, node: MapNode, rng: () => number)
 };
 
 const applyCombatReward = (state: SimState, enemyTier: EnemyTier, rng: () => number, result: SimResult): void => {
-  const rewardRule = getCombatRewardRule(enemyTier);
-  state.player.gold += rollGoldReward(rewardRule, rng);
-  const rewardCard = chooseRewardCard(state, createCombatCardRewards(rewardRule, rng));
+  const rewardBundle = createCombatRewardBundle(enemyTier, rng);
+  state.player.gold += rewardBundle.gold;
+  const rewardCard = chooseRewardCard(state, rewardBundle.cardOptions);
 
   if (rewardCard) {
     state.deck.push(rewardCard);
@@ -767,20 +767,7 @@ const applyBossReward = (state: SimState, act: 1 | 2, rng: () => number): void =
       ? BOSS_REWARDS.find(candidate => candidate.effect.type === 'MAX_HP') || pick(BOSS_REWARDS, rng)
       : pick(BOSS_REWARDS, rng);
 
-  switch (reward.effect.type) {
-    case 'MAX_ENERGY':
-      state.player.maxEnergy += reward.effect.amount;
-      break;
-    case 'MAX_HP':
-      state.player.maxHp += reward.effect.amount;
-      state.player.hp += reward.effect.amount;
-      break;
-    case 'GAIN_GOLD':
-      state.player.gold += reward.effect.amount;
-      break;
-  }
-
-  state.player.hp = state.player.maxHp;
+  state.player = resolveBossReward(state.player, reward.id, true).player;
 };
 
 const chooseMapNode = (nodes: MapNode[], state: SimState, result: SimResult, rng: () => number): MapNode => {

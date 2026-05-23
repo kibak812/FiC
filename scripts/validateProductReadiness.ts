@@ -387,7 +387,9 @@ section('Validation and CI gates', () => {
   const scripts = isRecord(packageJson.scripts) ? packageJson.scripts : {};
   const ciSource = readText('.github/workflows/ci.yml');
   const combatEngineSource = readText('utils/combatEngine.ts');
+  const rewardUtilsSource = readText('utils/rewardUtils.ts');
   const appSource = readText('App.tsx');
+  const simSource = readText('scripts/simulateRuns.ts');
 
   requireReady(exists('scripts/validateBalance.ts'), 'Balance validator script should exist.');
   requireReady(exists('scripts/testCore.ts'), 'Core combat and static data tests should exist.');
@@ -398,6 +400,9 @@ section('Validation and CI gates', () => {
   requireReady(combatEngineSource.includes('resolvePlayerWeaponAttack') && combatEngineSource.includes('PlayerWeaponHitEvent'), 'Combat engine should expose UI-free player weapon hit resolution with inspectable hit events.');
   requireReady(appSource.includes('resolveEnemyTurn(enemy, player)'), 'Runtime combat should use shared enemy turn resolution instead of duplicating enemy turn calculations in App.');
   requireReady(appSource.includes('resolvePlayerWeaponAttack({'), 'Runtime combat should use shared player weapon attack resolution instead of duplicating hit calculations in App.');
+  requireReady(rewardUtilsSource.includes('createCombatRewardBundle') && rewardUtilsSource.includes('resolveShopPurchase') && rewardUtilsSource.includes('resolveBossReward'), 'Reward utilities should expose UI-free combat reward, shop, and boss reward resolution.');
+  requireReady(appSource.includes('createCombatRewardBundle(enemy.tier)') && appSource.includes('resolveShopPurchase(player, itemId)') && appSource.includes('resolveBossReward(player, rewardId'), 'Runtime reward, shop, and boss reward flows should use shared static-data resolvers.');
+  requireReady(simSource.includes('createCombatRewardBundle(enemyTier') && simSource.includes('resolveShopPurchase(state.player') && simSource.includes('resolveBossReward(state.player'), 'Seeded simulation should use the same reward, shop, and boss reward resolvers as runtime.');
   requireReady(typeof scripts['test:balance'] === 'string', 'package.json should expose test:balance.');
   requireReady(typeof scripts['test:logic'] === 'string' && String(scripts['test:logic']).includes('simulateRuns.ts'), 'package.json should expose logic tests with seeded simulation.');
   requireReady(typeof scripts['test:e2e'] === 'string', 'package.json should expose e2e tests.');

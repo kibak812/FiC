@@ -13,12 +13,10 @@ import Anvil from './components/Anvil';
 import { cleanJunkFromDeck, createCardInstance, resetTemporaryDeckModifiers, shuffle } from './utils/cardUtils';
 import { createInitialPlayerStats } from './utils/playerUtils';
 import {
-  createCombatCardRewards,
+  createCombatRewardBundle,
   createRandomCardReward,
-  getBossRewardDefinition,
-  getCombatRewardRule,
-  getShopItemDefinition,
-  rollGoldReward
+  resolveBossReward,
+  resolveShopPurchase
 } from './utils/rewardUtils';
 import { createActMap, getAvailableMapNodeIds } from './utils/mapUtils';
 import {
@@ -487,8 +485,8 @@ const startCombat = (enemyData: EnemyData) => {
   const handleWinCombat = () => {
       cleanAndConsolidateDeck();
 
-      const rewardRule = getCombatRewardRule(enemy.tier);
-      const goldReward = rollGoldReward(rewardRule);
+      const rewardBundle = createCombatRewardBundle(enemy.tier);
+      const goldReward = rewardBundle.gold;
       setPlayer(prev => ({
           ...prev,
           gold: prev.gold + goldReward,
@@ -503,11 +501,10 @@ const startCombat = (enemyData: EnemyData) => {
           selfDamageThisTurn: 0
       }));
 
-      const options = createCombatCardRewards(rewardRule);
       showFeedback(`승리! ${goldReward} 골드 획득`);
       playSound('reward');
 
-      setRewardOptions(options);
+      setRewardOptions(rewardBundle.cardOptions);
       setGameState('REWARD');
   };
 
@@ -533,33 +530,10 @@ const startCombat = (enemyData: EnemyData) => {
   };
 
   const confirmBossReward = (rewardId: BossRewardId) => {
-      const reward = getBossRewardDefinition(rewardId);
+      const result = resolveBossReward(player, rewardId, act < 3);
+      setPlayer(result.player);
 
-      switch (reward.effect.type) {
-          case 'MAX_ENERGY':
-              setPlayer(prev => ({
-                  ...prev,
-                  maxEnergy: prev.maxEnergy + reward.effect.amount,
-                  hp: act < 3 ? prev.maxHp : prev.hp
-              }));
-              break;
-          case 'MAX_HP':
-              setPlayer(prev => ({
-                  ...prev,
-                  maxHp: prev.maxHp + reward.effect.amount,
-                  hp: act < 3 ? prev.maxHp + reward.effect.amount : prev.hp + reward.effect.amount
-              }));
-              break;
-          case 'GAIN_GOLD':
-              setPlayer(prev => ({
-                  ...prev,
-                  gold: prev.gold + reward.effect.amount,
-                  hp: act < 3 ? prev.maxHp : prev.hp
-              }));
-              break;
-      }
-
-      showFeedback(act < 3 ? `${reward.feedback} / 막 전환 수리 완료` : reward.feedback);
+      showFeedback(act < 3 ? `${result.reward.feedback} / 막 전환 수리 완료` : result.reward.feedback);
       playSound('reward');
       startNextActMap();
   };
@@ -595,53 +569,40 @@ const startCombat = (enemyData: EnemyData) => {
 
   // Shop Logic
   const handleShopBuy = (itemId: ShopItemId) => {
-      const item = getShopItemDefinition(itemId);
+      const result = resolveShopPurchase(player, itemId);
 
-      if (player.gold < item.price) {
+      if (result.event.type === 'INSUFFICIENT_GOLD') {
           showFeedback("골드가 부족합니다!");
           playSound('bad');
           return;
       }
 
-      switch (item.effect.type) {
-          case 'HEAL_PERCENT': {
-              const { percent } = item.effect;
-              setPlayer(prev => ({
-                  ...prev,
-                  gold: prev.gold - item.price,
-                  hp: Math.min(prev.maxHp, prev.hp + Math.floor(prev.maxHp * percent))
-              }));
+      switch (result.event.type) {
+          case 'HEAL':
+              setPlayer(result.player);
               showFeedback("체력 회복!");
               playSound('reward');
               break;
-          }
           case 'REMOVE_CARD':
-              setPlayer(prev => ({ ...prev, gold: prev.gold - item.price }));
+              setPlayer(result.player);
               playSound('ui');
               setRemovalContext('SHOP');
               setSelectedCardId(null);
               setGameState('REMOVE_CARD'); // Go to remove screen
               break;
-          case 'GAIN_RANDOM_CARD': {
-              const newCard = createRandomCardReward(item.effect.rarity);
-              setPlayer(prev => ({ ...prev, gold: prev.gold - item.price }));
+          case 'GAIN_CARD':
+              const gainedCard = result.event.card;
+              setPlayer(result.player);
               showFeedback('희귀 설계도 획득!');
               playSound('reward');
-              setDeck(prev => [...prev, newCard]);
-              setAcquiredCard(newCard); // Trigger Modal
+              setDeck(prev => [...prev, gainedCard]);
+              setAcquiredCard(gainedCard); // Trigger Modal
               break;
-          }
-          case 'MAX_ENERGY': {
-              const { amount } = item.effect;
-              setPlayer(prev => ({
-                  ...prev,
-                  gold: prev.gold - item.price,
-                  maxEnergy: prev.maxEnergy + amount
-              }));
+          case 'MAX_ENERGY':
+              setPlayer(result.player);
               showFeedback("최대 에너지 +1 증가!");
               playSound('reward');
               break;
-          }
       }
   };
 
