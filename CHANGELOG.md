@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.11.20] - 2026-05-23
+
+### Added
+- Hand-reviewed pixel sprites for 12 rare decoration cards, covering duplication mirrors, steel plating, blood whetstones, berserker runes, bloodstone runes, bulwark/venom/flame lenses, overcharge coils, flow feathers, growth crests, and resonance stones.
+
+### Changed
+- Rare decorations now read as attachable forge artifacts with distinct silhouettes instead of generated abstract glyphs.
+- Product readiness now treats those rare decoration sprites as hand-reviewed art with detail and color-separation checks.
+- Menu version updated to v1.11.20.
+
+### Design Notes
+- Decorations are the smallest card art surface, so each rare icon now uses one clear object shape plus archetype color accents before secondary sparkle details.
+
+---
+
 ## [1.11.19] - 2026-05-23
 
 ### Changed
