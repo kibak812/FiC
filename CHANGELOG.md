@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.11.4] - 2026-05-23
+
+### Changed
+- 균형추 손잡이 and 쌍갈고리 송곳 now use hand-drawn pixel sprites instead of generated motif-only art.
+- Product readiness now checks that recently added cards keep hand-reviewed pixel sprites.
+- Menu version updated to v1.11.4.
+
+### Design Notes
+- The new common cards are meant to teach draw-loop and multi-hit entry points, so their silhouettes now show that intent directly: balance weights and draw ribbons for the handle, paired hooked awls and two hit sparks for the head.
+
+---
+
 ## [1.11.3] - 2026-05-23
 
 ### Changed

@@ -1440,6 +1440,10 @@ const generatedCardSprite = ({ kind, theme, rarity, variant = 0, motif }: Genera
   );
 };
 
+export const HAND_DRAWN_CARD_SPRITE_IDS = new Set<number>([
+  101, 102, 103, 104, 105, 248, 249
+]);
+
 // Card Sprites - Each card has unique pixel art icon
 export const CardSprites: Record<number, React.FC<{ className?: string }>> = {
   // Starter cards
@@ -1904,6 +1908,53 @@ export const CardSprites: Record<number, React.FC<{ className?: string }>> = {
       <rect x="10" y="14" width="2" height="2" fill="#8B0000"/>
     </svg>
   ),
+  248: ({ className }) => ( // Counterweight Handle
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      <rect x="2" y="2" width="20" height="20" fill="#0B090D"/>
+      <rect x="3" y="3" width="18" height="18" fill="#2A2430"/>
+      <rect x="4" y="4" width="16" height="1" fill="#5588CC"/>
+      <rect x="4" y="19" width="16" height="1" fill="#5588CC"/>
+      <rect x="4" y="4" width="1" height="16" fill="#5588CC"/>
+      <rect x="19" y="4" width="1" height="16" fill="#5588CC"/>
+      <rect x="11" y="5" width="2" height="14" fill="#C9A04A"/>
+      <rect x="10" y="7" width="1" height="10" fill="#E8C76B"/>
+      <rect x="13" y="7" width="1" height="10" fill="#7A5224"/>
+      <rect x="8" y="8" width="8" height="2" fill="#8B7355"/>
+      <rect x="5" y="10" width="4" height="4" fill="#C0C0C0"/>
+      <rect x="15" y="10" width="4" height="4" fill="#C0C0C0"/>
+      <rect x="6" y="11" width="2" height="2" fill="#FFD700"/>
+      <rect x="16" y="11" width="2" height="2" fill="#FFD700"/>
+      <rect x="8" y="14" width="8" height="1" fill="#7DAFC2"/>
+      <rect x="7" y="16" width="4" height="2" fill="#E8F7FF"/>
+      <rect x="13" y="16" width="4" height="2" fill="#E8F7FF"/>
+      <rect x="8" y="17" width="2" height="1" fill="#35505E"/>
+      <rect x="14" y="17" width="2" height="1" fill="#35505E"/>
+    </svg>
+  ),
+  249: ({ className }) => ( // Twin Hook Awl
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      <rect x="2" y="2" width="20" height="20" fill="#0B090D"/>
+      <rect x="3" y="3" width="18" height="18" fill="#271E38"/>
+      <rect x="4" y="4" width="16" height="1" fill="#5588CC"/>
+      <rect x="4" y="19" width="16" height="1" fill="#5588CC"/>
+      <rect x="4" y="4" width="1" height="16" fill="#5588CC"/>
+      <rect x="19" y="4" width="1" height="16" fill="#5588CC"/>
+      <rect x="7" y="5" width="2" height="10" fill="#DCE6F0"/>
+      <rect x="15" y="5" width="2" height="10" fill="#DCE6F0"/>
+      <rect x="8" y="4" width="3" height="2" fill="#FFFFFF"/>
+      <rect x="13" y="4" width="3" height="2" fill="#FFFFFF"/>
+      <rect x="6" y="6" width="2" height="2" fill="#C0C0C0"/>
+      <rect x="16" y="6" width="2" height="2" fill="#C0C0C0"/>
+      <rect x="6" y="13" width="4" height="2" fill="#AA55CC"/>
+      <rect x="14" y="13" width="4" height="2" fill="#AA55CC"/>
+      <rect x="10" y="15" width="4" height="4" fill="#654321"/>
+      <rect x="9" y="16" width="6" height="2" fill="#8B4513"/>
+      <rect x="5" y="10" width="2" height="1" fill="#FFFFFF"/>
+      <rect x="17" y="10" width="2" height="1" fill="#FFFFFF"/>
+      <rect x="5" y="17" width="2" height="2" fill="#D49CFF"/>
+      <rect x="17" y="17" width="2" height="2" fill="#D49CFF"/>
+    </svg>
+  ),
 };
 
 const generatedCardConfigs: Record<number, GeneratedCardSpriteConfig> = {
@@ -1944,8 +1995,6 @@ const generatedCardConfigs: Record<number, GeneratedCardSpriteConfig> = {
   245: { kind: 'deco', theme: 'fire', rarity: 'common', variant: 45, motif: 'flint' },
   246: { kind: 'head', theme: 'heavy', rarity: 'common', variant: 46, motif: 'mace' },
   247: { kind: 'deco', theme: 'heavy', rarity: 'common', variant: 47, motif: 'pressedStone' },
-  248: { kind: 'handle', theme: 'draw', rarity: 'common', variant: 48, motif: 'counterweightGrip' },
-  249: { kind: 'head', theme: 'multi', rarity: 'common', variant: 49, motif: 'twinHookAwl' },
   308: { kind: 'head', theme: 'energy', rarity: 'rare', variant: 8, motif: 'furnaceCore' },
   309: { kind: 'handle', theme: 'gold', rarity: 'rare', variant: 9, motif: 'gamblerDice' },
   310: { kind: 'head', theme: 'multi', rarity: 'rare', variant: 10, motif: 'comboStrikes' },

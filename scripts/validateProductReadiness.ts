@@ -2,6 +2,9 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import React from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+
 import {
   BOSS_REWARDS,
   CARD_ARCHETYPES,
@@ -14,7 +17,7 @@ import {
   MAP_NODE_LAYOUTS,
   SHOP_ITEMS
 } from '../constants';
-import { CardSprites, MonsterSprites } from '../components/PixelSprites';
+import { CardSprites, HAND_DRAWN_CARD_SPRITE_IDS, MonsterSprites } from '../components/PixelSprites';
 import {
   CardRarity,
   CardType,
@@ -108,6 +111,7 @@ const rewardRarities = new Set<CardRarity>([
   CardRarity.RARE,
   CardRarity.LEGEND
 ]);
+const handReviewedCardSpriteIds = [248, 249];
 
 const getCards = (ids: number[]): CardData[] => {
   return ids.map(id => cardById.get(id)).filter((card): card is CardData => Boolean(card));
@@ -127,6 +131,19 @@ const allEnemyPoolEnemies = (act: Act): EnemyData[] => {
     ...ENEMY_POOLS[act][EnemyTier.ELITE],
     ...ENEMY_POOLS[act][EnemyTier.BOSS]
   ];
+};
+
+const countSpriteRects = (cardId: number): number => {
+  const Sprite = CardSprites[cardId];
+  if (!Sprite) return 0;
+  return renderToStaticMarkup(React.createElement(Sprite)).match(/<rect\b/g)?.length || 0;
+};
+
+const countSpriteFillColors = (cardId: number): number => {
+  const Sprite = CardSprites[cardId];
+  if (!Sprite) return 0;
+  const markup = renderToStaticMarkup(React.createElement(Sprite));
+  return new Set([...markup.matchAll(/fill="([^"]+)"/g)].map(match => match[1])).size;
 };
 
 const hasEnemyFamily = (enemies: EnemyData[], family: string): boolean => {
@@ -199,11 +216,19 @@ section('Card and enemy pixel art', () => {
   const missingCardSpriteIds = playerCards
     .filter(card => !CardSprites[card.id])
     .map(card => `${card.id}:${card.name}`);
+  const missingHandReviewedSprites = handReviewedCardSpriteIds
+    .filter(id => !HAND_DRAWN_CARD_SPRITE_IDS.has(id))
+    .map(id => `${id}:${cardById.get(id)?.name || 'unknown'}`);
+  const underDetailedHandReviewedSprites = handReviewedCardSpriteIds
+    .filter(id => countSpriteRects(id) < 18 || countSpriteFillColors(id) < 8)
+    .map(id => `${id}:${cardById.get(id)?.name || 'unknown'}`);
   const missingEnemySpriteIds = Object.values(ENEMIES)
     .filter(enemy => !MonsterSprites[enemy.id])
     .map(enemy => `${enemy.id}:${enemy.name}`);
 
   requireReady(missingCardSpriteIds.length === 0, `Every playable card needs a dedicated pixel sprite. Missing: ${missingCardSpriteIds.join(', ') || 'none'}.`);
+  requireReady(missingHandReviewedSprites.length === 0, `Recently added cards need hand-reviewed pixel sprites. Missing: ${missingHandReviewedSprites.join(', ') || 'none'}.`);
+  requireReady(underDetailedHandReviewedSprites.length === 0, `Hand-reviewed card sprites need enough pixel detail and color separation. Under-detailed: ${underDetailedHandReviewedSprites.join(', ') || 'none'}.`);
   requireReady(missingEnemySpriteIds.length === 0, `Every enemy needs a dedicated pixel sprite. Missing: ${missingEnemySpriteIds.join(', ') || 'none'}.`);
 });
 
