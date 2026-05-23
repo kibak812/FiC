@@ -12,7 +12,7 @@ interface RestScreenProps {
 }
 
 const RestScreen: React.FC<RestScreenProps> = ({ gold, maxHp, hasRested, onRestAction, onAdvance }) => {
-  const healAmount = Math.floor(maxHp * 0.3);
+  const healAmount = Math.floor(maxHp * 0.5);
 
   return (
     <div className="w-full h-screen-safe flex flex-col items-center justify-center bg-pixel-bg-dark text-stone-100 p-4 relative overflow-y-auto">
@@ -52,7 +52,7 @@ const RestScreen: React.FC<RestScreenProps> = ({ gold, maxHp, hasRested, onRestA
             <Hammer size={28} className={`transition-colors ${hasRested ? 'text-stone-600' : 'text-green-400 group-hover:text-green-300'}`} />
           </div>
           <h3 className="font-pixel-kr text-base font-bold mb-1">수리</h3>
-          <p className="text-stone-400 font-pixel-kr text-[9px] px-2 text-center">체력 30% 회복</p>
+          <p className="text-stone-400 font-pixel-kr text-[9px] px-2 text-center">체력 50% 회복</p>
           <div className={`mt-2 font-pixel text-xs flex items-center gap-1 ${hasRested ? 'text-stone-600' : 'text-green-400'}`}>
             <Heart size={12} fill="currentColor" /> +{healAmount}
           </div>

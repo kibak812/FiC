@@ -1,4 +1,4 @@
-import { ENEMY_POOLS, GAME_EVENTS, MAP_NODE_LAYOUTS } from '../constants';
+import { ENEMIES, ENEMY_POOLS, GAME_EVENTS, MAP_NODE_LAYOUTS } from '../constants';
 import { EnemyTier, MapNode, NodeType } from '../types';
 import type { RandomSource } from './cardUtils';
 
@@ -39,9 +39,18 @@ const randomEntry = <T,>(items: T[], rng: RandomSource = Math.random): T => {
   return items[Math.floor(rng() * items.length)];
 };
 
-const getEnemyIdForNode = (act: 1 | 2 | 3, type: NodeType, rng: RandomSource): string | undefined => {
+const ACT_ONE_EARLY_COMBAT_POOL = [
+  ENEMIES.RUST_SLIME,
+  ENEMIES.KOBOLD_SCRAPPER,
+  ENEMIES.SKELETON_WARRIOR,
+  ENEMIES.MINE_BAT
+];
+
+const getEnemyIdForNode = (act: 1 | 2 | 3, type: NodeType, floor: number, rng: RandomSource): string | undefined => {
   if (type === NodeType.COMBAT) {
-    return randomEntry(ENEMY_POOLS[act][EnemyTier.COMMON], rng).id;
+    const pool = act === 1 && floor <= 3 ? ACT_ONE_EARLY_COMBAT_POOL : ENEMY_POOLS[act][EnemyTier.COMMON];
+
+    return randomEntry(pool, rng).id;
   }
 
   if (type === NodeType.ELITE) {
@@ -76,7 +85,7 @@ export const createActMap = (act: 1 | 2 | 3, rng: RandomSource = Math.random): M
         name: meta.name,
         description: meta.description,
         icon: meta.icon,
-        enemyId: getEnemyIdForNode(act, type, rng),
+        enemyId: getEnemyIdForNode(act, type, floor, rng),
         eventId: getEventIdForNode(type, rng),
         nextNodeIds: []
       };

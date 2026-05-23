@@ -14,14 +14,17 @@ import {
 } from '../utils/cardEffects';
 import { calculateBlockedDamage, calculateEnemyIntentPlan, calculateEnemyStrengthGain, calculateWeaponStats, resolveEnemyTurnStartStatuses } from '../utils/combatEngine';
 import { createActMap, getAvailableMapNodeIds } from '../utils/mapUtils';
+import { createInitialPlayerStats } from '../utils/playerUtils';
 import { createCombatCardRewards, createRandomCardReward, getCombatRewardRule, rollGoldReward } from '../utils/rewardUtils';
 import { assert, createSeededRng, pick } from './testUtils';
 
 const RUN_COUNT = Number(process.env.SIM_RUNS || 1000);
+const MIN_WIN_RATE = Number(process.env.SIM_MIN_WIN_RATE || 0.01);
 const MAX_COMBAT_TURNS = 60;
 const MAX_WEAPONS_PER_TURN = 5;
 
 type TerminalState = 'WIN' | 'LOSE';
+type LossReason = 'DEATH' | 'TIMEOUT' | 'NON_COMBAT' | null;
 
 interface SimState {
   player: PlayerStats;
@@ -37,6 +40,13 @@ interface SimResult {
   terminal: TerminalState;
   act: 1 | 2 | 3;
   floor: number;
+  nodeType: NodeType | null;
+  enemyId: string | null;
+  playerHp: number;
+  entryHp: number;
+  enemyHp: number | null;
+  deckSize: number;
+  lossReason: LossReason;
   combats: number;
   turns: number;
   rewards: number;
@@ -52,21 +62,7 @@ interface WeaponChoice {
 const cloneEnemy = (enemyData: EnemyData): EnemyData => JSON.parse(JSON.stringify(enemyData));
 
 const createInitialState = (rng: () => number): SimState => ({
-  player: {
-    hp: 50,
-    maxHp: 50,
-    energy: 3,
-    maxEnergy: 3,
-    block: 0,
-    gold: 0,
-    costLimit: null,
-    disarmed: false,
-    nextTurnDraw: 0,
-    overheat: 0,
-    weaponsUsedThisTurn: 0,
-    dodgeNextAttack: false,
-    selfDamageThisTurn: 0
-  },
+  player: createInitialPlayerStats(),
   deck: shuffle(INITIAL_DECK_IDS.map(id => createCardInstance(id, rng)), rng),
   hand: [],
   discard: [],
@@ -100,9 +96,40 @@ const scoreCard = (card: CardInstance): number => {
   return card.value;
 };
 
-const chooseRewardCard = (cards: CardInstance[]): CardInstance | null => {
+const countCardsByType = (state: SimState): Record<CardType.HANDLE | CardType.HEAD | CardType.DECO, number> => {
+  const counts = {
+    [CardType.HANDLE]: 0,
+    [CardType.HEAD]: 0,
+    [CardType.DECO]: 0
+  };
+
+  for (const card of [...state.deck, ...state.hand, ...state.discard]) {
+    if (card.type === CardType.HANDLE || card.type === CardType.HEAD || card.type === CardType.DECO) {
+      counts[card.type] += 1;
+    }
+  }
+
+  return counts;
+};
+
+const scoreRewardCard = (state: SimState, card: CardInstance): number => {
+  const counts = countCardsByType(state);
+  const pairCount = Math.min(counts[CardType.HANDLE], counts[CardType.HEAD]);
+  let score = scoreCard(card);
+
+  if (card.type === CardType.HEAD && counts[CardType.HEAD] <= counts[CardType.HANDLE]) score += 18;
+  if (card.type === CardType.HANDLE && counts[CardType.HANDLE] < counts[CardType.HEAD]) score += 16;
+  if (card.type === CardType.DECO && pairCount >= counts[CardType.DECO]) score += 8;
+  if (card.cost <= Math.max(1, state.player.maxEnergy - 2)) score += 5;
+  if (card.cost > state.player.maxEnergy) score -= 20;
+  if (card.type === CardType.JUNK || card.rarity === CardRarity.SPECIAL) score -= 100;
+
+  return score;
+};
+
+const chooseRewardCard = (state: SimState, cards: CardInstance[]): CardInstance | null => {
   if (cards.length === 0) return null;
-  return [...cards].sort((a, b) => scoreCard(b) - scoreCard(a))[0];
+  return [...cards].sort((a, b) => scoreRewardCard(state, b) - scoreRewardCard(state, a))[0];
 };
 
 const chooseBestWeapon = (state: SimState, enemy: EnemyData): WeaponChoice | null => {
@@ -223,14 +250,16 @@ const createEffectContext = (
   slots: WeaponSlots,
   stats: ReturnType<typeof calculateWeaponStats>,
   modifiers: EffectModifiers,
-  rng: () => number
+  rng: () => number,
+  playerSnapshot: PlayerStats = state.player,
+  remainingEnergyAfterCost: number = Math.max(0, state.player.energy - stats.totalCost)
 ): CardEffectContext => ({
   slots,
   stats,
-  player: state.player,
+  player: playerSnapshot,
   enemy,
   effectMultiplier: isTwinHandle(slots.handle?.id || 0) ? 2 : 1,
-  remainingEnergyAfterCost: Math.max(0, state.player.energy - stats.totalCost),
+  remainingEnergyAfterCost,
   growingCrystalBonus: state.growingCrystalBonus,
   rng,
   showFeedback: () => undefined
@@ -241,6 +270,8 @@ const forgeBestWeapon = (state: SimState, enemy: EnemyData, rng: () => number): 
   if (!choice) return false;
 
   const { slots, stats } = choice;
+  const playerBeforeForge = { ...state.player };
+  const remainingEnergyAfterCost = Math.max(0, state.player.energy - stats.totalCost);
   state.player.energy -= stats.totalCost;
   state.player.weaponsUsedThisTurn += 1;
 
@@ -251,11 +282,11 @@ const forgeBestWeapon = (state: SimState, enemy: EnemyData, rng: () => number): 
     selfDamage: state.player.selfDamageThisTurn
   };
 
-  let ctx = createEffectContext(state, enemy, slots, stats, modifiers, rng);
+  let ctx = createEffectContext(state, enemy, slots, stats, modifiers, rng, playerBeforeForge, remainingEnergyAfterCost);
   processActions(executeEffectsForPhase(ctx, modifiers, 'SELF_DAMAGE'), modifiers, state, enemy, rng);
   if (state.player.hp <= 0) return true;
 
-  ctx = createEffectContext(state, enemy, slots, stats, modifiers, rng);
+  ctx = createEffectContext(state, enemy, slots, stats, modifiers, rng, playerBeforeForge, remainingEnergyAfterCost);
   modifiers = applyModifierActions(modifiers, executeEffectsForPhase(ctx, modifiers, 'PRE_DAMAGE'));
 
   const hitLoops = stats.hitCount * (isTwinHandle(slots.handle?.id || 0) ? 2 : 1);
@@ -285,7 +316,7 @@ const forgeBestWeapon = (state: SimState, enemy: EnemyData, rng: () => number): 
     if (damageDealt > 0) {
       enemy.currentHp = Math.max(0, enemy.currentHp - damageDealt);
       enemy.damageTakenThisTurn += damageDealt;
-      ctx = createEffectContext(state, enemy, slots, stats, modifiers, rng);
+      ctx = createEffectContext(state, enemy, slots, stats, modifiers, rng, playerBeforeForge, remainingEnergyAfterCost);
       processActions(executeEffectsForPhase(ctx, modifiers, 'ON_HIT'), modifiers, state, enemy, rng);
     }
 
@@ -296,7 +327,7 @@ const forgeBestWeapon = (state: SimState, enemy: EnemyData, rng: () => number): 
     state.player.block += modifiers.finalBlock;
   }
 
-  ctx = createEffectContext(state, enemy, slots, stats, modifiers, rng);
+  ctx = createEffectContext(state, enemy, slots, stats, modifiers, rng, playerBeforeForge, remainingEnergyAfterCost);
   processActions(executeEffectsForPhase(ctx, modifiers, 'POST_DAMAGE'), modifiers, state, enemy, rng);
 
   removeUsedCardsFromHand(state, [slots.handle, slots.head, slots.deco]);
@@ -402,7 +433,7 @@ const runEnemyTurn = (state: SimState, enemy: EnemyData, rng: () => number): voi
   enemy.currentIntentIndex = (enemy.currentIntentIndex + 1) % enemy.intents.length;
 };
 
-const simulateCombat = (state: SimState, enemyData: EnemyData, rng: () => number): { won: boolean; turns: number } => {
+const simulateCombat = (state: SimState, enemyData: EnemyData, rng: () => number): { won: boolean; turns: number; lossReason: LossReason; enemyHp: number } => {
   const enemy = cloneEnemy(enemyData);
 
   for (let turn = 1; turn <= MAX_COMBAT_TURNS; turn++) {
@@ -428,15 +459,15 @@ const simulateCombat = (state: SimState, enemyData: EnemyData, rng: () => number
     state.player.costLimit = null;
     state.player.disarmed = false;
 
-    if (enemy.currentHp <= 0) return { won: true, turns: turn };
-    if (state.player.hp <= 0) return { won: false, turns: turn };
+    if (enemy.currentHp <= 0) return { won: true, turns: turn, lossReason: null, enemyHp: enemy.currentHp };
+    if (state.player.hp <= 0) return { won: false, turns: turn, lossReason: 'DEATH', enemyHp: enemy.currentHp };
 
     runEnemyTurn(state, enemy, rng);
-    if (enemy.currentHp <= 0) return { won: true, turns: turn };
-    if (state.player.hp <= 0) return { won: false, turns: turn };
+    if (enemy.currentHp <= 0) return { won: true, turns: turn, lossReason: null, enemyHp: enemy.currentHp };
+    if (state.player.hp <= 0) return { won: false, turns: turn, lossReason: 'DEATH', enemyHp: enemy.currentHp };
   }
 
-  return { won: false, turns: MAX_COMBAT_TURNS };
+  return { won: false, turns: MAX_COMBAT_TURNS, lossReason: 'TIMEOUT', enemyHp: enemy.currentHp };
 };
 
 const canPayEventOption = (state: SimState, option: EventOption): boolean => {
@@ -508,7 +539,7 @@ const applyEventOption = (state: SimState, option: EventOption, rng: () => numbe
 const processNonCombatNode = (state: SimState, node: MapNode, rng: () => number): void => {
   if (node.type === NodeType.REST) {
     if (state.player.hp < state.player.maxHp) {
-      state.player.hp = Math.min(state.player.maxHp, state.player.hp + Math.floor(state.player.maxHp * 0.3));
+      state.player.hp = Math.min(state.player.maxHp, state.player.hp + Math.floor(state.player.maxHp * 0.5));
     } else {
       removeLowestValueCard(state);
     }
@@ -553,7 +584,7 @@ const processNonCombatNode = (state: SimState, node: MapNode, rng: () => number)
 const applyCombatReward = (state: SimState, enemyTier: EnemyTier, rng: () => number, result: SimResult): void => {
   const rewardRule = getCombatRewardRule(enemyTier);
   state.player.gold += rollGoldReward(rewardRule, rng);
-  const rewardCard = chooseRewardCard(createCombatCardRewards(rewardRule, rng));
+  const rewardCard = chooseRewardCard(state, createCombatCardRewards(rewardRule, rng));
 
   if (rewardCard) {
     state.deck.push(rewardCard);
@@ -564,7 +595,11 @@ const applyCombatReward = (state: SimState, enemyTier: EnemyTier, rng: () => num
 };
 
 const applyBossReward = (state: SimState, rng: () => number): void => {
-  const reward = pick(BOSS_REWARDS, rng);
+  const reward = state.player.maxEnergy < 6
+    ? BOSS_REWARDS.find(candidate => candidate.effect.type === 'MAX_ENERGY') || pick(BOSS_REWARDS, rng)
+    : state.player.maxHp < 100
+      ? BOSS_REWARDS.find(candidate => candidate.effect.type === 'MAX_HP') || pick(BOSS_REWARDS, rng)
+      : pick(BOSS_REWARDS, rng);
 
   switch (reward.effect.type) {
     case 'MAX_ENERGY':
@@ -578,17 +613,31 @@ const applyBossReward = (state: SimState, rng: () => number): void => {
       state.player.gold += reward.effect.amount;
       break;
   }
+
+  state.player.hp = state.player.maxHp;
 };
 
-const chooseMapNode = (nodes: MapNode[], state: SimState, rng: () => number): MapNode => {
+const chooseMapNode = (nodes: MapNode[], state: SimState, result: SimResult, rng: () => number): MapNode => {
   assert(nodes.length > 0, 'A route should always have an available next node');
+  const hpRatio = state.player.hp / state.player.maxHp;
+  const deckQuality = [...state.deck, ...state.hand, ...state.discard]
+    .filter(card => card.type !== CardType.JUNK)
+    .reduce((sum, card) => sum + scoreCard(card), 0);
+
   const scored = nodes.map(node => {
     let score = rng();
 
-    if (node.type === NodeType.REST && state.player.hp < state.player.maxHp) score += state.player.hp < state.player.maxHp * 0.65 ? 8 : 3;
-    if (node.type === NodeType.SHOP && state.player.gold >= 75) score += 3;
-    if (node.type === NodeType.EVENT) score += 1.5;
-    if (node.type === NodeType.ELITE && state.player.hp > state.player.maxHp * 0.85) score += 1;
+    if (node.type === NodeType.COMBAT) score += hpRatio < 0.55 ? -1.5 : 1.4;
+    if (node.type === NodeType.REST && state.player.hp < state.player.maxHp) score += hpRatio < 0.65 ? 8 : 3;
+    if (node.type === NodeType.SHOP) {
+      if (state.player.gold >= 40 && hpRatio < 0.8) score += 7;
+      else if (state.player.gold >= 75) score += hpRatio < 0.55 ? 4 : 2.5;
+    }
+    if (node.type === NodeType.EVENT) score += hpRatio < 0.7 ? 2.4 : 1.2;
+    if (node.type === NodeType.ELITE) {
+      const hasEliteBuffer = hpRatio > 0.85 && result.rewards >= 3 && deckQuality >= 180;
+      score += hasEliteBuffer ? 2.5 : -5;
+    }
     if (node.type === NodeType.BOSS) score += 10;
 
     return { node, score };
@@ -606,6 +655,13 @@ const simulateRun = (seed: number): SimResult => {
     terminal: 'LOSE',
     act: 1,
     floor: 0,
+    nodeType: null,
+    enemyId: null,
+    playerHp: state.player.hp,
+    entryHp: state.player.hp,
+    enemyHp: null,
+    deckSize: state.deck.length,
+    lossReason: null,
     combats: 0,
     turns: 0,
     rewards: 0,
@@ -624,9 +680,15 @@ const simulateRun = (seed: number): SimResult => {
         assert(!!node, `Map node ${id} should exist`);
         return node!;
       });
-      const node = chooseMapNode(availableNodes, state, rng);
+      const node = chooseMapNode(availableNodes, state, result, rng);
       currentNodeId = node.id;
       result.floor = node.floor;
+      result.nodeType = node.type;
+      result.enemyId = node.enemyId || null;
+      result.playerHp = state.player.hp;
+      result.entryHp = state.player.hp;
+      result.enemyHp = null;
+      result.deckSize = state.deck.length + state.hand.length + state.discard.length;
 
       if (node.type === NodeType.COMBAT || node.type === NodeType.ELITE || node.type === NodeType.BOSS) {
         assert(!!node.enemyId, `Combat node ${node.id} should reference an enemy`);
@@ -638,6 +700,10 @@ const simulateRun = (seed: number): SimResult => {
 
         if (!combat.won) {
           result.terminal = 'LOSE';
+          result.playerHp = state.player.hp;
+          result.enemyHp = combat.enemyHp;
+          result.deckSize = state.deck.length + state.hand.length + state.discard.length;
+          result.lossReason = combat.lossReason;
           return result;
         }
 
@@ -646,6 +712,9 @@ const simulateRun = (seed: number): SimResult => {
         if (node.type === NodeType.BOSS) {
           if (act === 3) {
             result.terminal = 'WIN';
+            result.playerHp = state.player.hp;
+            result.enemyHp = combat.enemyHp;
+            result.deckSize = state.deck.length + state.hand.length + state.discard.length;
             return result;
           }
 
@@ -656,6 +725,10 @@ const simulateRun = (seed: number): SimResult => {
         processNonCombatNode(state, node, rng);
         if (state.player.hp <= 0) {
           result.terminal = 'LOSE';
+          result.playerHp = state.player.hp;
+          result.enemyHp = null;
+          result.deckSize = state.deck.length + state.hand.length + state.discard.length;
+          result.lossReason = 'NON_COMBAT';
           return result;
         }
       }
@@ -663,6 +736,9 @@ const simulateRun = (seed: number): SimResult => {
   }
 
   result.terminal = 'WIN';
+  result.playerHp = state.player.hp;
+  result.enemyHp = null;
+  result.deckSize = state.deck.length + state.hand.length + state.discard.length;
   return result;
 };
 
@@ -670,17 +746,49 @@ const startedAt = Date.now();
 const results = Array.from({ length: RUN_COUNT }, (_, index) => simulateRun(index + 1));
 const wins = results.filter(result => result.terminal === 'WIN').length;
 const losses = RUN_COUNT - wins;
+const minWins = Math.ceil(RUN_COUNT * MIN_WIN_RATE);
 const totalCombats = results.reduce((sum, result) => sum + result.combats, 0);
 const totalTurns = results.reduce((sum, result) => sum + result.turns, 0);
 const totalRewards = results.reduce((sum, result) => sum + result.rewards, 0);
 const allSeenCardIds = new Set(results.flatMap(result => [...result.cardsSeen]));
 const terminalStates = new Set(results.map(result => result.terminal));
+const lossesByCheckpoint = results
+  .filter(result => result.terminal === 'LOSE')
+  .reduce<Record<string, number>>((counts, result) => {
+    const key = `A${result.act}F${result.floor}:${result.nodeType || 'UNKNOWN'}:${result.enemyId || 'none'}:${result.lossReason || 'unknown'}`;
+    counts[key] = (counts[key] || 0) + 1;
+    return counts;
+  }, {});
+const topLosses = Object.entries(lossesByCheckpoint)
+  .sort((a, b) => b[1] - a[1])
+  .slice(0, 5)
+  .map(([checkpoint, count]) => `${checkpoint}=${count}`)
+  .join(', ');
+const lossesByAct = results
+  .filter(result => result.terminal === 'LOSE')
+  .reduce<Record<number, number>>((counts, result) => {
+    counts[result.act] = (counts[result.act] || 0) + 1;
+    return counts;
+  }, {});
+const bossLosses = results.filter(result => result.terminal === 'LOSE' && result.nodeType === NodeType.BOSS);
+const averageBossEntryHp = bossLosses.length > 0
+  ? bossLosses.reduce((sum, result) => sum + result.entryHp, 0) / bossLosses.length
+  : 0;
+const averageBossEnemyHp = bossLosses.length > 0
+  ? bossLosses.reduce((sum, result) => sum + (result.enemyHp || 0), 0) / bossLosses.length
+  : 0;
 
 assert(results.length === RUN_COUNT, `Expected ${RUN_COUNT} simulated runs`);
 assert(results.every(result => result.combats > 0), 'Every simulated run should enter at least one combat');
 assert(results.every(result => result.floor >= 1 && result.floor <= 15), 'Every simulated run should stop on a valid floor');
 assert(terminalStates.size > 0, 'Simulations should reach terminal states');
+assert(wins >= minWins, `Seeded simulation should produce at least ${minWins} wins at ${(MIN_WIN_RATE * 100).toFixed(1)}% minimum win rate`);
 
 console.log(`Seeded run simulation: ${RUN_COUNT} runs completed in ${Date.now() - startedAt}ms`);
 console.log(`Results: ${wins} wins / ${losses} losses`);
 console.log(`Coverage: ${totalCombats} combats, ${totalTurns} combat turns, ${totalRewards} rewards, ${allSeenCardIds.size}/${CARD_DATABASE.length} card ids seen`);
+if (losses > 0) console.log(`Top loss checkpoints: ${topLosses}`);
+if (losses > 0) console.log(`Losses by act: ${[1, 2, 3].map(act => `A${act}=${lossesByAct[act] || 0}`).join(', ')}`);
+if (bossLosses.length > 0) {
+  console.log(`Boss loss average: entry HP ${averageBossEntryHp.toFixed(1)}, enemy HP remaining ${averageBossEnemyHp.toFixed(1)}`);
+}

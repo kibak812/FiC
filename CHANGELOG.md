@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.11.2] - 2026-05-23
+
+### Added
+- Seeded run simulation now enforces a minimum 1% win-rate sanity gate so future balance changes cannot silently return to unwinnable runs.
+- Shared initial player stat helper used by both runtime and simulation.
+
+### Changed
+- Player starts at 80 HP and 4 energy to better fit the multi-card weapon forging economy.
+- Rest repair now heals 50% of max HP.
+- Act 1 early combat nodes use onboarding-safe enemies before introducing counter-pattern enemies.
+- Boss HP and burst damage were rescaled by act, and act transitions now fully repair the player after choosing a boss reward.
+- Simulation card rewards now value slot balance, playable cost, and energy progression instead of raw rarity alone.
+- Menu version updated to v1.11.2.
+
+### Design Notes
+- The goal of this pass is not to make the game easy; it ensures a conservative automated player can occasionally complete a full run, which is a stronger product signal than terminal losses alone.
+
+---
+
 ## [1.11.1] - 2026-05-23
 
 ### Added

@@ -290,6 +290,8 @@ section('Save, onboarding, and packaging', () => {
   const saveSource = readText('utils/saveUtils.ts');
   const appSource = readText('App.tsx');
   const menuSource = readText('screens/MenuScreen.tsx');
+  const simSource = readText('scripts/simulateRuns.ts');
+  const playerSource = readText('utils/playerUtils.ts');
   const packageJson = readJsonRecord('package.json');
   const dependencies = isRecord(packageJson.dependencies) ? packageJson.dependencies : {};
   const devDependencies = isRecord(packageJson.devDependencies) ? packageJson.devDependencies : {};
@@ -315,6 +317,8 @@ section('Save, onboarding, and packaging', () => {
   requireReady(DEFAULT_GAME_SETTINGS.musicVolume >= 0 && DEFAULT_GAME_SETTINGS.musicVolume <= 1, 'Music volume should default inside 0-1.');
   requireReady(saveSource.includes('CURRENT_RUN_SAVE_VERSION') && saveSource.includes('CURRENT_SETTINGS_VERSION'), 'Save and settings data should be versioned.');
   requireReady(saveSource.includes('migrateRunSave') && saveSource.includes('migrateSettings'), 'Save and settings migration helpers should exist.');
+  requireReady(playerSource.includes('INITIAL_PLAYER_MAX_HP = 80') && playerSource.includes('INITIAL_PLAYER_MAX_ENERGY = 4'), 'Initial player stats should match the tuned commercial baseline.');
+  requireReady(appSource.includes('createInitialPlayerStats') && simSource.includes('createInitialPlayerStats'), 'Runtime and seeded simulation should share initial player stats.');
   requireReady(appSource.includes('saveRun({') && appSource.includes('loadSavedRun()') && appSource.includes('clearSavedRun()'), 'App should autosave, continue, and clear runs.');
   requireReady(menuSource.includes('confirmStartGame') && menuSource.includes('새 런 시작'), 'Menu should confirm new run start when a save exists.');
 
@@ -353,6 +357,7 @@ section('Validation and CI gates', () => {
   requireReady(ciSource.includes('npm audit --audit-level=moderate'), 'CI should run a moderate-or-higher security audit.');
 
   warnReady(readText('scripts/simulateRuns.ts').includes('1000'), 'Seeded simulation script should keep the 1000-run target visible.');
+  requireReady(readText('scripts/simulateRuns.ts').includes('SIM_MIN_WIN_RATE'), 'Seeded simulation should enforce a minimum win-rate sanity gate.');
 });
 
 const totalChecks = sections.reduce((sum, item) => sum + item.checks, 0);

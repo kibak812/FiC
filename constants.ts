@@ -410,23 +410,23 @@ export const ENEMIES: Record<string, EnemyData> = {
     'junk_king',
     '고철의 왕 (보스)',
     EnemyTier.BOSS,
-    150,
+    90,
     [
-      { type: IntentType.ATTACK, value: 10, description: '자석 펀치' },
-      { type: IntentType.DEBUFF, value: 0, description: '[녹슨 덩어리] 3장 추가', effect: { type: 'ADD_JUNK', count: 3 } },
-      { type: IntentType.ATTACK, value: 15, description: '폐품 투척' },
+      { type: IntentType.ATTACK, value: 7, description: '자석 펀치' },
+      { type: IntentType.DEBUFF, value: 0, description: '[녹슨 덩어리] 1장 추가', effect: { type: 'ADD_JUNK', count: 1 } },
+      { type: IntentType.ATTACK, value: 10, description: '폐품 투척' },
     ]
   ),
   CAVE_HEART: defineEnemy(
     'cave_heart',
     '광산의 심장 (보스)',
     EnemyTier.BOSS,
-    168,
+    100,
     [
-      { type: IntentType.ATTACK, value: 12, description: '맥동 충격' },
-      { type: IntentType.BUFF, value: 0, description: '오염 정화', effect: { type: 'CLEANSE_STATUSES_GAIN_STRENGTH', amountPerStatus: 1, minGain: 2, maxGain: 8 } },
-      { type: IntentType.DEBUFF, value: 0, description: '폐석 붕괴', effect: { type: 'ADD_JUNK', count: 2 } },
-      { type: IntentType.ATTACK, value: 22, description: '방어 파쇄 맥동', effect: { type: 'ATTACK_FROM_PLAYER_BLOCK', multiplier: 0.5 } },
+      { type: IntentType.ATTACK, value: 8, description: '맥동 충격' },
+      { type: IntentType.BUFF, value: 0, description: '오염 정화', effect: { type: 'CLEANSE_STATUSES_GAIN_STRENGTH', amountPerStatus: 0.5, minGain: 2, maxGain: 7 } },
+      { type: IntentType.DEBUFF, value: 0, description: '폐석 붕괴', effect: { type: 'ADD_JUNK', count: 1 } },
+      { type: IntentType.ATTACK, value: 13, description: '방어 파쇄 맥동', effect: { type: 'ATTACK_FROM_PLAYER_BLOCK', multiplier: 0.5 } },
     ]
   ),
 
@@ -545,24 +545,24 @@ export const ENEMIES: Record<string, EnemyData> = {
     'corrupted_smith',
     '타락한 대장장이 (보스)',
     EnemyTier.BOSS,
-    220,
+    130,
     [
-      { type: IntentType.ATTACK, value: 20, description: '달궈진 망치' },
+      { type: IntentType.ATTACK, value: 12, description: '달궈진 망치' },
       { type: IntentType.SPECIAL, value: 0, description: '다음 턴 무기 파괴', effect: { type: 'DISARM_HEAD' } },
-      { type: IntentType.ATTACK, value: 30, description: '대멸종' },
+      { type: IntentType.ATTACK, value: 18, description: '대멸종' },
     ]
   ),
   MOLTEN_OVERSEER: defineEnemy(
     'molten_overseer',
     '용광로 감독관 (보스)',
     EnemyTier.BOSS,
-    260,
+    155,
     [
-      { type: IntentType.ATTACK, value: 18, hits: 2, description: '쌍망치 압연 (x2)' },
+      { type: IntentType.ATTACK, value: 11, hits: 2, description: '쌍망치 압연 (x2)' },
       { type: IntentType.DEBUFF, value: 0, description: '공정 지연', effect: { type: 'INCREASE_RANDOM_HANDLE_COST', amount: 1 } },
-      { type: IntentType.BUFF, value: 0, description: '슬래그 정화', effect: { type: 'CLEANSE_STATUSES_GAIN_STRENGTH', amountPerStatus: 1, minGain: 3, maxGain: 10 } },
-      { type: IntentType.ATTACK, value: 28, description: '용융 강타' },
-      { type: IntentType.DEFEND, value: 30, description: '강철 장벽' },
+      { type: IntentType.BUFF, value: 0, description: '슬래그 정화', effect: { type: 'CLEANSE_STATUSES_GAIN_STRENGTH', amountPerStatus: 0.75, minGain: 3, maxGain: 8 } },
+      { type: IntentType.ATTACK, value: 16, description: '용융 강타' },
+      { type: IntentType.DEFEND, value: 20, description: '강철 장벽' },
     ]
   ),
 
@@ -685,25 +685,25 @@ export const ENEMIES: Record<string, EnemyData> = {
     'deus_ex_machina',
     '데우스 엑스 마키나',
     EnemyTier.BOSS,
-    400,
+    250,
     [
-      { type: IntentType.ATTACK, value: 14, description: '창조의 모방' },
-      { type: IntentType.ATTACK, value: 15, description: '창조의 모방' },
+      { type: IntentType.ATTACK, value: 10, description: '창조의 모방' },
+      { type: IntentType.ATTACK, value: 11, description: '창조의 모방' },
       { type: IntentType.DEBUFF, value: 0, description: '코스트 제한 (MAX 2)', effect: { type: 'SET_PLAYER_COST_LIMIT', limit: 2 } },
-      { type: IntentType.ATTACK, value: 50, description: '최후의 심판' },
+      { type: IntentType.ATTACK, value: 30, description: '최후의 심판' },
     ]
   ),
   CLOCKWORK_SERAPH: defineEnemy(
     'clockwork_seraph',
     '시계장치 세라프 (보스)',
     EnemyTier.BOSS,
-    420,
+    270,
     [
-      { type: IntentType.ATTACK, value: 18, hits: 2, description: '쌍익 절단 (x2)' },
-      { type: IntentType.BUFF, value: 0, description: '오류 정화', effect: { type: 'CLEANSE_STATUSES_GAIN_STRENGTH', amountPerStatus: 1, minGain: 4, maxGain: 14 } },
-      { type: IntentType.ATTACK, value: 35, description: '방어 알고리즘 역산', effect: { type: 'ATTACK_FROM_PLAYER_BLOCK', multiplier: 0.5 } },
+      { type: IntentType.ATTACK, value: 13, hits: 2, description: '쌍익 절단 (x2)' },
+      { type: IntentType.BUFF, value: 0, description: '오류 정화', effect: { type: 'CLEANSE_STATUSES_GAIN_STRENGTH', amountPerStatus: 0.75, minGain: 4, maxGain: 10 } },
+      { type: IntentType.ATTACK, value: 22, description: '방어 알고리즘 역산', effect: { type: 'ATTACK_FROM_PLAYER_BLOCK', multiplier: 0.5 } },
       { type: IntentType.DEBUFF, value: 0, description: '시간세 부과', effect: { type: 'SET_PLAYER_COST_LIMIT', limit: 2 } },
-      { type: IntentType.DEFEND, value: 40, description: '천상 기어 방벽' },
+      { type: IntentType.DEFEND, value: 26, description: '천상 기어 방벽' },
     ]
   ),
 };

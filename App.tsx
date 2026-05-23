@@ -11,6 +11,7 @@ import Anvil from './components/Anvil';
 
 // --- Utilities ---
 import { createCardInstance, shuffle } from './utils/cardUtils';
+import { createInitialPlayerStats } from './utils/playerUtils';
 import {
   createCombatCardRewards,
   createRandomCardReward,
@@ -80,9 +81,7 @@ export default function App() {
   const [acquiredCard, setAcquiredCard] = useState<CardInstance | null>(null); // New state for Shop feedback
   
   // Entities
-const [player, setPlayer] = useState<PlayerStats>({
-    hp: 50, maxHp: 50, energy: 3, maxEnergy: 3, block: 0, gold: 0, costLimit: null, disarmed: false, nextTurnDraw: 0, overheat: 0, weaponsUsedThisTurn: 0, dodgeNextAttack: false, selfDamageThisTurn: 0
-  });
+  const [player, setPlayer] = useState<PlayerStats>(() => createInitialPlayerStats());
   
   const [enemy, setEnemy] = useState<EnemyData>(JSON.parse(JSON.stringify(ENEMIES.RUST_SLIME))); // Init with weak enemy
 
@@ -346,7 +345,7 @@ const startCombat = (enemyData: EnemyData) => {
     setAcquiredCard(null);
     setDiscardingCardIds(new Set());
     
-    setPlayer({ hp: 50, maxHp: 50, energy: 3, maxEnergy: 3, block: 0, gold: 0, costLimit: null, disarmed: false, nextTurnDraw: 0, overheat: 0, weaponsUsedThisTurn: 0, dodgeNextAttack: false, selfDamageThisTurn: 0 });
+    setPlayer(createInitialPlayerStats());
     
     setFloor(0);
     setAct(1);
@@ -529,21 +528,29 @@ const startCombat = (enemyData: EnemyData) => {
 
       switch (reward.effect.type) {
           case 'MAX_ENERGY':
-              setPlayer(prev => ({ ...prev, maxEnergy: prev.maxEnergy + reward.effect.amount }));
+              setPlayer(prev => ({
+                  ...prev,
+                  maxEnergy: prev.maxEnergy + reward.effect.amount,
+                  hp: act < 3 ? prev.maxHp : prev.hp
+              }));
               break;
           case 'MAX_HP':
               setPlayer(prev => ({
                   ...prev,
                   maxHp: prev.maxHp + reward.effect.amount,
-                  hp: prev.hp + reward.effect.amount
+                  hp: act < 3 ? prev.maxHp + reward.effect.amount : prev.hp + reward.effect.amount
               }));
               break;
           case 'GAIN_GOLD':
-              setPlayer(prev => ({ ...prev, gold: prev.gold + reward.effect.amount }));
+              setPlayer(prev => ({
+                  ...prev,
+                  gold: prev.gold + reward.effect.amount,
+                  hp: act < 3 ? prev.maxHp : prev.hp
+              }));
               break;
       }
 
-      showFeedback(reward.feedback);
+      showFeedback(act < 3 ? `${reward.feedback} / 막 전환 수리 완료` : reward.feedback);
       playSound('reward');
       startNextActMap();
   };
@@ -564,7 +571,7 @@ const startCombat = (enemyData: EnemyData) => {
       }
 
       if (action === 'REPAIR') {
-          const healAmount = Math.floor(player.maxHp * 0.3);
+          const healAmount = Math.floor(player.maxHp * 0.5);
           setPlayer(prev => ({ ...prev, hp: Math.min(prev.maxHp, prev.hp + healAmount) }));
           showFeedback(`수리 완료! +${healAmount} HP`);
           playSound('reward');

@@ -30,6 +30,7 @@ import {
   getCombatRewardRule,
   rollGoldReward
 } from '../utils/rewardUtils';
+import { createActMap } from '../utils/mapUtils';
 import { assert, assertDeepEqual, assertEqual, createSeededRng, runSuite, test } from './testUtils';
 
 const createPlayer = (overrides: Partial<PlayerStats> = {}): PlayerStats => ({
@@ -357,7 +358,13 @@ runSuite('Enemy pattern tests', [
 
     const polluter = getEnemyById('cave_heart');
     polluter.currentIntentIndex = findIntentIndex('cave_heart', index => polluter.intents[index].effect?.type === 'ADD_JUNK');
-    assertEqual(calculateEnemyIntentPlan(polluter, player).junkCount, 2, 'Junk intent should expose junk count');
+    assertEqual(
+      calculateEnemyIntentPlan(polluter, player).junkCount,
+      polluter.intents[polluter.currentIntentIndex].effect?.type === 'ADD_JUNK'
+        ? polluter.intents[polluter.currentIntentIndex].effect.count
+        : 0,
+      'Junk intent should expose configured junk count'
+    );
   }),
 
   test('each act pool covers the required enemy pressure families', () => {
@@ -413,6 +420,21 @@ runSuite('Static reward, map, and archetype tests', [
 
       for (const nodeType of requiredNodeTypes) {
         assert(nodeTypes.includes(nodeType), `Act ${act} should include ${nodeType} nodes`);
+      }
+    }
+  }),
+
+  test('early act one combats use onboarding-safe enemies', () => {
+    const earlyEnemyIds = new Set(['rust_slime', 'kobold_scrapper', 'skeleton_warrior', 'mine_bat']);
+
+    for (let seed = 1; seed <= 20; seed++) {
+      const map = createActMap(1, createSeededRng(`opening-${seed}`));
+      const earlyCombats = map.filter(node => node.floor <= 3 && node.type === NodeType.COMBAT);
+
+      assert(earlyCombats.length > 0, 'Act one early floors should have combat nodes');
+      for (const combat of earlyCombats) {
+        assert(!!combat.enemyId, 'Act one early combat should have an enemy');
+        assert(earlyEnemyIds.has(combat.enemyId!), `Early act one combat should not start with a counter enemy, got ${combat.enemyId}`);
       }
     }
   }),

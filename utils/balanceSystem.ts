@@ -409,14 +409,14 @@ export const ENEMY_TIER_CONSTRAINTS: Record<EnemyTier, EnemyTierConstraints> = {
   },
 
   [EnemyTier.BOSS]: {
-    hpRange: { min: 140, max: 450 },
-    damageRange: { min: 10, max: 55 },
+    hpRange: { min: 85, max: 450 },
+    damageRange: { min: 7, max: 55 },
     blockRange: { min: 0, max: 40 },   // Some bosses are pure offense
     intentCount: { min: 2, max: 5 },   // Allow simpler boss patterns
     allowedTraits: ['DAMAGE_CAP_15', 'THORNS_5', 'RESURRECT', 'THIEVERY'],
     maxTraits: 2,
     allowedIntentTypes: [IntentType.ATTACK, IntentType.DEFEND, IntentType.BUFF, IntentType.DEBUFF, IntentType.SPECIAL, IntentType.WAIT],
-    difficultyRating: { min: 8, max: 35 }  // Wide range for boss variety
+    difficultyRating: { min: 5, max: 35 }  // Wide range for boss variety
   }
 };
 
