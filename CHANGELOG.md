@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.5.2] - 2026-05-23
+
+### Changed
+- Expanded generated card pixel art with per-card motifs so new cards read as distinct items instead of palette swaps.
+- Added dedicated pixel sprites for the 22 expanded enemies that previously fell back to the default monster image.
+
+### Design Notes
+- Card and enemy art is treated as core gameplay readability: slot, archetype, rarity, and individual item identity should be visible at icon scale.
+
+---
+
 ## [1.5.1] - 2026-05-23
 
 ### Changed
