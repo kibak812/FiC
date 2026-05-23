@@ -17,7 +17,12 @@ import {
   MAP_NODE_LAYOUTS,
   SHOP_ITEMS
 } from '../constants';
-import { CardSprites, HAND_DRAWN_CARD_SPRITE_IDS, MonsterSprites } from '../components/PixelSprites';
+import {
+  CardSprites,
+  CLARIFIED_CARD_SPRITE_IDS,
+  HAND_DRAWN_CARD_SPRITE_IDS,
+  MonsterSprites
+} from '../components/PixelSprites';
 import {
   CardRarity,
   CardType,
@@ -261,6 +266,15 @@ section('Card and enemy pixel art', () => {
   const missingHandReviewedSprites = handReviewedCardSpriteIds
     .filter(id => !HAND_DRAWN_CARD_SPRITE_IDS.has(id))
     .map(id => `${id}:${cardById.get(id)?.name || 'unknown'}`);
+  const missingClarifiedSprites = playerCards
+    .filter(card => !CLARIFIED_CARD_SPRITE_IDS.has(card.id))
+    .map(card => `${card.id}:${card.name}`);
+  const unreadableClarifiedSprites = playerCards
+    .filter(card => countSpriteRects(card.id) < 8 || countSpriteFillColors(card.id) < 5)
+    .map(card => `${card.id}:${card.name}`);
+  const overworkedClarifiedSprites = playerCards
+    .filter(card => countSpriteRects(card.id) > 14 || countSpriteFillColors(card.id) > 9)
+    .map(card => `${card.id}:${card.name}`);
   const unreadableHandReviewedSprites = handReviewedCardSpriteIds
     .filter(id => countSpriteRects(id) < 8 || countSpriteFillColors(id) < 5)
     .map(id => `${id}:${cardById.get(id)?.name || 'unknown'}`);
@@ -282,6 +296,9 @@ section('Card and enemy pixel art', () => {
 
   requireReady(missingCardSpriteIds.length === 0, `Every playable card needs a dedicated pixel sprite. Missing: ${missingCardSpriteIds.join(', ') || 'none'}.`);
   requireReady(missingHandReviewedSprites.length === 0, `Recently added cards need hand-reviewed pixel sprites. Missing: ${missingHandReviewedSprites.join(', ') || 'none'}.`);
+  requireReady(missingClarifiedSprites.length === 0, `Every playable card should use the clarified silhouette sprite pass. Missing: ${missingClarifiedSprites.join(', ') || 'none'}.`);
+  requireReady(unreadableClarifiedSprites.length === 0, `Clarified card sprites need enough shape and color separation to read at card size. Unreadable: ${unreadableClarifiedSprites.join(', ') || 'none'}.`);
+  requireReady(overworkedClarifiedSprites.length === 0, `Clarified card sprites should stay sparse: one object silhouette, restrained color count, no noisy clusters. Overworked: ${overworkedClarifiedSprites.join(', ') || 'none'}.`);
   requireReady(unreadableHandReviewedSprites.length === 0, `Hand-reviewed card sprites need a clear minimal silhouette and color separation. Unreadable: ${unreadableHandReviewedSprites.join(', ') || 'none'}.`);
   requireReady(overcrowdedHandReviewedSprites.length === 0, `Hand-reviewed card sprites should not cram too many tiny details into the icon area. Overcrowded: ${overcrowdedHandReviewedSprites.join(', ') || 'none'}.`);
   requireReady(overworkedFirstImpressionSprites.length === 0, `Starter and early reward card sprites should use one readable object silhouette with restrained color count. Overworked: ${overworkedFirstImpressionSprites.join(', ') || 'none'}.`);

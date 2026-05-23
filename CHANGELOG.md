@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.11.27] - 2026-05-23
+
+### Changed
+- Reworked every playable card icon through a unified clarified-silhouette pass so handles, heads, and decorations read as distinct item types at combat card size.
+- Product readiness now requires all playable cards to use the clarified sprite pass and rejects icons that become too visually noisy.
+- Menu version updated to v1.11.27.
+
+### Design Notes
+- Card art now favors one large identifiable object per card, with slot-specific silhouettes and restrained accent cues instead of small boxed clusters.
+
+---
+
 ## [1.11.26] - 2026-05-23
 
 ### Changed

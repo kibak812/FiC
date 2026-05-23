@@ -3959,6 +3959,1072 @@ const legendaryPayoffCardSprites: Record<number, React.FC<{ className?: string }
 
 Object.assign(CardSprites, legendaryPayoffCardSprites);
 
+type ClearCardPaletteName =
+  | 'arcane'
+  | 'blood'
+  | 'bone'
+  | 'cloth'
+  | 'ember'
+  | 'energy'
+  | 'frost'
+  | 'gold'
+  | 'iron'
+  | 'poison'
+  | 'steel'
+  | 'stone'
+  | 'void'
+  | 'wall'
+  | 'wood';
+
+type ClearCardPalette = {
+  dark: string;
+  shade: string;
+  base: string;
+  light: string;
+  accent: string;
+  spark: string;
+};
+
+type ClearHandleMotif =
+  | 'beast'
+  | 'blood'
+  | 'bone'
+  | 'coil'
+  | 'counterweight'
+  | 'dodge'
+  | 'ember'
+  | 'gold'
+  | 'guard'
+  | 'heavy'
+  | 'infinite'
+  | 'light'
+  | 'pierce'
+  | 'plain'
+  | 'scribe'
+  | 'shield'
+  | 'spark'
+  | 'split'
+  | 'twin'
+  | 'vine'
+  | 'wall';
+
+type ClearHeadMotif =
+  | 'axe'
+  | 'blade'
+  | 'cleaver'
+  | 'club'
+  | 'combo'
+  | 'crystal'
+  | 'dagger'
+  | 'execution'
+  | 'fangs'
+  | 'flameNozzle'
+  | 'frostBlade'
+  | 'furnace'
+  | 'gear'
+  | 'greatsword'
+  | 'hammer'
+  | 'hook'
+  | 'longsword'
+  | 'meteor'
+  | 'meteorCluster'
+  | 'needle'
+  | 'plagueWorld'
+  | 'potLid'
+  | 'rake'
+  | 'ram'
+  | 'saw'
+  | 'scythe'
+  | 'timeGear'
+  | 'trident'
+  | 'wall';
+
+type ClearDecoMotif =
+  | 'battery'
+  | 'charm'
+  | 'cloth'
+  | 'coil'
+  | 'cord'
+  | 'crest'
+  | 'crystal'
+  | 'dragonCrest'
+  | 'dust'
+  | 'ember'
+  | 'feather'
+  | 'flint'
+  | 'gem'
+  | 'lens'
+  | 'mirror'
+  | 'needles'
+  | 'plating'
+  | 'pouch'
+  | 'ribbon'
+  | 'rune'
+  | 'shieldShard'
+  | 'sigil'
+  | 'spring'
+  | 'starMap'
+  | 'thorn'
+  | 'wall'
+  | 'weight'
+  | 'whetstone';
+
+const clearCardPalettes: Record<ClearCardPaletteName, ClearCardPalette> = {
+  arcane: { dark: '#14101F', shade: '#3F2B6B', base: '#6950A8', light: '#A58BDF', accent: '#D7C8FF', spark: '#F4EFFF' },
+  blood: { dark: '#21070A', shade: '#6A1118', base: '#A93137', light: '#DE6665', accent: '#F1A06E', spark: '#FFE0B7' },
+  bone: { dark: '#241B12', shade: '#76614A', base: '#B49B76', light: '#E2D0A3', accent: '#FFF0C5', spark: '#FFFFFF' },
+  cloth: { dark: '#17121A', shade: '#4D3348', base: '#84616C', light: '#C59A8D', accent: '#EBC17B', spark: '#FFF1C8' },
+  ember: { dark: '#230D06', shade: '#77210D', base: '#B84A18', light: '#F07825', accent: '#FFC247', spark: '#FFF0A3' },
+  energy: { dark: '#061522', shade: '#164E77', base: '#2188B8', light: '#6BD2E8', accent: '#B5F5F2', spark: '#FFFFFF' },
+  frost: { dark: '#0A1A25', shade: '#25546D', base: '#5C9FB6', light: '#B5E6ED', accent: '#E4FBFF', spark: '#FFFFFF' },
+  gold: { dark: '#221504', shade: '#7A4A10', base: '#C2871A', light: '#F2C454', accent: '#FFF09D', spark: '#FFFFFF' },
+  iron: { dark: '#16191D', shade: '#46505A', base: '#75808B', light: '#B8C2C8', accent: '#E1E7E8', spark: '#FFFFFF' },
+  poison: { dark: '#06180C', shade: '#1F5A2C', base: '#3C9B43', light: '#85D15C', accent: '#D4F581', spark: '#F7FFD0' },
+  steel: { dark: '#101728', shade: '#31436A', base: '#607CA7', light: '#A7BDD1', accent: '#DDE8EC', spark: '#FFFFFF' },
+  stone: { dark: '#171617', shade: '#4C4A49', base: '#777471', light: '#B1ABA2', accent: '#D8C894', spark: '#FFF2B4' },
+  void: { dark: '#090915', shade: '#24224D', base: '#4B3B8F', light: '#8658CB', accent: '#D096FF', spark: '#F5DFFF' },
+  wall: { dark: '#0E1518', shade: '#2D4950', base: '#547982', light: '#9EB3B2', accent: '#D9D2AF', spark: '#FFF1C4' },
+  wood: { dark: '#241006', shade: '#6C3519', base: '#A56430', light: '#D99B58', accent: '#F1C472', spark: '#FFF1B4' }
+};
+
+const clearShadowRect = (key: string): React.ReactElement => (
+  <rect key={key} x="8" y="21" width="8" height="1" fill="#09070D" opacity="0.45"/>
+);
+
+const renderClearHandleMotif = (palette: ClearCardPalette, motif: ClearHandleMotif): React.ReactElement[] => {
+  switch (motif) {
+    case 'beast':
+      return [
+        <rect key="beast-l" x="6" y="8" width="2" height="5" fill={palette.accent}/>,
+        <rect key="beast-r" x="16" y="8" width="2" height="5" fill={palette.accent}/>,
+        <rect key="beast-tip" x="11" y="2" width="2" height="2" fill={palette.spark}/>
+      ];
+    case 'blood':
+      return [
+        <rect key="blood-drop" x="16" y="9" width="2" height="3" fill={palette.light}/>,
+        <rect key="blood-point" x="17" y="12" width="1" height="2" fill={palette.accent}/>,
+        <rect key="blood-glint" x="10" y="10" width="1" height="3" fill={palette.spark}/>
+      ];
+    case 'bone':
+      return [
+        <rect key="bone-l" x="6" y="7" width="3" height="2" fill={palette.accent}/>,
+        <rect key="bone-r" x="15" y="7" width="3" height="2" fill={palette.accent}/>,
+        <rect key="bone-chip" x="12" y="13" width="1" height="2" fill={palette.spark}/>
+      ];
+    case 'coil':
+      return [
+        <rect key="coil-a" x="8" y="9" width="8" height="1" fill={palette.accent}/>,
+        <rect key="coil-b" x="8" y="12" width="8" height="1" fill={palette.spark}/>,
+        <rect key="coil-c" x="8" y="15" width="8" height="1" fill={palette.accent}/>
+      ];
+    case 'counterweight':
+      return [
+        <rect key="weight-main" x="7" y="18" width="10" height="3" fill={palette.dark}/>,
+        <rect key="weight-face" x="9" y="18" width="6" height="2" fill={palette.accent}/>,
+        <rect key="weight-glint" x="11" y="19" width="2" height="1" fill={palette.spark}/>
+      ];
+    case 'dodge':
+      return [
+        <rect key="dodge-l" x="6" y="6" width="2" height="2" fill={palette.spark}/>,
+        <rect key="dodge-r" x="16" y="13" width="2" height="2" fill={palette.spark}/>,
+        <rect key="dodge-mark" x="7" y="15" width="2" height="1" fill={palette.accent}/>
+      ];
+    case 'ember':
+      return [
+        <rect key="ember-band" x="8" y="11" width="8" height="2" fill={palette.accent}/>,
+        <rect key="ember-spark" x="16" y="6" width="2" height="2" fill={palette.spark}/>,
+        <rect key="ember-low" x="7" y="15" width="2" height="2" fill={palette.light}/>
+      ];
+    case 'gold':
+      return [
+        <rect key="gold-palm" x="15" y="8" width="3" height="5" fill={palette.accent}/>,
+        <rect key="gold-ring" x="7" y="13" width="2" height="2" fill={palette.spark}/>,
+        <rect key="gold-mark" x="12" y="9" width="1" height="3" fill={palette.spark}/>
+      ];
+    case 'guard':
+      return [
+        <rect key="guard-left" x="6" y="9" width="3" height="2" fill={palette.dark}/>,
+        <rect key="guard-right" x="15" y="9" width="3" height="2" fill={palette.dark}/>,
+        <rect key="guard-glint" x="11" y="2" width="2" height="2" fill={palette.spark}/>
+      ];
+    case 'heavy':
+      return [
+        <rect key="heavy-top" x="7" y="3" width="10" height="3" fill={palette.dark}/>,
+        <rect key="heavy-cap" x="8" y="4" width="8" height="2" fill={palette.accent}/>,
+        <rect key="heavy-glint" x="12" y="4" width="2" height="1" fill={palette.spark}/>
+      ];
+    case 'infinite':
+      return [
+        <rect key="loop-l" x="6" y="10" width="3" height="3" fill={palette.accent}/>,
+        <rect key="loop-r" x="15" y="10" width="3" height="3" fill={palette.accent}/>,
+        <rect key="loop-mid" x="10" y="11" width="4" height="1" fill={palette.spark}/>
+      ];
+    case 'light':
+      return [
+        <rect key="light-cut-l" x="8" y="9" width="1" height="5" fill={palette.dark}/>,
+        <rect key="light-cut-r" x="15" y="9" width="1" height="5" fill={palette.dark}/>,
+        <rect key="light-glint" x="12" y="3" width="1" height="2" fill={palette.spark}/>
+      ];
+    case 'pierce':
+      return [
+        <rect key="pierce-tip" x="11" y="1" width="2" height="4" fill={palette.spark}/>,
+        <rect key="pierce-side" x="15" y="7" width="3" height="1" fill={palette.accent}/>,
+        <rect key="pierce-mark" x="6" y="14" width="3" height="1" fill={palette.accent}/>
+      ];
+    case 'scribe':
+      return [
+        <rect key="scribe-feather" x="16" y="5" width="2" height="7" fill={palette.accent}/>,
+        <rect key="scribe-tip" x="18" y="7" width="1" height="3" fill={palette.spark}/>,
+        <rect key="scribe-line" x="8" y="14" width="3" height="1" fill={palette.spark}/>
+      ];
+    case 'shield':
+      return [
+        <rect key="shield-face" x="6" y="8" width="3" height="7" fill={palette.accent}/>,
+        <rect key="shield-cut" x="7" y="15" width="1" height="2" fill={palette.spark}/>,
+        <rect key="shield-mark" x="16" y="10" width="2" height="3" fill={palette.dark}/>
+      ];
+    case 'spark':
+      return [
+        <rect key="spark-a" x="16" y="6" width="2" height="4" fill={palette.spark}/>,
+        <rect key="spark-b" x="14" y="10" width="2" height="2" fill={palette.accent}/>,
+        <rect key="spark-c" x="7" y="13" width="2" height="2" fill={palette.light}/>
+      ];
+    case 'split':
+      return [
+        <rect key="split-l" x="6" y="7" width="2" height="10" fill={palette.shade}/>,
+        <rect key="split-r" x="16" y="7" width="2" height="10" fill={palette.shade}/>,
+        <rect key="split-link" x="9" y="11" width="6" height="2" fill={palette.spark}/>
+      ];
+    case 'twin':
+      return [
+        <rect key="twin-l" x="6" y="6" width="3" height="12" fill={palette.shade}/>,
+        <rect key="twin-r" x="15" y="6" width="3" height="12" fill={palette.shade}/>,
+        <rect key="twin-light" x="7" y="7" width="1" height="9" fill={palette.spark}/>
+      ];
+    case 'vine':
+      return [
+        <rect key="vine-a" x="7" y="8" width="2" height="2" fill={palette.accent}/>,
+        <rect key="vine-b" x="15" y="11" width="2" height="2" fill={palette.accent}/>,
+        <rect key="vine-c" x="7" y="14" width="2" height="2" fill={palette.spark}/>
+      ];
+    case 'wall':
+      return [
+        <rect key="wall-brick-a" x="6" y="8" width="3" height="3" fill={palette.accent}/>,
+        <rect key="wall-brick-b" x="15" y="13" width="3" height="3" fill={palette.accent}/>,
+        <rect key="wall-line" x="8" y="11" width="8" height="1" fill={palette.spark}/>
+      ];
+    case 'plain':
+    default:
+      return [
+        <rect key="plain-knot-a" x="13" y="8" width="1" height="2" fill={palette.spark}/>,
+        <rect key="plain-knot-b" x="10" y="13" width="1" height="2" fill={palette.accent}/>
+      ];
+  }
+};
+
+const clearHandleSprite = (
+  paletteName: ClearCardPaletteName,
+  motif: ClearHandleMotif
+): React.FC<{ className?: string }> => {
+  const palette = clearCardPalettes[paletteName];
+
+  return ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      {clearShadowRect('handle-shadow')}
+      <rect x="9" y="5" width="6" height="14" fill={palette.dark}/>
+      <rect x="9" y="5" width="2" height="14" fill={palette.shade}/>
+      <rect x="11" y="4" width="4" height="16" fill={palette.base}/>
+      <rect x="12" y="5" width="2" height="13" fill={palette.light}/>
+      <rect x="8" y="6" width="8" height="2" fill={palette.accent}/>
+      <rect x="8" y="16" width="8" height="2" fill={palette.accent}/>
+      {renderClearHandleMotif(palette, motif)}
+    </svg>
+  );
+};
+
+const clearHeadSprite = (
+  paletteName: ClearCardPaletteName,
+  motif: ClearHeadMotif
+): React.FC<{ className?: string }> => {
+  const palette = clearCardPalettes[paletteName];
+
+  return ({ className }) => {
+    const common = [clearShadowRect('head-shadow')];
+    switch (motif) {
+      case 'axe':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="11" y="6" width="3" height="12" fill={palette.dark}/>
+            <rect x="14" y="5" width="5" height="7" fill={palette.base}/>
+            <rect x="16" y="6" width="3" height="4" fill={palette.light}/>
+            <rect x="8" y="8" width="3" height="5" fill={palette.shade}/>
+            <rect x="7" y="10" width="2" height="4" fill={palette.accent}/>
+            <rect x="10" y="18" width="5" height="2" fill={palette.accent}/>
+            <rect x="17" y="5" width="1" height="2" fill={palette.spark}/>
+          </svg>
+        );
+      case 'cleaver':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="7" y="5" width="10" height="10" fill={palette.dark}/>
+            <rect x="8" y="4" width="8" height="10" fill={palette.base}/>
+            <rect x="10" y="5" width="5" height="8" fill={palette.light}/>
+            <rect x="16" y="7" width="2" height="5" fill={palette.shade}/>
+            <rect x="10" y="15" width="5" height="2" fill={palette.accent}/>
+            <rect x="11" y="17" width="3" height="4" fill={palette.dark}/>
+            <rect x="9" y="6" width="1" height="2" fill={palette.spark}/>
+          </svg>
+        );
+      case 'club':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="9" y="4" width="6" height="10" fill={palette.dark}/>
+            <rect x="8" y="6" width="8" height="6" fill={palette.base}/>
+            <rect x="10" y="5" width="4" height="5" fill={palette.light}/>
+            <rect x="15" y="8" width="2" height="3" fill={palette.shade}/>
+            <rect x="10" y="14" width="5" height="3" fill={palette.accent}/>
+            <rect x="11" y="17" width="3" height="4" fill={palette.dark}/>
+            <rect x="11" y="6" width="1" height="2" fill={palette.spark}/>
+          </svg>
+        );
+      case 'combo':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="8" y="5" width="2" height="11" fill={palette.light}/>
+            <rect x="10" y="7" width="2" height="9" fill={palette.base}/>
+            <rect x="14" y="5" width="2" height="11" fill={palette.light}/>
+            <rect x="12" y="7" width="2" height="9" fill={palette.shade}/>
+            <rect x="7" y="15" width="10" height="2" fill={palette.accent}/>
+            <rect x="10" y="17" width="4" height="4" fill={palette.dark}/>
+            <rect x="16" y="5" width="1" height="2" fill={palette.spark}/>
+          </svg>
+        );
+      case 'crystal':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="10" y="3" width="4" height="3" fill={palette.spark}/>
+            <rect x="8" y="6" width="8" height="9" fill={palette.base}/>
+            <rect x="10" y="6" width="4" height="10" fill={palette.light}/>
+            <rect x="7" y="9" width="2" height="5" fill={palette.shade}/>
+            <rect x="15" y="9" width="2" height="5" fill={palette.dark}/>
+            <rect x="10" y="16" width="4" height="3" fill={palette.accent}/>
+            <rect x="11" y="19" width="2" height="2" fill={palette.dark}/>
+          </svg>
+        );
+      case 'dagger':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="11" y="3" width="2" height="10" fill={palette.light}/>
+            <rect x="10" y="5" width="1" height="8" fill={palette.base}/>
+            <rect x="13" y="5" width="1" height="8" fill={palette.shade}/>
+            <rect x="9" y="13" width="6" height="2" fill={palette.accent}/>
+            <rect x="11" y="15" width="2" height="5" fill={palette.dark}/>
+            <rect x="10" y="20" width="4" height="1" fill={palette.accent}/>
+            <rect x="12" y="2" width="1" height="1" fill={palette.spark}/>
+          </svg>
+        );
+      case 'execution':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="8" y="3" width="8" height="11" fill={palette.dark}/>
+            <rect x="9" y="4" width="6" height="10" fill={palette.base}/>
+            <rect x="11" y="4" width="3" height="9" fill={palette.light}/>
+            <rect x="15" y="8" width="2" height="5" fill={palette.shade}/>
+            <rect x="7" y="13" width="10" height="2" fill={palette.accent}/>
+            <rect x="10" y="15" width="4" height="5" fill={palette.dark}/>
+            <rect x="13" y="5" width="1" height="3" fill={palette.spark}/>
+          </svg>
+        );
+      case 'fangs':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="7" y="5" width="4" height="9" fill={palette.base}/>
+            <rect x="13" y="5" width="4" height="9" fill={palette.base}/>
+            <rect x="8" y="5" width="2" height="8" fill={palette.light}/>
+            <rect x="14" y="5" width="2" height="8" fill={palette.light}/>
+            <rect x="9" y="14" width="2" height="3" fill={palette.accent}/>
+            <rect x="13" y="14" width="2" height="3" fill={palette.accent}/>
+            <rect x="10" y="17" width="4" height="3" fill={palette.dark}/>
+            <rect x="15" y="6" width="1" height="2" fill={palette.spark}/>
+          </svg>
+        );
+      case 'flameNozzle':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="7" y="9" width="9" height="6" fill={palette.dark}/>
+            <rect x="8" y="8" width="8" height="5" fill={palette.base}/>
+            <rect x="10" y="9" width="5" height="3" fill={palette.light}/>
+            <rect x="16" y="10" width="3" height="2" fill={palette.accent}/>
+            <rect x="18" y="8" width="2" height="2" fill={palette.spark}/>
+            <rect x="9" y="15" width="6" height="2" fill={palette.accent}/>
+            <rect x="11" y="17" width="3" height="4" fill={palette.dark}/>
+          </svg>
+        );
+      case 'frostBlade':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="11" y="3" width="2" height="12" fill={palette.spark}/>
+            <rect x="9" y="6" width="2" height="8" fill={palette.light}/>
+            <rect x="13" y="6" width="2" height="8" fill={palette.base}/>
+            <rect x="8" y="10" width="2" height="2" fill={palette.accent}/>
+            <rect x="14" y="4" width="2" height="2" fill={palette.accent}/>
+            <rect x="8" y="15" width="8" height="2" fill={palette.shade}/>
+            <rect x="10" y="17" width="4" height="4" fill={palette.dark}/>
+          </svg>
+        );
+      case 'furnace':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="7" y="6" width="10" height="10" fill={palette.dark}/>
+            <rect x="8" y="5" width="8" height="10" fill={palette.base}/>
+            <rect x="10" y="7" width="4" height="5" fill={palette.accent}/>
+            <rect x="11" y="8" width="2" height="3" fill={palette.spark}/>
+            <rect x="8" y="15" width="8" height="2" fill={palette.shade}/>
+            <rect x="10" y="17" width="4" height="4" fill={palette.dark}/>
+            <rect x="16" y="8" width="2" height="4" fill={palette.light}/>
+          </svg>
+        );
+      case 'gear':
+      case 'timeGear':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="9" y="6" width="6" height="2" fill={palette.accent}/>
+            <rect x="9" y="16" width="6" height="2" fill={palette.accent}/>
+            <rect x="6" y="9" width="2" height="6" fill={palette.accent}/>
+            <rect x="16" y="9" width="2" height="6" fill={palette.accent}/>
+            <rect x="8" y="8" width="8" height="8" fill={palette.base}/>
+            <rect x="10" y="10" width="4" height="4" fill={palette.light}/>
+            <rect x="11" y="11" width="2" height="2" fill={palette.dark}/>
+            <rect x="14" y="7" width="1" height="2" fill={palette.spark}/>
+          </svg>
+        );
+      case 'greatsword':
+      case 'longsword':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="11" y="2" width="2" height="14" fill={palette.light}/>
+            <rect x="9" y="5" width="2" height="10" fill={palette.base}/>
+            <rect x="13" y="5" width="2" height="10" fill={palette.shade}/>
+            <rect x="8" y="16" width="8" height="2" fill={palette.accent}/>
+            <rect x="10" y="18" width="4" height="3" fill={palette.dark}/>
+            <rect x="12" y="2" width="1" height="2" fill={palette.spark}/>
+            <rect x="15" y="7" width="1" height="3" fill={palette.accent}/>
+          </svg>
+        );
+      case 'hammer':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="6" y="6" width="12" height="6" fill={palette.dark}/>
+            <rect x="7" y="5" width="10" height="6" fill={palette.base}/>
+            <rect x="9" y="6" width="5" height="3" fill={palette.light}/>
+            <rect x="17" y="7" width="2" height="3" fill={palette.shade}/>
+            <rect x="11" y="11" width="3" height="8" fill={palette.dark}/>
+            <rect x="10" y="19" width="5" height="2" fill={palette.accent}/>
+            <rect x="10" y="6" width="1" height="2" fill={palette.spark}/>
+          </svg>
+        );
+      case 'hook':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="11" y="4" width="2" height="12" fill={palette.light}/>
+            <rect x="13" y="5" width="3" height="2" fill={palette.base}/>
+            <rect x="15" y="7" width="2" height="5" fill={palette.shade}/>
+            <rect x="13" y="12" width="3" height="2" fill={palette.accent}/>
+            <rect x="8" y="15" width="8" height="2" fill={palette.accent}/>
+            <rect x="10" y="17" width="4" height="4" fill={palette.dark}/>
+            <rect x="14" y="5" width="1" height="1" fill={palette.spark}/>
+          </svg>
+        );
+      case 'meteor':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="7" y="6" width="3" height="3" fill={palette.spark}/>
+            <rect x="9" y="8" width="7" height="7" fill={palette.base}/>
+            <rect x="11" y="9" width="5" height="5" fill={palette.light}/>
+            <rect x="8" y="12" width="3" height="3" fill={palette.shade}/>
+            <rect x="15" y="13" width="3" height="3" fill={palette.accent}/>
+            <rect x="10" y="16" width="5" height="2" fill={palette.dark}/>
+            <rect x="11" y="18" width="3" height="3" fill={palette.dark}/>
+          </svg>
+        );
+      case 'meteorCluster':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="6" y="5" width="3" height="3" fill={palette.spark}/>
+            <rect x="9" y="8" width="5" height="5" fill={palette.base}/>
+            <rect x="15" y="6" width="3" height="3" fill={palette.light}/>
+            <rect x="6" y="13" width="4" height="4" fill={palette.accent}/>
+            <rect x="13" y="13" width="5" height="5" fill={palette.shade}/>
+            <rect x="10" y="18" width="4" height="2" fill={palette.dark}/>
+            <rect x="17" y="10" width="2" height="2" fill={palette.spark}/>
+          </svg>
+        );
+      case 'needle':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="12" y="2" width="1" height="14" fill={palette.spark}/>
+            <rect x="10" y="5" width="2" height="10" fill={palette.light}/>
+            <rect x="13" y="5" width="2" height="10" fill={palette.base}/>
+            <rect x="9" y="15" width="6" height="2" fill={palette.accent}/>
+            <rect x="11" y="17" width="3" height="4" fill={palette.dark}/>
+            <rect x="15" y="8" width="2" height="3" fill={palette.shade}/>
+            <rect x="8" y="9" width="2" height="2" fill={palette.accent}/>
+          </svg>
+        );
+      case 'plagueWorld':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="7" y="5" width="9" height="8" fill={palette.dark}/>
+            <rect x="8" y="6" width="7" height="7" fill={palette.base}/>
+            <rect x="10" y="7" width="4" height="4" fill={palette.light}/>
+            <rect x="15" y="9" width="3" height="2" fill={palette.accent}/>
+            <rect x="9" y="13" width="6" height="3" fill={palette.shade}/>
+            <rect x="10" y="16" width="4" height="5" fill={palette.dark}/>
+            <rect x="17" y="5" width="2" height="2" fill={palette.spark}/>
+          </svg>
+        );
+      case 'potLid':
+      case 'wall':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="8" y="9" width="8" height="7" fill={palette.base}/>
+            <rect x="6" y="11" width="2" height="5" fill={palette.shade}/>
+            <rect x="16" y="11" width="2" height="5" fill={palette.shade}/>
+            <rect x="10" y="7" width="4" height="2" fill={palette.light}/>
+            <rect x="9" y="10" width="6" height="2" fill={palette.spark}/>
+            <rect x="9" y="16" width="6" height="2" fill={palette.dark}/>
+            <rect x="11" y="18" width="2" height="2" fill={palette.accent}/>
+          </svg>
+        );
+      case 'rake':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="7" y="5" width="2" height="9" fill={palette.light}/>
+            <rect x="11" y="5" width="2" height="9" fill={palette.base}/>
+            <rect x="15" y="5" width="2" height="9" fill={palette.light}/>
+            <rect x="8" y="14" width="8" height="2" fill={palette.accent}/>
+            <rect x="10" y="16" width="4" height="4" fill={palette.dark}/>
+            <rect x="7" y="4" width="2" height="1" fill={palette.spark}/>
+            <rect x="16" y="8" width="2" height="3" fill={palette.shade}/>
+          </svg>
+        );
+      case 'ram':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="6" y="9" width="12" height="5" fill={palette.dark}/>
+            <rect x="8" y="8" width="8" height="5" fill={palette.base}/>
+            <rect x="10" y="9" width="5" height="3" fill={palette.light}/>
+            <rect x="18" y="10" width="2" height="2" fill={palette.accent}/>
+            <rect x="8" y="14" width="8" height="2" fill={palette.shade}/>
+            <rect x="10" y="16" width="4" height="5" fill={palette.dark}/>
+            <rect x="17" y="9" width="1" height="1" fill={palette.spark}/>
+          </svg>
+        );
+      case 'saw':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="7" y="8" width="10" height="6" fill={palette.base}/>
+            <rect x="8" y="7" width="2" height="2" fill={palette.accent}/>
+            <rect x="12" y="7" width="2" height="2" fill={palette.accent}/>
+            <rect x="16" y="9" width="2" height="2" fill={palette.accent}/>
+            <rect x="8" y="14" width="2" height="2" fill={palette.accent}/>
+            <rect x="12" y="14" width="2" height="2" fill={palette.accent}/>
+            <rect x="9" y="9" width="5" height="3" fill={palette.light}/>
+            <rect x="15" y="11" width="2" height="2" fill={palette.shade}/>
+            <rect x="10" y="16" width="4" height="5" fill={palette.dark}/>
+            <rect x="10" y="8" width="1" height="1" fill={palette.spark}/>
+          </svg>
+        );
+      case 'scythe':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="11" y="4" width="2" height="13" fill={palette.dark}/>
+            <rect x="13" y="4" width="5" height="2" fill={palette.light}/>
+            <rect x="16" y="6" width="2" height="4" fill={palette.base}/>
+            <rect x="14" y="10" width="3" height="2" fill={palette.accent}/>
+            <rect x="8" y="15" width="8" height="2" fill={palette.shade}/>
+            <rect x="10" y="17" width="4" height="4" fill={palette.dark}/>
+            <rect x="17" y="4" width="1" height="2" fill={palette.spark}/>
+          </svg>
+        );
+      case 'trident':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="7" y="4" width="2" height="9" fill={palette.light}/>
+            <rect x="11" y="3" width="2" height="12" fill={palette.spark}/>
+            <rect x="15" y="4" width="2" height="9" fill={palette.light}/>
+            <rect x="8" y="12" width="8" height="2" fill={palette.base}/>
+            <rect x="9" y="14" width="6" height="2" fill={palette.accent}/>
+            <rect x="11" y="16" width="3" height="5" fill={palette.dark}/>
+            <rect x="17" y="8" width="2" height="3" fill={palette.shade}/>
+          </svg>
+        );
+      case 'blade':
+      default:
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="11" y="3" width="2" height="12" fill={palette.light}/>
+            <rect x="10" y="5" width="1" height="10" fill={palette.base}/>
+            <rect x="13" y="5" width="1" height="10" fill={palette.shade}/>
+            <rect x="8" y="15" width="8" height="2" fill={palette.accent}/>
+            <rect x="10" y="17" width="4" height="4" fill={palette.dark}/>
+            <rect x="12" y="2" width="1" height="1" fill={palette.spark}/>
+            <rect x="14" y="8" width="2" height="1" fill={palette.accent}/>
+          </svg>
+        );
+    }
+  };
+};
+
+const clearDecoSprite = (
+  paletteName: ClearCardPaletteName,
+  motif: ClearDecoMotif
+): React.FC<{ className?: string }> => {
+  const palette = clearCardPalettes[paletteName];
+
+  return ({ className }) => {
+    const common = [clearShadowRect('deco-shadow')];
+    switch (motif) {
+      case 'battery':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="8" y="7" width="8" height="10" fill={palette.dark}/>
+            <rect x="9" y="6" width="6" height="10" fill={palette.base}/>
+            <rect x="11" y="4" width="2" height="2" fill={palette.accent}/>
+            <rect x="10" y="8" width="4" height="3" fill={palette.light}/>
+            <rect x="11" y="12" width="2" height="2" fill={palette.spark}/>
+            <rect x="9" y="16" width="6" height="2" fill={palette.shade}/>
+            <rect x="7" y="10" width="2" height="3" fill={palette.accent}/>
+          </svg>
+        );
+      case 'charm':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="11" y="4" width="2" height="3" fill={palette.accent}/>
+            <rect x="8" y="7" width="8" height="8" fill={palette.base}/>
+            <rect x="10" y="8" width="4" height="6" fill={palette.light}/>
+            <rect x="9" y="15" width="6" height="2" fill={palette.shade}/>
+            <rect x="11" y="17" width="2" height="3" fill={palette.dark}/>
+            <rect x="14" y="8" width="1" height="2" fill={palette.spark}/>
+            <rect x="7" y="10" width="2" height="3" fill={palette.accent}/>
+          </svg>
+        );
+      case 'cloth':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="7" y="7" width="10" height="9" fill={palette.base}/>
+            <rect x="8" y="8" width="7" height="6" fill={palette.light}/>
+            <rect x="6" y="10" width="2" height="4" fill={palette.shade}/>
+            <rect x="15" y="11" width="3" height="4" fill={palette.dark}/>
+            <rect x="8" y="16" width="4" height="2" fill={palette.accent}/>
+            <rect x="13" y="16" width="2" height="3" fill={palette.shade}/>
+            <rect x="10" y="9" width="2" height="1" fill={palette.spark}/>
+          </svg>
+        );
+      case 'coil':
+      case 'spring':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="8" y="6" width="8" height="2" fill={palette.accent}/>
+            <rect x="8" y="9" width="8" height="2" fill={palette.base}/>
+            <rect x="8" y="12" width="8" height="2" fill={palette.light}/>
+            <rect x="8" y="15" width="8" height="2" fill={palette.accent}/>
+            <rect x="7" y="7" width="2" height="8" fill={palette.shade}/>
+            <rect x="15" y="8" width="2" height="8" fill={palette.dark}/>
+            <rect x="11" y="10" width="2" height="1" fill={palette.spark}/>
+          </svg>
+        );
+      case 'cord':
+      case 'ribbon':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="7" y="7" width="9" height="2" fill={palette.light}/>
+            <rect x="14" y="9" width="2" height="4" fill={palette.base}/>
+            <rect x="8" y="12" width="8" height="2" fill={palette.accent}/>
+            <rect x="8" y="14" width="2" height="4" fill={palette.shade}/>
+            <rect x="10" y="17" width="6" height="2" fill={palette.dark}/>
+            <rect x="11" y="8" width="2" height="1" fill={palette.spark}/>
+            <rect x="16" y="10" width="2" height="2" fill={palette.accent}/>
+          </svg>
+        );
+      case 'crest':
+      case 'dragonCrest':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="9" y="5" width="6" height="3" fill={palette.accent}/>
+            <rect x="7" y="8" width="10" height="8" fill={palette.base}/>
+            <rect x="9" y="9" width="6" height="5" fill={palette.light}/>
+            <rect x="8" y="16" width="8" height="2" fill={palette.shade}/>
+            <rect x="11" y="18" width="2" height="2" fill={palette.dark}/>
+            <rect x="6" y="7" width="2" height="3" fill={palette.dark}/>
+            <rect x="16" y="7" width="2" height="3" fill={palette.spark}/>
+          </svg>
+        );
+      case 'crystal':
+      case 'gem':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="10" y="4" width="4" height="3" fill={palette.spark}/>
+            <rect x="8" y="7" width="8" height="7" fill={palette.base}/>
+            <rect x="10" y="7" width="4" height="8" fill={palette.light}/>
+            <rect x="7" y="10" width="2" height="4" fill={palette.shade}/>
+            <rect x="15" y="10" width="2" height="4" fill={palette.dark}/>
+            <rect x="9" y="15" width="6" height="3" fill={palette.accent}/>
+            <rect x="11" y="18" width="2" height="2" fill={palette.dark}/>
+          </svg>
+        );
+      case 'dust':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="8" y="10" width="8" height="7" fill={palette.base}/>
+            <rect x="9" y="9" width="6" height="2" fill={palette.accent}/>
+            <rect x="10" y="11" width="4" height="4" fill={palette.light}/>
+            <rect x="7" y="13" width="2" height="3" fill={palette.shade}/>
+            <rect x="15" y="13" width="2" height="3" fill={palette.dark}/>
+            <rect x="6" y="6" width="2" height="2" fill={palette.spark}/>
+            <rect x="17" y="8" width="2" height="2" fill={palette.accent}/>
+          </svg>
+        );
+      case 'ember':
+      case 'flint':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="8" y="9" width="8" height="7" fill={palette.dark}/>
+            <rect x="9" y="8" width="6" height="7" fill={palette.base}/>
+            <rect x="10" y="9" width="4" height="4" fill={palette.light}/>
+            <rect x="12" y="7" width="2" height="2" fill={palette.spark}/>
+            <rect x="7" y="13" width="2" height="3" fill={palette.shade}/>
+            <rect x="15" y="12" width="2" height="3" fill={palette.accent}/>
+            <rect x="10" y="16" width="4" height="2" fill={palette.dark}/>
+          </svg>
+        );
+      case 'feather':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="12" y="5" width="2" height="13" fill={palette.dark}/>
+            <rect x="8" y="6" width="5" height="3" fill={palette.light}/>
+            <rect x="7" y="9" width="6" height="3" fill={palette.base}/>
+            <rect x="9" y="12" width="4" height="3" fill={palette.accent}/>
+            <rect x="13" y="7" width="4" height="3" fill={palette.shade}/>
+            <rect x="13" y="10" width="3" height="3" fill={palette.light}/>
+            <rect x="9" y="7" width="2" height="1" fill={palette.spark}/>
+          </svg>
+        );
+      case 'lens':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="8" y="7" width="8" height="8" fill={palette.dark}/>
+            <rect x="9" y="6" width="6" height="10" fill={palette.base}/>
+            <rect x="8" y="9" width="8" height="4" fill={palette.light}/>
+            <rect x="10" y="8" width="4" height="5" fill={palette.spark}/>
+            <rect x="15" y="10" width="3" height="3" fill={palette.accent}/>
+            <rect x="9" y="16" width="6" height="2" fill={palette.shade}/>
+            <rect x="11" y="18" width="2" height="2" fill={palette.dark}/>
+          </svg>
+        );
+      case 'mirror':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="8" y="5" width="8" height="10" fill={palette.dark}/>
+            <rect x="9" y="6" width="6" height="8" fill={palette.base}/>
+            <rect x="10" y="7" width="4" height="5" fill={palette.light}/>
+            <rect x="13" y="7" width="1" height="2" fill={palette.spark}/>
+            <rect x="10" y="15" width="4" height="2" fill={palette.accent}/>
+            <rect x="11" y="17" width="2" height="4" fill={palette.shade}/>
+            <rect x="7" y="9" width="2" height="3" fill={palette.accent}/>
+          </svg>
+        );
+      case 'needles':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="8" y="5" width="2" height="12" fill={palette.light}/>
+            <rect x="14" y="5" width="2" height="12" fill={palette.light}/>
+            <rect x="9" y="17" width="1" height="3" fill={palette.accent}/>
+            <rect x="15" y="17" width="1" height="3" fill={palette.accent}/>
+            <rect x="7" y="10" width="2" height="3" fill={palette.shade}/>
+            <rect x="15" y="9" width="2" height="3" fill={palette.base}/>
+            <rect x="11" y="7" width="2" height="1" fill={palette.spark}/>
+          </svg>
+        );
+      case 'plating':
+      case 'shieldShard':
+      case 'wall':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="8" y="6" width="8" height="10" fill={palette.dark}/>
+            <rect x="9" y="7" width="6" height="8" fill={palette.base}/>
+            <rect x="10" y="8" width="4" height="3" fill={palette.light}/>
+            <rect x="7" y="10" width="2" height="4" fill={palette.shade}/>
+            <rect x="15" y="10" width="2" height="4" fill={palette.shade}/>
+            <rect x="9" y="16" width="6" height="2" fill={palette.accent}/>
+            <rect x="11" y="18" width="2" height="2" fill={palette.spark}/>
+          </svg>
+        );
+      case 'pouch':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="9" y="7" width="6" height="2" fill={palette.accent}/>
+            <rect x="8" y="9" width="8" height="8" fill={palette.base}/>
+            <rect x="10" y="10" width="4" height="5" fill={palette.light}/>
+            <rect x="7" y="12" width="2" height="3" fill={palette.shade}/>
+            <rect x="15" y="12" width="2" height="3" fill={palette.dark}/>
+            <rect x="10" y="17" width="4" height="2" fill={palette.dark}/>
+            <rect x="13" y="10" width="1" height="2" fill={palette.spark}/>
+          </svg>
+        );
+      case 'rune':
+      case 'sigil':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="8" y="6" width="8" height="10" fill={palette.dark}/>
+            <rect x="9" y="7" width="6" height="8" fill={palette.base}/>
+            <rect x="11" y="8" width="2" height="6" fill={palette.light}/>
+            <rect x="9" y="10" width="6" height="2" fill={palette.accent}/>
+            <rect x="10" y="16" width="4" height="2" fill={palette.shade}/>
+            <rect x="12" y="5" width="2" height="2" fill={palette.spark}/>
+            <rect x="15" y="9" width="2" height="3" fill={palette.accent}/>
+          </svg>
+        );
+      case 'starMap':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="7" y="6" width="10" height="10" fill={palette.dark}/>
+            <rect x="8" y="7" width="8" height="8" fill={palette.base}/>
+            <rect x="9" y="8" width="2" height="2" fill={palette.spark}/>
+            <rect x="13" y="9" width="2" height="2" fill={palette.light}/>
+            <rect x="10" y="13" width="2" height="2" fill={palette.accent}/>
+            <rect x="10" y="10" width="4" height="1" fill={palette.shade}/>
+            <rect x="11" y="16" width="3" height="3" fill={palette.dark}/>
+          </svg>
+        );
+      case 'thorn':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="8" y="8" width="8" height="8" fill={palette.base}/>
+            <rect x="10" y="7" width="4" height="2" fill={palette.light}/>
+            <rect x="7" y="10" width="2" height="4" fill={palette.accent}/>
+            <rect x="15" y="10" width="2" height="4" fill={palette.accent}/>
+            <rect x="10" y="16" width="4" height="2" fill={palette.dark}/>
+            <rect x="11" y="10" width="2" height="4" fill={palette.shade}/>
+            <rect x="13" y="8" width="1" height="2" fill={palette.spark}/>
+          </svg>
+        );
+      case 'weight':
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="10" y="5" width="4" height="3" fill={palette.accent}/>
+            <rect x="8" y="8" width="8" height="8" fill={palette.dark}/>
+            <rect x="9" y="9" width="6" height="6" fill={palette.base}/>
+            <rect x="10" y="10" width="4" height="3" fill={palette.light}/>
+            <rect x="7" y="12" width="2" height="3" fill={palette.shade}/>
+            <rect x="15" y="12" width="2" height="3" fill={palette.shade}/>
+            <rect x="11" y="10" width="1" height="1" fill={palette.spark}/>
+          </svg>
+        );
+      case 'whetstone':
+      default:
+        return (
+          <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+            {common}
+            <rect x="7" y="11" width="10" height="5" fill={palette.dark}/>
+            <rect x="8" y="10" width="8" height="5" fill={palette.base}/>
+            <rect x="9" y="9" width="6" height="3" fill={palette.light}/>
+            <rect x="8" y="15" width="8" height="2" fill={palette.shade}/>
+            <rect x="10" y="17" width="4" height="2" fill={palette.accent}/>
+            <rect x="13" y="9" width="2" height="1" fill={palette.spark}/>
+            <rect x="6" y="13" width="2" height="2" fill={palette.accent}/>
+          </svg>
+        );
+    }
+  };
+};
+
+const clarifiedHandleSprites: Record<number, React.FC<{ className?: string }>> = {
+  101: clearHandleSprite('wood', 'plain'),
+  102: clearHandleSprite('iron', 'guard'),
+  201: clearHandleSprite('steel', 'light'),
+  206: clearHandleSprite('bone', 'bone'),
+  212: clearHandleSprite('steel', 'light'),
+  216: clearHandleSprite('blood', 'blood'),
+  217: clearHandleSprite('wall', 'shield'),
+  218: clearHandleSprite('steel', 'light'),
+  220: clearHandleSprite('poison', 'coil'),
+  221: clearHandleSprite('ember', 'ember'),
+  222: clearHandleSprite('energy', 'spark'),
+  223: clearHandleSprite('arcane', 'scribe'),
+  224: clearHandleSprite('stone', 'heavy'),
+  225: clearHandleSprite('steel', 'split'),
+  248: clearHandleSprite('gold', 'counterweight'),
+  301: clearHandleSprite('steel', 'twin'),
+  302: clearHandleSprite('poison', 'vine'),
+  307: clearHandleSprite('gold', 'gold'),
+  309: clearHandleSprite('void', 'plain'),
+  317: clearHandleSprite('steel', 'pierce'),
+  318: clearHandleSprite('blood', 'blood'),
+  321: clearHandleSprite('blood', 'scribe'),
+  322: clearHandleSprite('wall', 'wall'),
+  323: clearHandleSprite('poison', 'vine'),
+  324: clearHandleSprite('ember', 'ember'),
+  325: clearHandleSprite('energy', 'spark'),
+  326: clearHandleSprite('arcane', 'scribe'),
+  327: clearHandleSprite('stone', 'heavy'),
+  328: clearHandleSprite('void', 'split'),
+  401: clearHandleSprite('stone', 'heavy'),
+  405: clearHandleSprite('void', 'infinite'),
+  412: clearHandleSprite('steel', 'dodge'),
+  414: clearHandleSprite('blood', 'blood'),
+  415: clearHandleSprite('wall', 'wall'),
+  416: clearHandleSprite('arcane', 'infinite'),
+  417: clearHandleSprite('bone', 'beast')
+};
+
+const clarifiedHeadSprites: Record<number, React.FC<{ className?: string }>> = {
+  103: clearHeadSprite('iron', 'blade'),
+  104: clearHeadSprite('iron', 'potLid'),
+  202: clearHeadSprite('steel', 'longsword'),
+  203: clearHeadSprite('iron', 'saw'),
+  209: clearHeadSprite('iron', 'gear'),
+  213: clearHeadSprite('poison', 'needle'),
+  214: clearHeadSprite('wood', 'club'),
+  215: clearHeadSprite('steel', 'dagger'),
+  226: clearHeadSprite('blood', 'rake'),
+  227: clearHeadSprite('wall', 'axe'),
+  228: clearHeadSprite('poison', 'needle'),
+  229: clearHeadSprite('ember', 'blade'),
+  230: clearHeadSprite('energy', 'dagger'),
+  231: clearHeadSprite('arcane', 'blade'),
+  232: clearHeadSprite('steel', 'cleaver'),
+  233: clearHeadSprite('steel', 'trident'),
+  234: clearHeadSprite('steel', 'saw'),
+  235: clearHeadSprite('poison', 'gear'),
+  246: clearHeadSprite('iron', 'club'),
+  249: clearHeadSprite('steel', 'hook'),
+  303: clearHeadSprite('ember', 'flameNozzle'),
+  304: clearHeadSprite('stone', 'hammer'),
+  306: clearHeadSprite('bone', 'fangs'),
+  308: clearHeadSprite('ember', 'furnace'),
+  310: clearHeadSprite('steel', 'combo'),
+  312: clearHeadSprite('ember', 'blade'),
+  313: clearHeadSprite('energy', 'blade'),
+  314: clearHeadSprite('blood', 'blade'),
+  329: clearHeadSprite('blood', 'saw'),
+  330: clearHeadSprite('wall', 'wall'),
+  331: clearHeadSprite('poison', 'scythe'),
+  332: clearHeadSprite('ember', 'saw'),
+  333: clearHeadSprite('energy', 'saw'),
+  334: clearHeadSprite('arcane', 'blade'),
+  335: clearHeadSprite('energy', 'trident'),
+  336: clearHeadSprite('stone', 'ram'),
+  402: clearHeadSprite('void', 'crystal'),
+  404: clearHeadSprite('ember', 'meteor'),
+  406: clearHeadSprite('gold', 'timeGear'),
+  408: clearHeadSprite('frost', 'frostBlade'),
+  409: clearHeadSprite('blood', 'execution'),
+  418: clearHeadSprite('blood', 'greatsword'),
+  419: clearHeadSprite('wall', 'wall'),
+  420: clearHeadSprite('poison', 'plagueWorld'),
+  421: clearHeadSprite('ember', 'meteorCluster')
+};
+
+const clarifiedDecoSprites: Record<number, React.FC<{ className?: string }>> = {
+  105: clearDecoSprite('stone', 'whetstone'),
+  106: clearDecoSprite('cloth', 'cord'),
+  204: clearDecoSprite('steel', 'feather'),
+  205: clearDecoSprite('poison', 'cloth'),
+  207: clearDecoSprite('steel', 'thorn'),
+  208: clearDecoSprite('energy', 'gem'),
+  210: clearDecoSprite('wall', 'thorn'),
+  211: clearDecoSprite('energy', 'battery'),
+  219: clearDecoSprite('void', 'sigil'),
+  236: clearDecoSprite('blood', 'charm'),
+  237: clearDecoSprite('wall', 'shieldShard'),
+  238: clearDecoSprite('poison', 'pouch'),
+  239: clearDecoSprite('ember', 'ember'),
+  240: clearDecoSprite('energy', 'spring'),
+  241: clearDecoSprite('arcane', 'ribbon'),
+  242: clearDecoSprite('stone', 'weight'),
+  243: clearDecoSprite('steel', 'needles'),
+  244: clearDecoSprite('void', 'dust'),
+  245: clearDecoSprite('ember', 'flint'),
+  247: clearDecoSprite('stone', 'whetstone'),
+  305: clearDecoSprite('void', 'mirror'),
+  311: clearDecoSprite('steel', 'plating'),
+  319: clearDecoSprite('blood', 'whetstone'),
+  320: clearDecoSprite('blood', 'rune'),
+  337: clearDecoSprite('blood', 'rune'),
+  338: clearDecoSprite('wall', 'lens'),
+  339: clearDecoSprite('poison', 'lens'),
+  340: clearDecoSprite('ember', 'lens'),
+  341: clearDecoSprite('energy', 'coil'),
+  342: clearDecoSprite('steel', 'feather'),
+  343: clearDecoSprite('gold', 'crest'),
+  344: clearDecoSprite('arcane', 'gem'),
+  403: clearDecoSprite('gold', 'gem'),
+  407: clearDecoSprite('void', 'crystal'),
+  413: clearDecoSprite('ember', 'dragonCrest'),
+  422: clearDecoSprite('blood', 'crystal'),
+  423: clearDecoSprite('wall', 'wall'),
+  424: clearDecoSprite('energy', 'battery'),
+  425: clearDecoSprite('arcane', 'starMap')
+};
+
+const clarifiedCardSprites: Record<number, React.FC<{ className?: string }>> = {
+  ...clarifiedHandleSprites,
+  ...clarifiedHeadSprites,
+  ...clarifiedDecoSprites
+};
+
+Object.assign(CardSprites, clarifiedCardSprites);
+
+export const CLARIFIED_CARD_SPRITE_IDS = new Set<number>(
+  Object.keys(clarifiedCardSprites).map(Number)
+);
+
 // Default sprite for cards without specific art
 export const DefaultCardSprite: React.FC<{ type: string; className?: string }> = ({ type, className }) => {
   switch (type) {
