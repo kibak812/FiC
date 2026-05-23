@@ -8,30 +8,29 @@
 
 import { CARD_DATABASE, ENEMIES } from '../constants';
 import {
-  validateCardBalance,
-  validateEnemyBalance,
   validateAllCards,
   validateAllEnemies,
-  generateValidationReport
+  generateValidationReport,
+  isIntendedBalanceWarning
 } from '../utils/balanceValidator';
 
 // Run validation
-console.log('\n🔍 Starting FiC Balance Validation...\n');
+console.log('\nStarting FiC Balance Validation...\n');
 
 // Validate cards
 const cardResults = validateAllCards(CARD_DATABASE);
-console.log(`📜 Validated ${CARD_DATABASE.length} cards`);
+console.log(`Validated ${CARD_DATABASE.length} cards`);
 
 // Validate enemies
 const enemyResults = validateAllEnemies(ENEMIES);
-console.log(`👾 Validated ${Object.keys(ENEMIES).length} enemies`);
+console.log(`Validated ${Object.keys(ENEMIES).length} enemies`);
 
 // Generate and print report
 console.log('\n');
 console.log(generateValidationReport(cardResults, enemyResults));
 
 // Detailed power analysis for interesting cards
-console.log('\n📊 POWER ANALYSIS (Selected Cards):');
+console.log('\nPOWER ANALYSIS (Selected Cards):');
 console.log('───────────────────────────────────────────────────────────────');
 
 const interestingCards = [103, 202, 304, 402, 404, 314, 401, 413];
@@ -53,7 +52,7 @@ for (const cardId of interestingCards) {
 }
 
 // Summary statistics
-console.log('\n\n📈 BALANCE DISTRIBUTION:');
+console.log('\n\nBALANCE DISTRIBUTION:');
 console.log('───────────────────────────────────────────────────────────────');
 
 const ratings: Record<string, number> = {
@@ -75,19 +74,24 @@ console.log(`  Balanced:     ${ratings.balanced} (${(ratings.balanced/total*100)
 console.log(`  Strong:       ${ratings.strong} (${(ratings.strong/total*100).toFixed(1)}%)`);
 console.log(`  Overpowered:  ${ratings.overpowered} (${(ratings.overpowered/total*100).toFixed(1)}%)`);
 
-// Exit with error code if there are critical errors
-let criticalErrors = 0;
-cardResults.forEach(r => {
-  criticalErrors += r.errors.filter(e => e.severity === 'critical').length;
-});
-enemyResults.forEach(r => {
-  criticalErrors += r.errors.filter(e => e.severity === 'critical').length;
+// Exit with error code if there are validation errors or unexpected warnings.
+let validationErrors = 0;
+let unexpectedWarnings = 0;
+
+cardResults.forEach((result, cardId) => {
+  validationErrors += result.errors.length;
+  unexpectedWarnings += result.warnings.filter(warning => !isIntendedBalanceWarning('card', cardId, warning)).length;
 });
 
-if (criticalErrors > 0) {
-  console.log(`\n❌ ${criticalErrors} critical errors found!`);
+enemyResults.forEach((result, enemyKey) => {
+  validationErrors += result.errors.length;
+  unexpectedWarnings += result.warnings.filter(warning => !isIntendedBalanceWarning('enemy', enemyKey, warning)).length;
+});
+
+if (validationErrors > 0 || unexpectedWarnings > 0) {
+  console.log(`\n${validationErrors} errors and ${unexpectedWarnings} unexpected warnings found!`);
   process.exit(1);
 } else {
-  console.log('\n✅ No critical errors!');
+  console.log('\nNo validation errors or unexpected warnings!');
   process.exit(0);
 }

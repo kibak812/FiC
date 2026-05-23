@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.5.1] - 2026-05-23
+
+### Changed
+- Balance validation now separates intended warning exceptions from unexpected warnings.
+- `scripts/validateBalance.ts` now fails on any validation error or unexpected warning, not only critical errors.
+
+### Design Notes
+- The current 57 card warnings are documented as intentional exceptions for tutorial simplicity, archetype enablers, conditional payoffs, and generated runtime cards.
+
+---
+
 ## [1.5.0] - 2026-05-23
 
 ### Added

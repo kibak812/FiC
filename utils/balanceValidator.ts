@@ -184,6 +184,91 @@ Object.assign(CARD_EFFECT_MAPPING, {
   801: { effects: ['DIRECT_DAMAGE'], values: { damage: 0 } }
 });
 
+export type BalanceWarningScope = 'card' | 'enemy';
+
+const allowedWarningKey = (scope: BalanceWarningScope, entityId: string | number, warningCode: string): string => {
+  return `${scope}:${entityId}:${warningCode}`;
+};
+
+// These warnings are intentional design exceptions rather than unresolved balance issues.
+// New warnings must either be fixed or added here with a matching product-design reason.
+export const INTENDED_BALANCE_WARNING_REASONS: Record<string, string> = {
+  // Tutorial cards are deliberately plain so first-time players learn the forge slots.
+  [allowedWarningKey('card', 101, 'WEAK_CARD')]: 'Starter handle is intentionally simple tutorial glue.',
+  [allowedWarningKey('card', 102, 'WEAK_CARD')]: 'Starter parry converts damage to block and is valued by context rather than raw power.',
+
+  // Common zero-cost and archetype entry cards can look weak/strong in isolation.
+  [allowedWarningKey('card', 208, 'STRONG_CARD')]: 'Zero-cost energy is an intentional early energy-loop entry point.',
+  [allowedWarningKey('card', 214, 'STRONG_CARD')]: 'Common weak applicator is a deliberate early defensive/status bridge.',
+  [allowedWarningKey('card', 218, 'WEAK_CARD')]: 'Low multiplier is traded for zero cost and combo smoothing.',
+  [allowedWarningKey('card', 216, 'WEAK_CARD')]: 'Self-damage entry card exists to enable later payoff cards.',
+  [allowedWarningKey('card', 220, 'WEAK_CARD')]: 'Poison handle is a low-power status entry card.',
+  [allowedWarningKey('card', 222, 'UNUSUAL_EFFECT')]: 'Energy on handles is an intentional energy-loop axis.',
+  [allowedWarningKey('card', 223, 'WEAK_CARD')]: 'Draw handle is an archetype enabler, not a raw damage card.',
+  [allowedWarningKey('card', 224, 'WEAK_CARD')]: 'Heavy common handle is intentionally inefficient without a high-value head.',
+  [allowedWarningKey('card', 225, 'UNUSUAL_EFFECT')]: 'Multi-hit handle is an intentional multi-hit axis.',
+  [allowedWarningKey('card', 225, 'STRONG_CARD')]: 'Multi-hit entry card is allowed to be strong because its base multiplier is low.',
+  [allowedWarningKey('card', 228, 'STRONG_CARD')]: 'Poison entry head intentionally over-indexes to seed status decks.',
+  [allowedWarningKey('card', 229, 'STRONG_CARD')]: 'Burn entry head intentionally over-indexes to seed status decks.',
+  [allowedWarningKey('card', 230, 'STRONG_CARD')]: 'Energy refund head is a deliberate early energy-loop hook.',
+  [allowedWarningKey('card', 231, 'UNUSUAL_EFFECT')]: 'Draw on heads is part of the draw-loop archetype.',
+  [allowedWarningKey('card', 233, 'DAMAGE_UNUSUAL')]: 'Low per-hit damage is intentional for multi-hit scaling.',
+  [allowedWarningKey('card', 233, 'STRONG_CARD')]: 'Three-hit common head is an intentional multi-hit entry payoff.',
+  [allowedWarningKey('card', 234, 'UNUSUAL_EFFECT')]: 'Weapon-use scaling is an intentional combo head pattern.',
+  [allowedWarningKey('card', 236, 'WEAK_CARD')]: 'Self-damage deco is a setup piece for berserker payoffs.',
+  [allowedWarningKey('card', 240, 'STRONG_CARD')]: 'Zero-cost energy deco intentionally anchors energy-loop entry.',
+  [allowedWarningKey('card', 241, 'WEAK_CARD')]: 'Delayed draw is intentionally lower power than immediate draw.',
+  [allowedWarningKey('card', 243, 'WEAK_CARD')]: 'Multi-hit deco is intentionally conditional.',
+
+  // Rare cards with unusual slot effects are intentional archetype glue.
+  [allowedWarningKey('card', 301, 'UNUSUAL_EFFECT')]: 'Twin Handle doubles head effects by design.',
+  [allowedWarningKey('card', 302, 'WEAK_CARD')]: 'Lifesteal is evaluated conservatively because its value depends on final damage.',
+  [allowedWarningKey('card', 305, 'WEAK_CARD')]: 'Replica creation is strategic deck setup rather than immediate power.',
+  [allowedWarningKey('card', 307, 'WEAK_CARD')]: 'Gold gain has low combat value but high run economy value.',
+  [allowedWarningKey('card', 311, 'UNUSUAL_EFFECT')]: 'Block scaling deco supports defense conversion.',
+  [allowedWarningKey('card', 311, 'WEAK_CARD')]: 'Block multiplier is conditional on defensive weapons.',
+  [allowedWarningKey('card', 317, 'WEAK_CARD')]: 'Piercing is matchup-dependent and intentionally low in raw power.',
+  [allowedWarningKey('card', 318, 'WEAK_CARD')]: 'Blood Handle is a zero-cost self-damage enabler.',
+  [allowedWarningKey('card', 321, 'WEAK_CARD')]: 'Blood Book Handle trades HP for archetype setup and multiplier context.',
+  [allowedWarningKey('card', 325, 'UNUSUAL_EFFECT')]: 'Energy on handles is an intentional energy-loop axis.',
+  [allowedWarningKey('card', 326, 'WEAK_CARD')]: 'Draw handle is valued as consistency rather than raw power.',
+  [allowedWarningKey('card', 327, 'WEAK_CARD')]: 'Heavy handle requires expensive heads to realize its value.',
+  [allowedWarningKey('card', 328, 'UNUSUAL_EFFECT')]: 'Echo multi-hit handle is an intentional multi-hit axis.',
+  [allowedWarningKey('card', 333, 'STRONG_CARD')]: 'Mana sawblade is an intentionally premium rare energy-loop head.',
+  [allowedWarningKey('card', 334, 'UNUSUAL_EFFECT')]: 'Draw on heads is part of the draw-loop archetype.',
+  [allowedWarningKey('card', 337, 'WEAK_CARD')]: 'Bloodstone Rune is a conditional self-damage payoff.',
+  [allowedWarningKey('card', 338, 'UNUSUAL_EFFECT')]: 'Block on decos is intentional defense-conversion support.',
+  [allowedWarningKey('card', 343, 'WEAK_CARD')]: 'Damage multiplier deco needs high base damage to pay off.',
+  [allowedWarningKey('card', 344, 'WEAK_CARD')]: 'Multi-hit resonance is intentionally conditional.',
+
+  // Legendary warnings are accepted because these cards are narrow, expensive, or build-defining.
+  [allowedWarningKey('card', 405, 'WEAK_CARD')]: 'Return-to-hand value is strategic and capped once per turn.',
+  [allowedWarningKey('card', 406, 'WEAK_CARD')]: 'Time Cog is pure control and does not need raw damage.',
+  [allowedWarningKey('card', 407, 'STRONG_CARD')]: 'Growing Crystal is a legendary scaling reward with a cap.',
+  [allowedWarningKey('card', 409, 'WEAK_CARD')]: 'Execute is threshold-dependent and intentionally conservative.',
+  [allowedWarningKey('card', 412, 'WEAK_CARD')]: 'Dodge is matchup-dependent and defensive.',
+  [allowedWarningKey('card', 414, 'WEAK_CARD')]: 'Blood Pact needs self-damage payoffs to reach legendary value.',
+  [allowedWarningKey('card', 415, 'STRONG_CARD')]: 'Legendary defense conversion is intentionally build-defining.',
+  [allowedWarningKey('card', 416, 'WEAK_CARD')]: 'Return-to-hand plus draw is capped by once-per-turn loop rules.',
+  [allowedWarningKey('card', 417, 'UNUSUAL_EFFECT')]: 'Legendary multi-hit handle is an intentional archetype capstone.',
+  [allowedWarningKey('card', 417, 'WEAK_CARD')]: 'Multi-hit capstone depends on on-hit synergies.',
+  [allowedWarningKey('card', 421, 'WEAK_CARD')]: 'Exhausting four-hit head is narrow but synergistic.',
+  [allowedWarningKey('card', 423, 'UNUSUAL_EFFECT')]: 'Block on decos is intentional defense-conversion support.',
+  [allowedWarningKey('card', 423, 'WEAK_CARD')]: 'Legendary wall deco depends on entering the turn with block.',
+
+  // Runtime/generated cards are validated for safety but not normal reward balance.
+  [allowedWarningKey('card', 801, 'DAMAGE_UNUSUAL')]: 'Shadow Weapon is a generated placeholder whose value is set at runtime.',
+  [allowedWarningKey('card', 801, 'WEAK_CARD')]: 'Shadow Weapon is a generated placeholder whose value is set at runtime.'
+};
+
+export const isIntendedBalanceWarning = (
+  scope: BalanceWarningScope,
+  entityId: string | number,
+  warning: ValidationWarning
+): boolean => {
+  return Boolean(INTENDED_BALANCE_WARNING_REASONS[allowedWarningKey(scope, entityId, warning.code)]);
+};
+
 // ============================================================
 // CARD VALIDATION
 // ============================================================
@@ -1017,25 +1102,30 @@ export function generateValidationReport(
   // Card summary
   let cardErrors = 0;
   let cardWarnings = 0;
+  let intendedCardWarnings = 0;
+  let unexpectedCardWarnings = 0;
   const cardIssues: string[] = [];
 
   cardResults.forEach((result, cardId) => {
     cardErrors += result.errors.length;
     cardWarnings += result.warnings.length;
+    const unexpectedWarnings = result.warnings.filter(warning => !isIntendedBalanceWarning('card', cardId, warning));
+    intendedCardWarnings += result.warnings.length - unexpectedWarnings.length;
+    unexpectedCardWarnings += unexpectedWarnings.length;
 
-    if (result.errors.length > 0 || result.warnings.length > 0) {
+    if (result.errors.length > 0 || unexpectedWarnings.length > 0) {
       cardIssues.push(`Card ${cardId}:`);
       result.errors.forEach(e => cardIssues.push(`  [ERROR] ${e.message}`));
-      result.warnings.forEach(w => cardIssues.push(`  [WARN] ${w.message}`));
+      unexpectedWarnings.forEach(w => cardIssues.push(`  [WARN] ${w.message}`));
     }
   });
 
   lines.push(`CARDS: ${cardResults.size} validated`);
-  lines.push(`  Errors: ${cardErrors}  |  Warnings: ${cardWarnings}`);
+  lines.push(`  Errors: ${cardErrors}  |  Warnings: ${cardWarnings} (${intendedCardWarnings} intended, ${unexpectedCardWarnings} unexpected)`);
   lines.push('');
 
   if (cardIssues.length > 0) {
-    lines.push('Card Issues:');
+    lines.push('Card Issues (errors and unexpected warnings only):');
     cardIssues.forEach(line => lines.push(line));
     lines.push('');
   }
@@ -1043,26 +1133,31 @@ export function generateValidationReport(
   // Enemy summary
   let enemyErrors = 0;
   let enemyWarnings = 0;
+  let intendedEnemyWarnings = 0;
+  let unexpectedEnemyWarnings = 0;
   const enemyIssues: string[] = [];
 
   enemyResults.forEach((result, enemyKey) => {
     enemyErrors += result.errors.length;
     enemyWarnings += result.warnings.length;
+    const unexpectedWarnings = result.warnings.filter(warning => !isIntendedBalanceWarning('enemy', enemyKey, warning));
+    intendedEnemyWarnings += result.warnings.length - unexpectedWarnings.length;
+    unexpectedEnemyWarnings += unexpectedWarnings.length;
 
-    if (result.errors.length > 0 || result.warnings.length > 0) {
+    if (result.errors.length > 0 || unexpectedWarnings.length > 0) {
       enemyIssues.push(`Enemy ${enemyKey}:`);
       result.errors.forEach(e => enemyIssues.push(`  [ERROR] ${e.message}`));
-      result.warnings.forEach(w => enemyIssues.push(`  [WARN] ${w.message}`));
+      unexpectedWarnings.forEach(w => enemyIssues.push(`  [WARN] ${w.message}`));
     }
   });
 
   lines.push('───────────────────────────────────────────────────────────────');
   lines.push(`ENEMIES: ${enemyResults.size} validated`);
-  lines.push(`  Errors: ${enemyErrors}  |  Warnings: ${enemyWarnings}`);
+  lines.push(`  Errors: ${enemyErrors}  |  Warnings: ${enemyWarnings} (${intendedEnemyWarnings} intended, ${unexpectedEnemyWarnings} unexpected)`);
   lines.push('');
 
   if (enemyIssues.length > 0) {
-    lines.push('Enemy Issues:');
+    lines.push('Enemy Issues (errors and unexpected warnings only):');
     enemyIssues.forEach(line => lines.push(line));
     lines.push('');
   }
@@ -1071,13 +1166,15 @@ export function generateValidationReport(
   lines.push('═══════════════════════════════════════════════════════════════');
   const totalErrors = cardErrors + enemyErrors;
   const totalWarnings = cardWarnings + enemyWarnings;
+  const totalIntendedWarnings = intendedCardWarnings + intendedEnemyWarnings;
+  const totalUnexpectedWarnings = unexpectedCardWarnings + unexpectedEnemyWarnings;
 
   if (totalErrors === 0 && totalWarnings === 0) {
     lines.push('STATUS: ALL VALIDATIONS PASSED');
-  } else if (totalErrors === 0) {
-    lines.push(`STATUS: PASSED WITH ${totalWarnings} WARNINGS`);
+  } else if (totalErrors === 0 && totalUnexpectedWarnings === 0) {
+    lines.push(`STATUS: PASSED WITH ${totalIntendedWarnings} INTENDED WARNINGS`);
   } else {
-    lines.push(`STATUS: FAILED - ${totalErrors} ERRORS, ${totalWarnings} WARNINGS`);
+    lines.push(`STATUS: FAILED - ${totalErrors} ERRORS, ${totalUnexpectedWarnings} UNEXPECTED WARNINGS`);
   }
   lines.push('═══════════════════════════════════════════════════════════════');
 
