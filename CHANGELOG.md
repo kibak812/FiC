@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.11.18] - 2026-05-23
+
+### Added
+- Hand-reviewed pixel sprites for 16 rare head cards, covering flamethrowers, warhammers, twin fangs, furnace cores, combo blades, lava blades, mana blades, frenzy blades, saws, fortress heads, plague scythes, storm tridents, and ram heads.
+
+### Changed
+- Rare head cards now render with distinct weapon-head silhouettes instead of relying on generic generated blocks and color clusters.
+- Product readiness now treats those rare head sprites as hand-reviewed art with detail and color-separation checks.
+- Menu version updated to v1.11.18.
+
+### Design Notes
+- Rare heads are the clearest visual signal of what a crafted weapon will do, so their icons now emphasize readable blade/nozzle/hammer/tooth shapes before secondary color themes.
+
+---
+
 ## [1.11.17] - 2026-05-23
 
 ### Added
