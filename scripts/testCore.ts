@@ -42,6 +42,7 @@ import {
   resolveEventCardRemoval,
   resolveEventOption
 } from '../utils/eventUtils';
+import { createRunLearningFeedback, RunLearningSnapshot } from '../utils/learningFeedback';
 import { createActMap } from '../utils/mapUtils';
 import { assert, assertDeepEqual, assertEqual, createSeededRng, runSuite, test } from './testUtils';
 
@@ -776,6 +777,32 @@ runSuite('Static reward, map, and archetype tests', [
     assertEqual(removed.player.gold, 10, 'Removal event should charge its static cost');
     assertEqual(removed.deck.length, 1, 'Removal event should remove the selected card');
     assert(removed.event.type === 'REMOVE_CARD' && removed.event.removedCard?.instanceId === deck[0].instanceId, 'Removal event should expose the removed card');
+  }),
+
+  test('run learning feedback identifies concrete loss lessons', () => {
+    const baseSnapshot: RunLearningSnapshot = {
+      isWin: false,
+      act: 2,
+      floor: 9,
+      gold: 75,
+      playerHp: 0,
+      playerMaxHp: 80,
+      maxEnergy: 5,
+      deckSize: 18,
+      junkCount: 0,
+      starterCount: 2,
+      rareOrLegendCount: 7,
+      enemyName: '부패한 대장장이',
+      enemyHp: 50,
+      enemyMaxHp: 120
+    };
+
+    assertEqual(createRunLearningFeedback({ ...baseSnapshot, junkCount: 4 }).focus, 'DECK_POLLUTION', 'Learning feedback should call out polluted decks');
+    assertEqual(createRunLearningFeedback({ ...baseSnapshot, maxEnergy: 4, junkCount: 0 }).focus, 'ENERGY_PRESSURE', 'Learning feedback should call out midgame energy pressure');
+    assertEqual(createRunLearningFeedback({ ...baseSnapshot, act: 1, floor: 7, deckSize: 28, rareOrLegendCount: 3 }).focus, 'DECK_BLOAT', 'Learning feedback should call out bloated low-quality decks');
+    assertEqual(createRunLearningFeedback({ ...baseSnapshot, act: 1, floor: 7, starterCount: 6 }).focus, 'CARD_QUALITY', 'Learning feedback should call out too many starter cards');
+    assertEqual(createRunLearningFeedback({ ...baseSnapshot, act: 1, floor: 5, enemyHp: 12 }).focus, 'FINISHING_DAMAGE', 'Learning feedback should call out near-kill damage gaps');
+    assertEqual(createRunLearningFeedback({ ...baseSnapshot, isWin: true, playerHp: 35, enemyHp: 0 }).focus, 'VICTORY', 'Learning feedback should use a victory lesson after winning');
   }),
 
   test('archetypes have entry, mid, late, and all slot connections', () => {

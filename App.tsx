@@ -3,7 +3,7 @@ import { HelpCircle } from 'lucide-react';
 import { 
   CardInstance, CardType, CombatState, PlayerStats, EnemyData, 
   EnemyTier, BossRewardId, ShopItemId,
-  GameEvent, EventOption, MapNode, NodeType, GameState, RemovalContext, GameSettings
+  GameEvent, EventOption, MapNode, NodeType, GameState, RemovalContext, GameSettings, CardRarity
 } from './types';
 import { INITIAL_DECK_IDS, ENEMIES, GAME_EVENTS } from './constants';
 import CardComponent from './components/CardComponent';
@@ -1386,6 +1386,23 @@ case 'PLAYER_DRAW':
   const availableMapNodeIds = getAvailableMapNodeIds(mapNodes, currentMapNodeId);
   const effectiveAnimationsEnabled = settings.animationsEnabled && !settings.reduceMotion;
   const effectiveScreenShake = settings.screenShake && !settings.reduceMotion;
+  const runCards = [...deck, ...hand, ...discardPile];
+  const learningSnapshot = {
+    isWin: gameState === 'WIN',
+    act,
+    floor,
+    gold: player.gold,
+    playerHp: player.hp,
+    playerMaxHp: player.maxHp,
+    maxEnergy: player.maxEnergy,
+    deckSize: runCards.length,
+    junkCount: runCards.filter(card => card.type === CardType.JUNK).length,
+    starterCount: runCards.filter(card => card.rarity === CardRarity.STARTER).length,
+    rareOrLegendCount: runCards.filter(card => card.rarity === CardRarity.RARE || card.rarity === CardRarity.LEGEND).length,
+    enemyName: enemy.name,
+    enemyHp: Math.max(0, enemy.currentHp),
+    enemyMaxHp: enemy.maxHp
+  };
   const shouldShowFirstCombatTutorial =
     gameState === 'PLAYING' &&
     combatState.phase === 'PLAYER_ACTION' &&
@@ -1414,6 +1431,7 @@ case 'PLAYER_DRAW':
         act={act}
         floor={floor}
         gold={player.gold}
+        learningSnapshot={learningSnapshot}
         onRestart={startGame}
       />
     );

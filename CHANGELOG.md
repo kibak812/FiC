@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.11.12] - 2026-05-23
+
+### Added
+- State-aware run learning feedback that classifies losses such as deck pollution, energy pressure, deck bloat, starter-card dependence, and near-kill damage gaps.
+- Core logic coverage for the learning-feedback classifier used by the game-over screen.
+
+### Changed
+- Game-over feedback now uses the final run state instead of only Act/Floor thresholds, showing concrete deck and enemy details for the next run.
+- Product readiness now checks that failure feedback is generated through the shared learning-feedback utility.
+- Menu version updated to v1.11.12.
+
+### Design Notes
+- Losing should teach the player what to try next; the feedback now points at the run's actual bottleneck instead of giving the same broad advice repeatedly.
+
+---
+
 ## [1.11.11] - 2026-05-23
 
 ### Added

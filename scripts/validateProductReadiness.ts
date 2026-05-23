@@ -333,6 +333,8 @@ section('Save, onboarding, and packaging', () => {
   const cardUtilsSource = readText('utils/cardUtils.ts');
   const appSource = readText('App.tsx');
   const menuSource = readText('screens/MenuScreen.tsx');
+  const gameOverSource = readText('screens/GameOverScreen.tsx');
+  const learningFeedbackSource = readText('utils/learningFeedback.ts');
   const simSource = readText('scripts/simulateRuns.ts');
   const playerSource = readText('utils/playerUtils.ts');
   const packageJson = readJsonRecord('package.json');
@@ -371,6 +373,8 @@ section('Save, onboarding, and packaging', () => {
   requireReady(exists('components/CombatHelpModal.tsx'), 'Combat help and card type dictionary should exist.');
   requireReady(exists('components/StatusDetailModal.tsx'), 'Status effect dictionary modal should exist.');
   requireReady(exists('screens/GameOverScreen.tsx'), 'Failure feedback screen should exist.');
+  requireReady(learningFeedbackSource.includes('createRunLearningFeedback') && learningFeedbackSource.includes('DECK_POLLUTION') && learningFeedbackSource.includes('ENERGY_PRESSURE'), 'Failure feedback should classify concrete run lessons from the final run state.');
+  requireReady(appSource.includes('learningSnapshot') && gameOverSource.includes('createRunLearningFeedback'), 'Game over screen should receive and render state-aware learning feedback.');
 
   requireReady(exists('hooks/useAudioEngine.ts'), 'Procedural sound/music engine should exist.');
   requireReady(Boolean(dependencies['@fontsource/press-start-2p']) && Boolean(dependencies.galmuri), 'Offline pixel font dependencies should be bundled.');
