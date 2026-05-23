@@ -2107,15 +2107,10 @@ interface ReviewedHandleSpriteConfig {
 
 const renderReviewedHandleFrame = (accent: string) => (
   <>
-    <rect x="4" y="4" width="2" height="2" fill="#0B090D"/>
-    <rect x="18" y="4" width="2" height="2" fill="#0B090D"/>
-    <rect x="5" y="5" width="14" height="1" fill="#2B1E18"/>
-    <rect x="5" y="18" width="14" height="1" fill="#2B1E18"/>
-    <rect x="6" y="6" width="1" height="12" fill="#1A1110"/>
-    <rect x="17" y="6" width="1" height="12" fill="#1A1110"/>
-    <rect x="7" y="19" width="10" height="1" fill="#0B090D" opacity="0.55"/>
-    <rect x="5" y="8" width="1" height="2" fill={accent}/>
-    <rect x="18" y="14" width="1" height="2" fill={accent}/>
+    <rect x="8" y="20" width="8" height="1" fill="#09070D" opacity="0.45"/>
+    <rect x="10" y="21" width="4" height="1" fill="#09070D" opacity="0.25"/>
+    <rect x="6" y="17" width="1" height="1" fill={accent} opacity="0.75"/>
+    <rect x="17" y="6" width="1" height="1" fill={accent} opacity="0.75"/>
   </>
 );
 
@@ -2345,15 +2340,10 @@ interface ReviewedHeadSpriteConfig {
 
 const renderReviewedHeadFrame = (accent: string) => (
   <>
-    <rect x="4" y="4" width="2" height="2" fill="#09070D"/>
-    <rect x="18" y="4" width="2" height="2" fill="#09070D"/>
-    <rect x="5" y="5" width="14" height="1" fill="#221821"/>
-    <rect x="5" y="18" width="14" height="1" fill="#221821"/>
-    <rect x="6" y="6" width="1" height="12" fill="#120C14"/>
-    <rect x="17" y="6" width="1" height="12" fill="#120C14"/>
-    <rect x="7" y="20" width="10" height="1" fill="#09070D" opacity="0.5"/>
-    <rect x="5" y="15" width="2" height="1" fill={accent}/>
-    <rect x="17" y="7" width="2" height="1" fill={accent}/>
+    <rect x="8" y="20" width="8" height="1" fill="#09070D" opacity="0.45"/>
+    <rect x="10" y="21" width="4" height="1" fill="#09070D" opacity="0.25"/>
+    <rect x="5" y="16" width="2" height="1" fill={accent} opacity="0.75"/>
+    <rect x="17" y="6" width="2" height="1" fill={accent} opacity="0.75"/>
   </>
 );
 
@@ -2863,15 +2853,10 @@ interface ReviewedDecoSpriteConfig {
 
 const renderReviewedDecoFrame = (accent: string) => (
   <>
-    <rect x="4" y="4" width="2" height="2" fill="#09070D"/>
-    <rect x="18" y="4" width="2" height="2" fill="#09070D"/>
-    <rect x="5" y="5" width="14" height="1" fill="#21171A"/>
-    <rect x="5" y="18" width="14" height="1" fill="#21171A"/>
-    <rect x="6" y="6" width="1" height="12" fill="#130D10"/>
-    <rect x="17" y="6" width="1" height="12" fill="#130D10"/>
-    <rect x="7" y="20" width="10" height="1" fill="#09070D" opacity="0.45"/>
-    <rect x="5" y="7" width="1" height="2" fill={accent}/>
-    <rect x="18" y="15" width="1" height="2" fill={accent}/>
+    <rect x="8" y="20" width="8" height="1" fill="#09070D" opacity="0.4"/>
+    <rect x="10" y="21" width="4" height="1" fill="#09070D" opacity="0.22"/>
+    <rect x="6" y="17" width="1" height="1" fill={accent} opacity="0.75"/>
+    <rect x="17" y="6" width="1" height="1" fill={accent} opacity="0.75"/>
   </>
 );
 
@@ -3305,16 +3290,10 @@ Object.assign(CardSprites, reviewedDecoSprites);
 
 const renderEarlyRunFrame = (accent: string) => (
   <>
-    <rect x="4" y="4" width="2" height="2" fill="#09070D"/>
-    <rect x="18" y="4" width="2" height="2" fill="#09070D"/>
-    <rect x="5" y="5" width="14" height="1" fill="#261B16"/>
-    <rect x="5" y="18" width="14" height="1" fill="#261B16"/>
-    <rect x="6" y="6" width="1" height="12" fill="#120C0A"/>
-    <rect x="17" y="6" width="1" height="12" fill="#120C0A"/>
-    <rect x="7" y="20" width="10" height="1" fill="#09070D" opacity="0.5"/>
-    <rect x="5" y="7" width="1" height="2" fill={accent}/>
-    <rect x="18" y="15" width="1" height="2" fill={accent}/>
-    <rect x="18" y="18" width="1" height="1" fill="#F7E7B2"/>
+    <rect x="8" y="20" width="8" height="1" fill="#09070D" opacity="0.42"/>
+    <rect x="10" y="21" width="4" height="1" fill="#09070D" opacity="0.24"/>
+    <rect x="6" y="17" width="1" height="1" fill={accent} opacity="0.75"/>
+    <rect x="17" y="6" width="1" height="1" fill={accent} opacity="0.75"/>
   </>
 );
 

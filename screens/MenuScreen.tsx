@@ -328,7 +328,7 @@ const MenuScreen: React.FC<MenuScreenProps> = ({
 
       {/* Version */}
       <div className="absolute bottom-4 right-4 text-xs text-stone-600 font-pixel">
-        v1.11.22
+        v1.11.23
       </div>
     </div>
   );

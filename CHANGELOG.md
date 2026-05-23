@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.11.23] - 2026-05-23
+
+### Changed
+- Removed the redundant inner frame treatment from hand-reviewed card icons so the card border itself remains the only strong frame.
+- Simplified the visual direction for starter, common, rare, and legendary card sprites toward larger silhouettes with fewer tiny filler marks.
+- Product readiness now checks for readable minimal silhouettes and flags overcrowded icon art instead of rewarding maximum pixel density.
+- Menu version updated to v1.11.23.
+
+### Design Notes
+- Card icons are tiny in combat, so clarity now comes from one readable object shape and a few material/color cues rather than boxed-in detail clusters.
+
+---
+
 ## [1.11.22] - 2026-05-23
 
 ### Added
