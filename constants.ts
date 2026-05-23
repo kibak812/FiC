@@ -916,5 +916,27 @@ export const GAME_EVENTS: GameEvent[] = [
             { label: '카드 제거', description: '체력을 5 소모하여 카드 1장을 제거합니다.', type: 'REMOVE_CARD', cost: 5, costResource: 'HP' },
             { label: '떠나기', description: '그냥 지나칩니다.', type: 'LEAVE' }
         ]
+    },
+    {
+        id: 'collapsed_mine_cart',
+        title: '무너진 광산 수레',
+        description: '부서진 수레 아래로 아직 쓸 만한 광석과 오래된 주화가 흩어져 있습니다. 지지대는 금방이라도 내려앉을 듯 삐걱거립니다.',
+        icon: 'gem',
+        options: [
+            { label: '조심히 회수', description: '35 골드를 획득합니다.', type: 'GAIN_GOLD', value: 35 },
+            { label: '깊이 파헤치기', description: '체력을 8 잃고 70 골드를 획득합니다.', type: 'GAIN_GOLD', value: 70, cost: 8, costResource: 'HP' },
+            { label: '떠나기', description: '불안한 갱도를 그대로 둡니다.', type: 'LEAVE' }
+        ]
+    },
+    {
+        id: 'cooling_trough',
+        title: '식어가는 담금통',
+        description: '희미한 푸른 김이 오르는 담금통이 있습니다. 물은 무기를 안정시키지만, 너무 오래 담그면 귀중한 재료가 녹아버릴 수 있습니다.',
+        icon: 'droplets',
+        options: [
+            { label: '손을 식히기', description: '체력을 10 회복합니다.', type: 'HEAL', value: 10 },
+            { label: '정밀 담금질', description: '20 골드를 지불하고 무작위 카드 1장을 희귀 등급으로 변환합니다.', type: 'RANDOM_UPGRADE', cost: 20, costResource: 'GOLD' },
+            { label: '떠나기', description: '담금통의 온도가 더 내려가기 전에 지나칩니다.', type: 'LEAVE' }
+        ]
     }
 ];

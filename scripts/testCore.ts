@@ -1,5 +1,14 @@
-import { CARD_ARCHETYPES, ENEMIES, ENEMY_POOLS } from '../constants';
-import { CardRarity, CardType, EnemyTier, IntentType, PlayerStats } from '../types';
+import {
+  BOSS_REWARDS,
+  CARD_ARCHETYPES,
+  COMBAT_REWARD_RULES,
+  ENEMIES,
+  ENEMY_POOLS,
+  GAME_EVENTS,
+  MAP_NODE_LAYOUTS,
+  SHOP_ITEMS
+} from '../constants';
+import { CardRarity, CardType, EnemyTier, EventOptionType, IntentType, NodeType, PlayerStats } from '../types';
 import { createCardInstance } from '../utils/cardUtils';
 import {
   applyModifierActions,
@@ -242,6 +251,32 @@ runSuite('Core combat tests', [
 ]);
 
 runSuite('Enemy pattern tests', [
+  test('enemy roster meets commercial act and tier coverage targets', () => {
+    const enemies = Object.values(ENEMIES);
+    const enemyIds = enemies.map(enemy => enemy.id);
+    const staticEnemyObjects = new Set(enemies);
+
+    assert(enemies.length >= 35 && enemies.length <= 45, 'Enemy roster should stay within the 35-45 target range');
+    assertEqual(new Set(enemyIds).size, enemyIds.length, 'Enemy ids should be unique');
+
+    for (const act of [1, 2, 3] as const) {
+      const common = ENEMY_POOLS[act][EnemyTier.COMMON];
+      const elite = ENEMY_POOLS[act][EnemyTier.ELITE];
+      const boss = ENEMY_POOLS[act][EnemyTier.BOSS];
+      const actPool = [...common, ...elite, ...boss];
+
+      assert(common.length >= 6, `Act ${act} should have at least 6 common enemies`);
+      assert(elite.length >= 3, `Act ${act} should have at least 3 elite enemies`);
+      assert(boss.length >= 2, `Act ${act} should have at least 2 boss candidates`);
+      assertEqual(new Set(actPool.map(enemy => enemy.id)).size, actPool.length, `Act ${act} enemy pool should not repeat candidates`);
+
+      for (const enemy of common) assertEqual(enemy.tier, EnemyTier.COMMON, `${enemy.id} should be in the common tier`);
+      for (const enemy of elite) assertEqual(enemy.tier, EnemyTier.ELITE, `${enemy.id} should be in the elite tier`);
+      for (const enemy of boss) assertEqual(enemy.tier, EnemyTier.BOSS, `${enemy.id} should be in the boss tier`);
+      for (const enemy of actPool) assert(staticEnemyObjects.has(enemy), `${enemy.id} should come from static ENEMIES`);
+    }
+  }),
+
   test('structured enemy intent plans preserve special enemy counter patterns', () => {
     const player = createPlayer({ block: 12, weaponsUsedThisTurn: 3 });
     const hammerhead = getEnemyById('hammerhead');
@@ -329,7 +364,59 @@ runSuite('Enemy pattern tests', [
   })
 ]);
 
-runSuite('Static reward and archetype tests', [
+runSuite('Static reward, map, and archetype tests', [
+  test('map layouts expose all required node types in every act', () => {
+    const requiredNodeTypes = [NodeType.COMBAT, NodeType.ELITE, NodeType.REST, NodeType.SHOP, NodeType.EVENT, NodeType.BOSS];
+
+    for (const act of [1, 2, 3] as const) {
+      const rows = MAP_NODE_LAYOUTS[act];
+      const nodeTypes = rows.flat();
+
+      assertEqual(rows.length, 15, `Act ${act} should keep the 15-floor map structure`);
+      assertEqual(rows[rows.length - 1].length, 1, `Act ${act} final row should be a single boss node`);
+      assertEqual(rows[rows.length - 1][0], NodeType.BOSS, `Act ${act} final row should route to the boss`);
+
+      for (const nodeType of requiredNodeTypes) {
+        assert(nodeTypes.includes(nodeType), `Act ${act} should include ${nodeType} nodes`);
+      }
+    }
+  }),
+
+  test('static reward, shop, boss reward, and event tables are complete', () => {
+    assertDeepEqual(Object.keys(COMBAT_REWARD_RULES).sort(), ['BOSS', 'COMMON', 'ELITE'], 'Combat reward rules should cover every enemy reward tier');
+    for (const rule of Object.values(COMBAT_REWARD_RULES)) {
+      assert(rule.gold.min > 0 && rule.gold.max >= rule.gold.min, `${rule.id} gold reward range should be valid`);
+      assert(rule.cardOptionCount >= 3, `${rule.id} should offer at least three card choices`);
+      assert(rule.cardRarities.every(rarity => [CardRarity.COMMON, CardRarity.RARE, CardRarity.LEGEND].includes(rarity)), `${rule.id} should only use reward-pool rarities`);
+    }
+
+    assertDeepEqual(SHOP_ITEMS.map(item => item.id).sort(), ['ENERGY', 'HEAL', 'RARE', 'REMOVE'], 'Shop should expose the full static item set');
+    assertEqual(new Set(SHOP_ITEMS.map(item => item.id)).size, SHOP_ITEMS.length, 'Shop item ids should be unique');
+    for (const item of SHOP_ITEMS) {
+      assert(item.price > 0, `${item.id} should have a positive price`);
+      assert(!!item.name && !!item.description, `${item.id} should have display copy`);
+    }
+
+    assertDeepEqual(BOSS_REWARDS.map(reward => reward.id).sort(), ['ENERGY', 'GOLD', 'MAX_HP'], 'Boss rewards should expose the full static reward set');
+    assertEqual(new Set(BOSS_REWARDS.map(reward => reward.id)).size, BOSS_REWARDS.length, 'Boss reward ids should be unique');
+    for (const reward of BOSS_REWARDS) {
+      assert(!!reward.name && !!reward.description && !!reward.feedback, `${reward.id} should have reward copy and feedback`);
+    }
+
+    const validEventTypes: EventOptionType[] = ['HEAL', 'DAMAGE', 'GAIN_CARD_RARE', 'REMOVE_CARD', 'GAIN_GOLD', 'LOSE_GOLD', 'FULL_HEAL', 'RANDOM_UPGRADE', 'LEAVE'];
+    assert(GAME_EVENTS.length >= 6, 'Event pool should have enough static events for route variety');
+    for (const event of GAME_EVENTS) {
+      assert(event.options.length >= 2, `${event.id} should offer at least two choices`);
+      for (const option of event.options) {
+        assert(validEventTypes.includes(option.type), `${event.id} option should use a supported event type`);
+        if (option.cost !== undefined) {
+          assert(option.cost > 0, `${event.id} option cost should be positive`);
+          assert(!!option.costResource, `${event.id} option with a cost should define a cost resource`);
+        }
+      }
+    }
+  }),
+
   test('reward generation is deterministic when seeded', () => {
     const rule = getCombatRewardRule(EnemyTier.COMMON);
     const firstRng = createSeededRng('reward-seed');

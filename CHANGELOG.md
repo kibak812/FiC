@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.11.0] - 2026-05-23
+
+### Added
+- New static events: Collapsed Mine Cart and Cooling Trough.
+- Logic tests now enforce enemy roster counts, act/tier enemy pools, map node coverage, static reward tables, shop items, boss rewards, and event table completeness.
+
+### Changed
+- Menu version updated to v1.11.0.
+
+### Design Notes
+- Event choices now include safer resource recovery, HP-for-gold risk, small healing, and paid card refinement so event paths feel less repetitive without adding online or generated content.
+
+---
+
 ## [1.10.1] - 2026-05-23
 
 ### Added
