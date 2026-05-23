@@ -1,8 +1,7 @@
 /**
  * Balance Validator - Validation functions for WWM Physics Layer
  *
- * These functions validate cards and enemies against the balance system rules.
- * Any AI-generated content MUST pass these validations before being accepted.
+ * These functions validate offline cards and enemies against the balance system rules.
  */
 
 import { CardData, CardType, CardRarity, EnemyData, EnemyTier, IntentType, EnemyTrait } from '../types';
@@ -205,7 +204,7 @@ function validateSlotConstraints(card: CardData, errors: ValidationError[], warn
   if (!effectMapping) {
     warnings.push({
       code: 'UNMAPPED_CARD',
-      field: 'effectId',
+      field: 'effects',
       message: `Card ${card.id} has no effect mapping, cannot validate effects`,
       suggestion: 'Add effect mapping to CARD_EFFECT_MAPPING'
     });
@@ -366,7 +365,9 @@ function analyzeCardPower(card: CardData): PowerAnalysis {
 
   // Calculate power from base value based on card type
   if (card.type === CardType.HEAD) {
-    totalPower += num(values.damage) || card.value || 0;
+    if (effectMapping.effects.includes('DIRECT_DAMAGE')) {
+      totalPower += num(values.damage) || card.value || 0;
+    }
   } else if (card.type === CardType.HANDLE) {
     // Handle multiplier power calculation
     let mult = num(values.multiplier, 1) || card.value || 1;

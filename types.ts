@@ -22,7 +22,6 @@ export interface CardData {
   value: number; // Damage for Head, Multiplier for Handle, Additive for Deco
   rarity: CardRarity;
   description: string;
-  effectId?: string;
   unplayable?: boolean; // New flag for Rust cards
 }
 
@@ -113,25 +112,86 @@ export interface CraftedWeapon {
   effects: string[];
 }
 
+// --- Static Reward Data ---
+
+export type CombatRewardId = 'COMMON' | 'ELITE' | 'BOSS';
+
+export interface CombatRewardRule {
+  id: CombatRewardId;
+  gold: {
+    min: number;
+    max: number;
+  };
+  cardOptionCount: number;
+  cardRarities: CardRarity[];
+}
+
+export type ShopItemId = 'REMOVE' | 'HEAL' | 'RARE' | 'ENERGY';
+export type ShopIconKey = 'flame' | 'heart' | 'sparkles' | 'zap';
+export type ShopColorKey = 'red' | 'green' | 'purple' | 'yellow';
+
+export type ShopItemEffect =
+  | { type: 'REMOVE_CARD' }
+  | { type: 'HEAL_PERCENT'; percent: number }
+  | { type: 'GAIN_RANDOM_CARD'; rarity: CardRarity }
+  | { type: 'MAX_ENERGY'; amount: number };
+
+export interface ShopItemDefinition {
+  id: ShopItemId;
+  name: string;
+  description: string;
+  price: number;
+  icon: ShopIconKey;
+  color: ShopColorKey;
+  effect: ShopItemEffect;
+}
+
+export type BossRewardId = 'ENERGY' | 'MAX_HP' | 'GOLD';
+export type BossRewardIconKey = 'zap' | 'heart' | 'coins';
+export type BossRewardColorKey = 'yellow' | 'blue' | 'stone';
+
+export type BossRewardEffect =
+  | { type: 'MAX_ENERGY'; amount: number }
+  | { type: 'MAX_HP'; amount: number }
+  | { type: 'GAIN_GOLD'; amount: number };
+
+export interface BossRewardDefinition {
+  id: BossRewardId;
+  name: string;
+  description: string;
+  icon: BossRewardIconKey;
+  color: BossRewardColorKey;
+  effect: BossRewardEffect;
+  feedback: string;
+}
+
 export enum NodeType {
   COMBAT = 'COMBAT',
   ELITE = 'ELITE',
   REST = 'REST',
+  SHOP = 'SHOP',
   EVENT = 'EVENT',
   BOSS = 'BOSS'
 }
 
 export interface MapNode {
+  id: string;
+  act: 1 | 2 | 3;
+  floor: number;
+  row: number;
   type: NodeType;
   name: string;
   description: string;
   icon: string;
   enemyId?: string; // If combat, specific enemy (optional)
+  eventId?: string;
+  nextNodeIds: string[];
 }
 
 // --- Event System ---
 
 export type EventOptionType = 'HEAL' | 'DAMAGE' | 'GAIN_CARD_RARE' | 'REMOVE_CARD' | 'GAIN_GOLD' | 'LOSE_GOLD' | 'FULL_HEAL' | 'RANDOM_UPGRADE' | 'LEAVE';
+export type EventCostResource = 'GOLD' | 'HP';
 
 export interface EventOption {
     label: string;
@@ -139,6 +199,7 @@ export interface EventOption {
     type: EventOptionType;
     value?: number; // Amount
     cost?: number; // Gold/HP cost if any
+    costResource?: EventCostResource;
 }
 
 export interface GameEvent {

@@ -1,10 +1,9 @@
 /**
  * Balance System - WWM Physics Layer for FiC
  *
- * This system defines the "laws of physics" for card and enemy generation.
- * Any AI-generated content MUST pass validation through this system.
+ * This system defines the "laws of physics" for offline card and enemy content.
  *
- * Design Philosophy (from Slay the Spire + AI Spire):
+ * Design Philosophy:
  * 1. Energy Economy: All effects have calculable "power value"
  * 2. Slot Constraints: Each slot type has allowed/forbidden effects
  * 3. Rarity Budget: Higher rarity = more power, but with trade-offs

@@ -1,29 +1,29 @@
 import React, { useState, useEffect } from 'react';
 import { 
   CardInstance, CardType, CombatState, PlayerStats, EnemyData, 
-  IntentType, CraftedWeapon, CardRarity, EnemyTrait, EnemyTier
+  IntentType, CraftedWeapon, EnemyTrait, EnemyTier, BossRewardId, ShopItemId,
+  GameEvent, EventOption, CardRarity, MapNode, NodeType
 } from './types';
-import { CARD_DATABASE, INITIAL_DECK_IDS, ENEMIES, ENEMY_POOLS } from './constants';
+import { INITIAL_DECK_IDS, ENEMIES, GAME_EVENTS } from './constants';
 import CardComponent from './components/CardComponent';
 import Anvil from './components/Anvil';
-import { Shield, Zap, Layers } from 'lucide-react';
 
 // --- Utilities ---
-import { generateId, createCardInstance, shuffle } from './utils/cardUtils';
+import { createCardInstance, shuffle } from './utils/cardUtils';
+import {
+  createCombatCardRewards,
+  createRandomCardReward,
+  getBossRewardDefinition,
+  getCombatRewardRule,
+  getShopItemDefinition,
+  rollGoldReward
+} from './utils/rewardUtils';
+import { createActMap, getAvailableMapNodeIds } from './utils/mapUtils';
 import {
   CardEffectContext, EffectModifiers, EffectAction,
   executeEffectsForPhase, applyModifierActions,
   isExhaustCard, isInfiniteLoopCard, isTwinHandle
 } from './utils/cardEffects';
-
-// --- WWM AI Generation Service ---
-import {
-  isGeminiAvailable,
-  generateCardWithFallback,
-  generateEnemyWithFallback,
-  CardGenerationContext,
-  EnemyGenerationContext
-} from './services/geminiService';
 
 // --- Hooks ---
 import { useAnimations } from './hooks/useAnimations';
@@ -37,6 +37,8 @@ import RewardScreen from './screens/RewardScreen';
 import ShopScreen from './screens/ShopScreen';
 import RestScreen from './screens/RestScreen';
 import RemoveCardScreen from './screens/RemoveCardScreen';
+import EventScreen from './screens/EventScreen';
+import MapScreen from './screens/MapScreen';
 import DeckHUD from './components/DeckHUD';
 import PlayerHUD from './components/PlayerHUD';
 import EnemySection from './components/EnemySection';
@@ -45,14 +47,15 @@ import StatusDetailModal from './components/StatusDetailModal';
 
 // --- Main App ---
 
-type GameState = 'MENU' | 'PLAYING' | 'REWARD' | 'BOSS_REWARD' | 'REST' | 'SHOP' | 'REMOVE_CARD' | 'WIN' | 'LOSE';
+type GameState = 'MENU' | 'MAP' | 'PLAYING' | 'REWARD' | 'BOSS_REWARD' | 'REST' | 'SHOP' | 'EVENT' | 'REMOVE_CARD' | 'WIN' | 'LOSE';
+type RemovalContext = 'REST' | 'SHOP' | 'EVENT' | null;
 
 const ACT_LENGTH = 15;
 
 export default function App() {
   // Game State
   const [gameState, setGameState] = useState<GameState>('MENU');
-  const [floor, setFloor] = useState(1);
+  const [floor, setFloor] = useState(0);
   const [act, setAct] = useState(1);
   const [hasRested, setHasRested] = useState(false); // New state to track if player used Heal/Smelt this rest
   const [acquiredCard, setAcquiredCard] = useState<CardInstance | null>(null); // New state for Shop feedback
@@ -72,7 +75,13 @@ const [player, setPlayer] = useState<PlayerStats>({
   // Reward & Interaction State
   const [rewardOptions, setRewardOptions] = useState<CardInstance[]>([]);
   const [selectedCardId, setSelectedCardId] = useState<string | null>(null); // For removal/selection
-  const [bossRewards, setBossRewards] = useState<{id: string, name: string, desc: string, icon: React.ReactNode}[]>([]);
+  const [removalContext, setRemovalContext] = useState<RemovalContext>(null);
+  const [currentEvent, setCurrentEvent] = useState<GameEvent | null>(null);
+  const [pendingEventRemovalOption, setPendingEventRemovalOption] = useState<EventOption | null>(null);
+  const [mapNodes, setMapNodes] = useState<MapNode[]>([]);
+  const [currentMapNodeId, setCurrentMapNodeId] = useState<string | null>(null);
+  const [completedMapNodeIds, setCompletedMapNodeIds] = useState<string[]>([]);
+  const [activeMapNode, setActiveMapNode] = useState<MapNode | null>(null);
 
   // Crafting Slots
   const [slots, setSlots] = useState<{
@@ -104,10 +113,6 @@ const [player, setPlayer] = useState<PlayerStats>({
 
   // Status effect detail modal
   const [showStatusDetail, setShowStatusDetail] = useState<string | null>(null); // Status key or null
-
-  // WWM AI Generation State
-  const [isGeneratingContent, setIsGeneratingContent] = useState(false);
-  const [aiGeneratedCard, setAiGeneratedCard] = useState<CardInstance | null>(null); // Track AI-generated card in rewards
 
   // --- Touch Drag State ---
   const [dragState, setDragState] = useState<{
@@ -185,173 +190,108 @@ const startCombat = (enemyData: EnemyData) => {
     setInfiniteLoopUsed(false);
   };
 
-  const advanceGame = async () => {
-      let nextFloor = floor + 1;
-      let nextAct = act;
+  const startEvent = (eventId?: string) => {
+      const event = GAME_EVENTS.find(candidate => candidate.id === eventId) ||
+        GAME_EVENTS[Math.floor(Math.random() * GAME_EVENTS.length)];
+      setCurrentEvent(event);
+      setSelectedCardId(null);
+      setPendingEventRemovalOption(null);
+      setGameState('EVENT');
+  };
 
-      // Check Act Completion
-      if (nextFloor > ACT_LENGTH) {
-          nextAct++;
-          nextFloor = 1;
-
-          if (nextAct > 3) {
-              setGameState('WIN');
-              return;
-          }
-
-          setAct(nextAct);
-          showFeedback(`ACT ${nextAct} 시작!`);
-      }
-
-      setFloor(nextFloor);
-
-      // --- Fixed Level Structure ---
-      // Floor 15: Boss - Always use predefined boss
-      if (nextFloor === ACT_LENGTH) {
-          const boss = ENEMY_POOLS[nextAct as 1|2|3][EnemyTier.BOSS];
-          startCombat(JSON.parse(JSON.stringify(boss)));
+  const completeActiveMapNode = () => {
+      if (!activeMapNode) {
+          setGameState('MAP');
           return;
       }
 
-      // Floor 8: Elite - Try AI generation
-      if (nextFloor === 8) {
-          setIsGeneratingContent(true);
-          try {
-            // 100% AI-generated elite for testing
-            if (isGeminiAvailable()) {
-              const aiContext: EnemyGenerationContext = {
-                targetTier: 'Elite',
-                act: nextAct as 1 | 2 | 3,
-                theme: '강력한 정예 몬스터'
-              };
-              const result = await generateEnemyWithFallback(aiContext);
-              if (result.validationResult.valid) {
-                showFeedback('⚔️ AI가 새로운 적을 생성했습니다!', 'good');
-                startCombat(JSON.parse(JSON.stringify(result.enemy)));
-                setIsGeneratingContent(false);
-                return;
-              }
-            }
-          } catch (error) {
-            console.error('AI elite generation failed:', error);
-          }
-          setIsGeneratingContent(false);
+      setCompletedMapNodeIds(prev => prev.includes(activeMapNode.id) ? prev : [...prev, activeMapNode.id]);
+      setCurrentMapNodeId(activeMapNode.id);
+      setActiveMapNode(null);
+      setGameState('MAP');
+  };
 
-          // Fallback to pool
-          const pool = ENEMY_POOLS[nextAct as 1|2|3][EnemyTier.ELITE];
-          const enemy = pool[Math.floor(Math.random() * pool.length)];
-          startCombat(JSON.parse(JSON.stringify(enemy)));
+  const startNextActMap = () => {
+      const nextAct = (act + 1) as 1 | 2 | 3;
+      setAct(nextAct);
+      setFloor(0);
+      setMapNodes(createActMap(nextAct));
+      setCurrentMapNodeId(null);
+      setCompletedMapNodeIds([]);
+      setActiveMapNode(null);
+      setHasRested(false);
+      showFeedback(`ACT ${nextAct} 시작!`);
+      setGameState('MAP');
+  };
+
+  const handleSelectMapNode = (node: MapNode) => {
+      const availableNodeIds = getAvailableMapNodeIds(mapNodes, currentMapNodeId);
+      if (!availableNodeIds.includes(node.id)) {
+          showFeedback("아직 갈 수 없는 경로입니다.");
           return;
       }
 
-      // Default: Common Enemy - Try AI generation
-      setIsGeneratingContent(true);
-      try {
-        // 100% AI-generated common enemy for testing
-        if (isGeminiAvailable()) {
-          const aiContext: EnemyGenerationContext = {
-            targetTier: 'Common',
-            act: nextAct as 1 | 2 | 3
-          };
-          const result = await generateEnemyWithFallback(aiContext);
-          if (result.validationResult.valid) {
-            showFeedback('🎲 새로운 적이 나타났습니다!', 'good');
-            startCombat(JSON.parse(JSON.stringify(result.enemy)));
-            setIsGeneratingContent(false);
-            return;
-          }
-        }
-      } catch (error) {
-        console.error('AI enemy generation failed:', error);
-      }
-      setIsGeneratingContent(false);
+      setActiveMapNode(node);
+      setAct(node.act);
+      setFloor(node.floor);
+      setHasRested(false);
 
-      // Fallback to pool
-      const pool = ENEMY_POOLS[nextAct as 1|2|3][EnemyTier.COMMON];
-      const enemy = pool[Math.floor(Math.random() * pool.length)];
-      startCombat(JSON.parse(JSON.stringify(enemy)));
+      if (node.type === NodeType.COMBAT || node.type === NodeType.ELITE || node.type === NodeType.BOSS) {
+          const enemyData = node.enemyId ? Object.values(ENEMIES).find(candidate => candidate.id === node.enemyId) : null;
+          if (!enemyData) {
+              throw new Error(`Map enemy ${node.enemyId} not found`);
+          }
+          startCombat(JSON.parse(JSON.stringify(enemyData)));
+          return;
+      }
+
+      if (node.type === NodeType.EVENT) {
+          startEvent(node.eventId);
+          return;
+      }
+
+      if (node.type === NodeType.SHOP) {
+          setGameState('SHOP');
+          return;
+      }
+
+      setGameState('REST');
   };
 
   // --- Game Loop Methods ---
 
   const startGame = () => {
     const newDeck = INITIAL_DECK_IDS.map(id => createCardInstance(id));
+    const firstActMap = createActMap(1);
+
     setDeck(shuffle(newDeck));
     setHand([]);
     setDiscardPile([]);
+    setCurrentEvent(null);
+    setPendingEventRemovalOption(null);
+    setRemovalContext(null);
+    setMapNodes(firstActMap);
+    setCurrentMapNodeId(null);
+    setCompletedMapNodeIds([]);
+    setActiveMapNode(null);
     
     setPlayer({ hp: 50, maxHp: 50, energy: 3, maxEnergy: 3, block: 0, gold: 0, costLimit: null, disarmed: false, nextTurnDraw: 0, overheat: 0, weaponsUsedThisTurn: 0, dodgeNextAttack: false, selfDamageThisTurn: 0 });
     
-    setFloor(1);
+    setFloor(0);
     setAct(1);
-    
-    // Start Floor 1 Combat immediately
-    const tier1Pool = ENEMY_POOLS[1][EnemyTier.COMMON];
-    const starterEnemy = JSON.parse(JSON.stringify(tier1Pool[Math.floor(Math.random() * tier1Pool.length)]));
-    startCombat(starterEnemy);
+    setGameState('MAP');
   };
 
-  const handleWinCombat = async () => {
+  const handleWinCombat = () => {
       cleanAndConsolidateDeck();
 
-      // Rewards
-      const isEliteOrBoss = enemy.tier === EnemyTier.ELITE || enemy.tier === EnemyTier.BOSS;
-      const goldReward = Math.floor(Math.random() * 20) + (isEliteOrBoss ? 30 : 15);
+      const rewardRule = getCombatRewardRule(enemy.tier);
+      const goldReward = rollGoldReward(rewardRule);
       setPlayer(prev => ({...prev, gold: prev.gold + goldReward}));
 
-      // Base pool from database
-      const pool = CARD_DATABASE.filter(c =>
-          c.rarity !== CardRarity.JUNK &&
-          c.rarity !== CardRarity.STARTER &&
-          c.rarity !== CardRarity.SPECIAL
-      );
-
-      const shuffled = shuffle(pool);
-      const count = isEliteOrBoss ? 4 : 3;
-      let options = shuffled.slice(0, count - 1).map(data => ({...data, instanceId: generateId()}));
-
-      // WWM AI Generation: Try to add one AI-generated card to rewards
-      setIsGeneratingContent(true);
+      const options = createCombatCardRewards(rewardRule);
       showFeedback(`승리! ${goldReward} 골드 획득`);
 
-      try {
-        // Determine AI card parameters based on act progression
-        const rarityOptions: ('Common' | 'Rare' | 'Legend')[] =
-          act === 1 ? ['Common', 'Rare'] :
-          act === 2 ? ['Common', 'Rare', 'Legend'] :
-          ['Rare', 'Legend'];
-        const typeOptions: ('Handle' | 'Head' | 'Deco')[] = ['Handle', 'Head', 'Deco'];
-
-        const aiContext: CardGenerationContext = {
-          targetType: typeOptions[Math.floor(Math.random() * typeOptions.length)],
-          targetRarity: isEliteOrBoss
-            ? rarityOptions[Math.floor(Math.random() * rarityOptions.length)]
-            : rarityOptions[0], // Common for normal enemies
-          theme: isEliteOrBoss ? '강력한 보스 전리품' : undefined
-        };
-
-        const result = await generateCardWithFallback(aiContext);
-        const aiCard: CardInstance = {
-          ...result.card,
-          instanceId: generateId()
-        };
-
-        // Only mark as AI-generated if it was actually generated by AI (not fallback)
-        if (result.isAiGenerated) {
-          setAiGeneratedCard(aiCard);
-          showFeedback('✨ AI가 새로운 카드를 생성했습니다!', 'good');
-        }
-        options.push(aiCard);
-      } catch (error) {
-        console.error('AI card generation failed:', error);
-        // Fallback: add one more card from database
-        const fallbackCard = shuffled[count - 1];
-        if (fallbackCard) {
-          options.push({...fallbackCard, instanceId: generateId()});
-        }
-      }
-
-      setIsGeneratingContent(false);
       setRewardOptions(options);
       setGameState('REWARD');
   };
@@ -359,69 +299,43 @@ const startCombat = (enemyData: EnemyData) => {
   const handleSelectReward = (card: CardInstance | null) => {
       if (card) {
           setDeck(prev => [...prev, card]);
-          // Check if this was an AI-generated card
-          if (aiGeneratedCard && card.instanceId === aiGeneratedCard.instanceId) {
-            showFeedback(`✨ ${card.name} (AI 생성) 획득!`);
-          } else {
-            showFeedback(`${card.name} 획득!`);
-          }
+          showFeedback(`${card.name} 획득!`);
       } else {
           showFeedback("보상 건너뛰기");
       }
 
-      // Reset AI card state
-      setAiGeneratedCard(null);
-
       // Check if Boss was defeated
-      if (enemy.tier === EnemyTier.BOSS && act < 4) {
-          setupBossReward();
+      if (enemy.tier === EnemyTier.BOSS && act < 3) {
           setGameState('BOSS_REWARD');
+      } else if (enemy.tier === EnemyTier.BOSS) {
+          setGameState('WIN');
       } else {
-          setHasRested(false); // Reset rest status for new floor
-          setGameState('REST');
+          setHasRested(false);
+          completeActiveMapNode();
       }
   };
 
-  const setupBossReward = () => {
-      setBossRewards([
-          { id: 'MAX_ENERGY', name: '확장 풀무', desc: '최대 에너지 +1', icon: <Zap size={32} className="text-yellow-400" /> },
-          { id: 'DRAW_BONUS', name: '자동 망치', desc: '매 턴 시작 시 드로우 +1', icon: <Layers size={32} className="text-blue-400" /> },
-          { id: 'START_BLOCK', name: '미스릴 모루', desc: '전투 시작 시 방어도 15 획득', icon: <Shield size={32} className="text-stone-300" /> },
-      ]);
-  };
+  const confirmBossReward = (rewardId: BossRewardId) => {
+      const reward = getBossRewardDefinition(rewardId);
 
-  const handleSelectBossReward = (rewardId: string) => {
-      if (rewardId === 'MAX_ENERGY') {
-          setPlayer(prev => ({ ...prev, maxEnergy: prev.maxEnergy + 1 }));
-          showFeedback("최대 에너지 증가!");
-      } else if (rewardId === 'DRAW_BONUS') {
-          setPlayer(prev => ({ ...prev, nextTurnDraw: prev.nextTurnDraw + 1 })); 
-      } else if (rewardId === 'START_BLOCK') {
-          // Handled in startCombat
-      }
-      
-      if (rewardId !== 'MAX_ENERGY') {
-         setPlayer(prev => ({ ...prev, maxHp: prev.maxHp + 20, hp: prev.hp + 20 }));
-         showFeedback("최대 체력 증가!");
+      switch (reward.effect.type) {
+          case 'MAX_ENERGY':
+              setPlayer(prev => ({ ...prev, maxEnergy: prev.maxEnergy + reward.effect.amount }));
+              break;
+          case 'MAX_HP':
+              setPlayer(prev => ({
+                  ...prev,
+                  maxHp: prev.maxHp + reward.effect.amount,
+                  hp: prev.hp + reward.effect.amount
+              }));
+              break;
+          case 'GAIN_GOLD':
+              setPlayer(prev => ({ ...prev, gold: prev.gold + reward.effect.amount }));
+              break;
       }
 
-      setHasRested(false); // Reset rest status
-      setGameState('REST');
-  };
-  
-  const confirmBossReward = (type: 'ENERGY' | 'DRAW' | 'BLOCK') => {
-      if (type === 'ENERGY') {
-          setPlayer(prev => ({ ...prev, maxEnergy: prev.maxEnergy + 1 }));
-          showFeedback("대장간 개조: 에너지 +1");
-      } else if (type === 'DRAW') {
-          setPlayer(prev => ({ ...prev, maxHp: prev.maxHp + 30, hp: prev.hp + 30 }));
-          showFeedback("대장간 확장: 최대 체력 +30");
-      } else {
-          setPlayer(prev => ({ ...prev, gold: prev.gold + 200 }));
-          showFeedback("대장간 지원금: +200 골드");
-      }
-      setHasRested(false); // Reset rest status
-      setGameState('REST');
+      showFeedback(reward.feedback);
+      startNextActMap();
   };
 
 
@@ -443,102 +357,224 @@ const startCombat = (enemyData: EnemyData) => {
           showFeedback(`수리 완료! +${healAmount} HP`);
           setHasRested(true); // Mark as rested
       } else {
+          setRemovalContext('REST');
           setSelectedCardId(null); 
           setGameState('REMOVE_CARD');
       }
   };
 
   // Shop Logic
-  const handleShopBuy = async (item: 'HEAL' | 'REMOVE' | 'RARE' | 'ENERGY') => {
-      const PRICES = { HEAL: 40, REMOVE: 50, RARE: 75, ENERGY: 200 };
+  const handleShopBuy = (itemId: ShopItemId) => {
+      const item = getShopItemDefinition(itemId);
 
-      if (player.gold < PRICES[item]) {
+      if (player.gold < item.price) {
           showFeedback("골드가 부족합니다!");
           return;
       }
 
-      if (item === 'HEAL') {
-          setPlayer(prev => ({ ...prev, gold: prev.gold - PRICES.HEAL, hp: Math.min(prev.maxHp, prev.hp + Math.floor(prev.maxHp * 0.5)) }));
-          showFeedback("체력 회복!");
-      } else if (item === 'REMOVE') {
-          setPlayer(prev => ({ ...prev, gold: prev.gold - PRICES.REMOVE }));
-          setSelectedCardId(null);
-          setGameState('REMOVE_CARD'); // Go to remove screen
-      } else if (item === 'RARE') {
-          setPlayer(prev => ({ ...prev, gold: prev.gold - PRICES.RARE }));
-          setIsGeneratingContent(true);
-
-          let newCard: CardInstance;
-
-          try {
-            // Try AI generation for rare card
-            const typeOptions: ('Handle' | 'Head' | 'Deco')[] = ['Handle', 'Head', 'Deco'];
-            const aiContext: CardGenerationContext = {
-              targetType: typeOptions[Math.floor(Math.random() * typeOptions.length)],
-              targetRarity: 'Rare',
-              theme: '상점에서 판매하는 희귀한 설계도'
-            };
-
-            const result = await generateCardWithFallback(aiContext);
-            newCard = { ...result.card, instanceId: generateId() };
-
-            // Only show AI message if actually AI-generated
-            if (result.isAiGenerated) {
-              showFeedback('✨ AI가 희귀 설계도를 생성했습니다!', 'good');
-            } else {
-              showFeedback('희귀 설계도 획득!');
-            }
-          } catch (error) {
-            console.error('AI shop card generation failed:', error);
-            // Fallback to database
-            const rares = CARD_DATABASE.filter(c => c.rarity === CardRarity.RARE);
-            const randomRare = rares[Math.floor(Math.random() * rares.length)];
-            newCard = { ...randomRare, instanceId: generateId() };
-            showFeedback('희귀 설계도 획득!');
+      switch (item.effect.type) {
+          case 'HEAL_PERCENT': {
+              const { percent } = item.effect;
+              setPlayer(prev => ({
+                  ...prev,
+                  gold: prev.gold - item.price,
+                  hp: Math.min(prev.maxHp, prev.hp + Math.floor(prev.maxHp * percent))
+              }));
+              showFeedback("체력 회복!");
+              break;
           }
-
-          setIsGeneratingContent(false);
-          setDeck(prev => [...prev, newCard]);
-          setAcquiredCard(newCard); // Trigger Modal
-      } else if (item === 'ENERGY') {
-          setPlayer(prev => ({ ...prev, gold: prev.gold - PRICES.ENERGY, maxEnergy: prev.maxEnergy + 1 }));
-          showFeedback("최대 에너지 +1 증가!");
+          case 'REMOVE_CARD':
+              setPlayer(prev => ({ ...prev, gold: prev.gold - item.price }));
+              setRemovalContext('SHOP');
+              setSelectedCardId(null);
+              setGameState('REMOVE_CARD'); // Go to remove screen
+              break;
+          case 'GAIN_RANDOM_CARD': {
+              const newCard = createRandomCardReward(item.effect.rarity);
+              setPlayer(prev => ({ ...prev, gold: prev.gold - item.price }));
+              showFeedback('희귀 설계도 획득!');
+              setDeck(prev => [...prev, newCard]);
+              setAcquiredCard(newCard); // Trigger Modal
+              break;
+          }
+          case 'MAX_ENERGY': {
+              const { amount } = item.effect;
+              setPlayer(prev => ({
+                  ...prev,
+                  gold: prev.gold - item.price,
+                  maxEnergy: prev.maxEnergy + amount
+              }));
+              showFeedback("최대 에너지 +1 증가!");
+              break;
+          }
       }
+  };
+
+  const handleShopExit = () => {
+      if (activeMapNode?.type === NodeType.SHOP) {
+          completeActiveMapNode();
+          return;
+      }
+
+      setGameState('REST');
+  };
+
+  const canPayEventOption = (option: EventOption): boolean => {
+      if (!option.cost || !option.costResource) return true;
+      if (option.costResource === 'GOLD') return player.gold >= option.cost;
+      return player.hp > option.cost;
+  };
+
+  const payEventCost = (option: EventOption) => {
+      if (!option.cost || !option.costResource) return;
+
+      if (option.costResource === 'GOLD') {
+          setPlayer(prev => ({ ...prev, gold: Math.max(0, prev.gold - option.cost!) }));
+      } else {
+          setPlayer(prev => ({ ...prev, hp: Math.max(1, prev.hp - option.cost!) }));
+          triggerPlayerHit();
+      }
+  };
+
+  const finishEvent = () => {
+      setCurrentEvent(null);
+      setPendingEventRemovalOption(null);
+      setRemovalContext(null);
+      setSelectedCardId(null);
+      setHasRested(false);
+      completeActiveMapNode();
+  };
+
+  const upgradeRandomDeckCard = () => {
+      const candidates = deck.filter(card =>
+          card.rarity !== CardRarity.RARE &&
+          card.rarity !== CardRarity.LEGEND &&
+          card.rarity !== CardRarity.JUNK &&
+          card.rarity !== CardRarity.SPECIAL
+      );
+
+      if (candidates.length === 0) {
+          showFeedback("강화할 카드가 없습니다.");
+          return;
+      }
+
+      const target = candidates[Math.floor(Math.random() * candidates.length)];
+      const upgradedCard = {
+          ...createRandomCardReward(CardRarity.RARE, target.type),
+          instanceId: target.instanceId
+      };
+
+      setDeck(prev => prev.map(card => card.instanceId === target.instanceId ? upgradedCard : card));
+      showFeedback(`${target.name} 강화: ${upgradedCard.name}`);
+  };
+
+  const handleEventOption = (option: EventOption) => {
+      if (!canPayEventOption(option)) {
+          showFeedback("조건을 충족하지 못했습니다.");
+          return;
+      }
+
+      if (option.type === 'REMOVE_CARD') {
+          setRemovalContext('EVENT');
+          setPendingEventRemovalOption(option);
+          setSelectedCardId(null);
+          setGameState('REMOVE_CARD');
+          return;
+      }
+
+      payEventCost(option);
+
+      switch (option.type) {
+          case 'HEAL':
+              setPlayer(prev => ({ ...prev, hp: Math.min(prev.maxHp, prev.hp + (option.value || 0)) }));
+              showFeedback(`체력 +${option.value || 0}`);
+              break;
+          case 'DAMAGE': {
+              const damage = option.value || 0;
+              const nextHp = player.hp - damage;
+              setPlayer(prev => ({ ...prev, hp: Math.max(0, prev.hp - damage) }));
+              triggerPlayerHit();
+              showFeedback(`체력 -${damage}`, 'bad');
+              if (nextHp <= 0) {
+                  setGameState('LOSE');
+                  return;
+              }
+              break;
+          }
+          case 'GAIN_CARD_RARE': {
+              const newCard = createRandomCardReward(CardRarity.RARE);
+              setDeck(prev => [...prev, newCard]);
+              showFeedback(`${newCard.name} 획득!`);
+              break;
+          }
+          case 'GAIN_GOLD':
+              setPlayer(prev => ({ ...prev, gold: prev.gold + (option.value || 0) }));
+              showFeedback(`${option.value || 0} 골드 획득`);
+              break;
+          case 'LOSE_GOLD':
+              setPlayer(prev => ({ ...prev, gold: Math.max(0, prev.gold - (option.value || 0)) }));
+              showFeedback(`${option.value || 0} 골드 상실`, 'bad');
+              break;
+          case 'FULL_HEAL':
+              setPlayer(prev => ({ ...prev, hp: prev.maxHp }));
+              showFeedback("체력 완전 회복!");
+              break;
+          case 'RANDOM_UPGRADE':
+              upgradeRandomDeckCard();
+              break;
+          case 'LEAVE':
+              showFeedback("아무 일도 일어나지 않았습니다.");
+              break;
+      }
+
+      finishEvent();
   };
 
   const handleConfirmRemoval = () => {
       if (!selectedCardId) return;
       
+      if (removalContext === 'EVENT' && pendingEventRemovalOption) {
+          if (!canPayEventOption(pendingEventRemovalOption)) {
+              showFeedback("조건을 충족하지 못했습니다.");
+              return;
+          }
+          payEventCost(pendingEventRemovalOption);
+      }
+
       setDeck(prev => prev.filter(c => c.instanceId !== selectedCardId));
       showFeedback("카드 제거 완료!");
       
-      if (!isShopRemoval) {
+      if (removalContext === 'REST') {
           setHasRested(true);
       }
-      setIsShopRemoval(false);
+      if (removalContext === 'EVENT') {
+          finishEvent();
+          return;
+      }
+      if (removalContext === 'SHOP' && activeMapNode?.type === NodeType.SHOP) {
+          setRemovalContext(null);
+          setGameState('SHOP');
+          return;
+      }
+      setRemovalContext(null);
       setGameState('REST');
   };
 
-  const [isShopRemoval, setIsShopRemoval] = useState(false);
-
-  // Updated Shop Buy to track source
-  const handleShopBuyWithFlag = (item: 'HEAL' | 'REMOVE' | 'RARE' | 'ENERGY') => {
-      if (item === 'REMOVE') {
-         if (player.gold < 50) {
-             showFeedback("골드가 부족합니다!");
-             return;
-         }
-         setPlayer(prev => ({ ...prev, gold: prev.gold - 50 }));
-         setIsShopRemoval(true);
-         setSelectedCardId(null);
-         setGameState('REMOVE_CARD');
-      } else {
-          handleShopBuy(item);
-      }
-  }
-
   const handleCancelRemoval = () => {
-      setIsShopRemoval(false);
+      if (removalContext === 'EVENT' && currentEvent) {
+          setPendingEventRemovalOption(null);
+          setRemovalContext(null);
+          setSelectedCardId(null);
+          setGameState('EVENT');
+          return;
+      }
+      if (removalContext === 'SHOP' && activeMapNode?.type === NodeType.SHOP) {
+          setRemovalContext(null);
+          setSelectedCardId(null);
+          setGameState('SHOP');
+          return;
+      }
+      setRemovalContext(null);
       setGameState('REST');
   };
 
@@ -1296,6 +1332,7 @@ if (enemy.statuses.poison > 0) {
   // Derived state for Anvil
   const weaponPrediction = calculateWeaponStats();
   const canCraft = !!(slots.handle && slots.head);
+  const availableMapNodeIds = getAvailableMapNodeIds(mapNodes, currentMapNodeId);
 
   // --- Render Sub-Screens ---
 
@@ -1315,6 +1352,22 @@ if (enemy.statuses.poison > 0) {
     );
   }
 
+  if (gameState === 'MAP') {
+    return (
+      <MapScreen
+        act={act}
+        floor={floor}
+        gold={player.gold}
+        hp={player.hp}
+        maxHp={player.maxHp}
+        nodes={mapNodes}
+        completedNodeIds={completedMapNodeIds}
+        availableNodeIds={availableMapNodeIds}
+        onSelectNode={handleSelectMapNode}
+      />
+    );
+  }
+
   if (gameState === 'BOSS_REWARD') {
     return <BossRewardScreen onSelectReward={confirmBossReward} />;
   }
@@ -1323,8 +1376,19 @@ if (enemy.statuses.poison > 0) {
     return (
       <ShopScreen
         gold={player.gold}
-        onBuyItem={handleShopBuyWithFlag}
-        onExit={() => setGameState('REST')}
+        onBuyItem={handleShopBuy}
+        onExit={handleShopExit}
+      />
+    );
+  }
+
+  if (gameState === 'EVENT' && currentEvent) {
+    return (
+      <EventScreen
+        event={currentEvent}
+        gold={player.gold}
+        hp={player.hp}
+        onSelectOption={handleEventOption}
       />
     );
   }
@@ -1334,8 +1398,6 @@ if (enemy.statuses.poison > 0) {
       <RewardScreen
         rewardOptions={rewardOptions}
         onSelectReward={handleSelectReward}
-        aiGeneratedCardId={aiGeneratedCard?.instanceId}
-        isLoading={isGeneratingContent}
       />
     );
   }
@@ -1347,7 +1409,7 @@ if (enemy.statuses.poison > 0) {
         maxHp={player.maxHp}
         hasRested={hasRested}
         onRestAction={handleRestAction}
-        onAdvance={advanceGame}
+        onAdvance={completeActiveMapNode}
       />
     );
   }

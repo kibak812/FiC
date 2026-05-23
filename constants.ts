@@ -1,5 +1,19 @@
 
-import { CardData, CardRarity, CardType, EnemyData, IntentType, EnemyTrait, EnemyTier, GameEvent } from './types';
+import {
+  BossRewardDefinition,
+  CardData,
+  CardRarity,
+  CardType,
+  CombatRewardId,
+  CombatRewardRule,
+  EnemyData,
+  IntentType,
+  EnemyTrait,
+  EnemyTier,
+  GameEvent,
+  NodeType,
+  ShopItemDefinition
+} from './types';
 
 // --- Card Database ---
 
@@ -74,7 +88,7 @@ export const CARD_DATABASE: CardData[] = [
   // Balance Patch v1.0 - New Legend
   { id: 405, name: '무한 회귀', type: CardType.HANDLE, cost: 2, value: 1, rarity: CardRarity.LEGEND, description: '사용 후 손으로 귀환. 턴당 1회.' },
   { id: 406, name: '시간의 톱니', type: CardType.HEAD, cost: 2, value: 0, rarity: CardRarity.LEGEND, description: '적 기절 1. 다음 의도 건너뜀.' },
-  { id: 407, name: '성장하는 결정', type: CardType.DECO, cost: 0, value: 2, rarity: CardRarity.LEGEND, description: '영구 피해 +2. 전투 중 중첩 (최대 16).' },
+  { id: 407, name: '성장하는 결정', type: CardType.DECO, cost: 1, value: 2, rarity: CardRarity.LEGEND, description: '영구 피해 +2. 전투 중 중첩 (최대 16).' },
 
   // Balance Patch v1.1 - New Legend
   { id: 408, name: '서리 칼날', type: CardType.HEAD, cost: 2, value: 8, rarity: CardRarity.LEGEND, description: '피해 8. 적 기절.' },
@@ -246,6 +260,154 @@ export const ENEMY_POOLS = {
   }
 };
 
+// --- Rewards ---
+
+export const COMBAT_REWARD_RULES: Record<CombatRewardId, CombatRewardRule> = {
+  COMMON: {
+    id: 'COMMON',
+    gold: { min: 15, max: 34 },
+    cardOptionCount: 3,
+    cardRarities: [CardRarity.COMMON, CardRarity.RARE, CardRarity.LEGEND]
+  },
+  ELITE: {
+    id: 'ELITE',
+    gold: { min: 30, max: 49 },
+    cardOptionCount: 4,
+    cardRarities: [CardRarity.COMMON, CardRarity.RARE, CardRarity.LEGEND]
+  },
+  BOSS: {
+    id: 'BOSS',
+    gold: { min: 30, max: 49 },
+    cardOptionCount: 4,
+    cardRarities: [CardRarity.COMMON, CardRarity.RARE, CardRarity.LEGEND]
+  }
+};
+
+export const SHOP_ITEMS: ShopItemDefinition[] = [
+  {
+    id: 'REMOVE',
+    name: '카드 정화',
+    description: '카드 1장 제거',
+    price: 50,
+    icon: 'flame',
+    color: 'red',
+    effect: { type: 'REMOVE_CARD' }
+  },
+  {
+    id: 'HEAL',
+    name: '긴급 수리',
+    description: '체력 50% 회복',
+    price: 40,
+    icon: 'heart',
+    color: 'green',
+    effect: { type: 'HEAL_PERCENT', percent: 0.5 }
+  },
+  {
+    id: 'RARE',
+    name: '희귀 도면',
+    description: '무작위 희귀 카드',
+    price: 75,
+    icon: 'sparkles',
+    color: 'purple',
+    effect: { type: 'GAIN_RANDOM_CARD', rarity: CardRarity.RARE }
+  },
+  {
+    id: 'ENERGY',
+    name: '마나 수정',
+    description: '최대 에너지 +1',
+    price: 200,
+    icon: 'zap',
+    color: 'yellow',
+    effect: { type: 'MAX_ENERGY', amount: 1 }
+  }
+];
+
+export const BOSS_REWARDS: BossRewardDefinition[] = [
+  {
+    id: 'ENERGY',
+    name: '확장 풀무',
+    description: '에너지 +1',
+    icon: 'zap',
+    color: 'yellow',
+    effect: { type: 'MAX_ENERGY', amount: 1 },
+    feedback: '대장간 개조: 에너지 +1'
+  },
+  {
+    id: 'MAX_HP',
+    name: '생명석 강화',
+    description: '최대 HP +30',
+    icon: 'heart',
+    color: 'blue',
+    effect: { type: 'MAX_HP', amount: 30 },
+    feedback: '대장간 확장: 최대 체력 +30'
+  },
+  {
+    id: 'GOLD',
+    name: '지원금',
+    description: '골드 +200',
+    icon: 'coins',
+    color: 'stone',
+    effect: { type: 'GAIN_GOLD', amount: 200 },
+    feedback: '대장간 지원금: +200 골드'
+  }
+];
+
+// --- Map ---
+
+export const MAP_NODE_LAYOUTS: Record<1 | 2 | 3, NodeType[][]> = {
+  1: [
+    [NodeType.COMBAT],
+    [NodeType.COMBAT, NodeType.EVENT],
+    [NodeType.COMBAT, NodeType.SHOP],
+    [NodeType.EVENT, NodeType.COMBAT],
+    [NodeType.ELITE, NodeType.COMBAT],
+    [NodeType.REST, NodeType.SHOP],
+    [NodeType.COMBAT, NodeType.EVENT],
+    [NodeType.ELITE, NodeType.REST],
+    [NodeType.COMBAT, NodeType.SHOP],
+    [NodeType.EVENT, NodeType.COMBAT],
+    [NodeType.ELITE, NodeType.COMBAT],
+    [NodeType.REST, NodeType.SHOP],
+    [NodeType.COMBAT, NodeType.EVENT],
+    [NodeType.ELITE, NodeType.REST],
+    [NodeType.BOSS]
+  ],
+  2: [
+    [NodeType.COMBAT],
+    [NodeType.COMBAT, NodeType.EVENT],
+    [NodeType.SHOP, NodeType.COMBAT],
+    [NodeType.COMBAT, NodeType.EVENT],
+    [NodeType.ELITE, NodeType.COMBAT],
+    [NodeType.REST, NodeType.SHOP],
+    [NodeType.COMBAT, NodeType.EVENT],
+    [NodeType.ELITE, NodeType.REST],
+    [NodeType.COMBAT, NodeType.SHOP],
+    [NodeType.EVENT, NodeType.COMBAT],
+    [NodeType.ELITE, NodeType.COMBAT],
+    [NodeType.REST, NodeType.SHOP],
+    [NodeType.COMBAT, NodeType.EVENT],
+    [NodeType.ELITE, NodeType.REST],
+    [NodeType.BOSS]
+  ],
+  3: [
+    [NodeType.COMBAT],
+    [NodeType.EVENT, NodeType.COMBAT],
+    [NodeType.COMBAT, NodeType.SHOP],
+    [NodeType.ELITE, NodeType.EVENT],
+    [NodeType.COMBAT, NodeType.ELITE],
+    [NodeType.REST, NodeType.SHOP],
+    [NodeType.COMBAT, NodeType.EVENT],
+    [NodeType.ELITE, NodeType.REST],
+    [NodeType.COMBAT, NodeType.SHOP],
+    [NodeType.EVENT, NodeType.COMBAT],
+    [NodeType.ELITE, NodeType.COMBAT],
+    [NodeType.REST, NodeType.SHOP],
+    [NodeType.COMBAT, NodeType.EVENT],
+    [NodeType.ELITE, NodeType.REST],
+    [NodeType.BOSS]
+  ]
+};
+
 // --- Events ---
 
 export const GAME_EVENTS: GameEvent[] = [
@@ -265,7 +427,7 @@ export const GAME_EVENTS: GameEvent[] = [
         description: '기괴한 형태의 조각상이 당신을 노려보는 것 같습니다. 발치에는 희귀한 무기 부품이 떨어져 있습니다.',
         icon: 'skull',
         options: [
-            { label: '부품 줍기', description: '체력을 6 잃고, 희귀 카드를 획득합니다.', type: 'GAIN_CARD_RARE', value: 6, cost: 6 },
+            { label: '부품 줍기', description: '체력을 6 잃고, 희귀 카드를 획득합니다.', type: 'GAIN_CARD_RARE', cost: 6, costResource: 'HP' },
             { label: '무시하기', description: '조용히 지나갑니다.', type: 'LEAVE' }
         ]
     },
@@ -275,8 +437,8 @@ export const GAME_EVENTS: GameEvent[] = [
         description: '커다란 배낭을 멘 상인이 잠시 쉬어가라고 손짓합니다. "좋은 물건이 있다네."',
         icon: 'gem',
         options: [
-            { label: '카드 제거', description: '30 골드를 지불하고 카드 1장을 제거합니다.', type: 'REMOVE_CARD', cost: 30 },
-            { label: '물약 구매', description: '15 골드를 지불하고 체력을 모두 회복합니다.', type: 'FULL_HEAL', cost: 15 },
+            { label: '카드 제거', description: '30 골드를 지불하고 카드 1장을 제거합니다.', type: 'REMOVE_CARD', cost: 30, costResource: 'GOLD' },
+            { label: '물약 구매', description: '15 골드를 지불하고 체력을 모두 회복합니다.', type: 'FULL_HEAL', cost: 15, costResource: 'GOLD' },
             { label: '떠나기', description: '상인에게 작별을 고합니다.', type: 'LEAVE' }
         ]
     },
@@ -287,7 +449,7 @@ export const GAME_EVENTS: GameEvent[] = [
         icon: 'hammer',
         options: [
             { label: '카드 강화', description: '무작위 카드 1장을 희귀 등급으로 변환합니다.', type: 'RANDOM_UPGRADE' },
-            { label: '카드 제거', description: '체력을 5 소모하여 카드 1장을 제거합니다.', type: 'REMOVE_CARD', cost: 5, value: 5 }, // Using cost field specifically for logic
+            { label: '카드 제거', description: '체력을 5 소모하여 카드 1장을 제거합니다.', type: 'REMOVE_CARD', cost: 5, costResource: 'HP' },
             { label: '떠나기', description: '그냥 지나칩니다.', type: 'LEAVE' }
         ]
     }

@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.3.2] - 2026-05-23
+
+### Changed
+- Combat rewards, shop stock, and boss rewards now use static data tables instead of inline UI/gameplay constants.
+- Reward generation now reads gold ranges, card option counts, shop prices, and boss reward effects from offline definitions.
+- GAME_EVENTS now appear during runs on static event floors and apply offline event outcomes for healing, rare cards, removal, gold costs, HP costs, full heals, and random rare upgrades.
+- Fixed rail progression has been replaced with an act map made of connected combat, elite, rest, shop, event, and boss nodes.
+- Growth Crystal (407) cost increased from 0 to 1 to bring permanent growth under the validator's legendary budget.
+
+### Design Notes
+- This closes the first offline-core slice for combat rewards, shop purchases, and boss rewards while preserving the current balance values.
+- Event integration connects the existing static event database to moment-to-moment progression without adding online or generated content dependencies.
+- Map generation chooses from static node layouts, enemy pools, and event data so runs remain offline while gaining route decisions.
+- Pot Lid (104) is now validated as a defensive head instead of double-counting its value as both damage and block.
+
+---
+
 ## [1.3.1] - 2026-01-02
 
 ### Fixed
