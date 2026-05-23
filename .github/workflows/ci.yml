@@ -26,5 +26,17 @@ jobs:
       - name: Type check
         run: npx tsc --noEmit
 
+      - name: Balance validation
+        run: npm run test:balance
+
+      - name: Logic and simulation tests
+        run: npm run test:logic
+
+      - name: Install Playwright browsers
+        run: npx playwright install --with-deps chromium
+
+      - name: UI e2e tests
+        run: npm run test:e2e
+
       - name: Build
         run: npm run build

@@ -1,5 +1,6 @@
 import { ENEMY_POOLS, GAME_EVENTS, MAP_NODE_LAYOUTS } from '../constants';
 import { EnemyTier, MapNode, NodeType } from '../types';
+import type { RandomSource } from './cardUtils';
 
 const NODE_META: Record<NodeType, { name: string; description: string; icon: string }> = {
   [NodeType.COMBAT]: {
@@ -34,32 +35,32 @@ const NODE_META: Record<NodeType, { name: string; description: string; icon: str
   }
 };
 
-const randomEntry = <T,>(items: T[]): T => {
-  return items[Math.floor(Math.random() * items.length)];
+const randomEntry = <T,>(items: T[], rng: RandomSource = Math.random): T => {
+  return items[Math.floor(rng() * items.length)];
 };
 
-const getEnemyIdForNode = (act: 1 | 2 | 3, type: NodeType): string | undefined => {
+const getEnemyIdForNode = (act: 1 | 2 | 3, type: NodeType, rng: RandomSource): string | undefined => {
   if (type === NodeType.COMBAT) {
-    return randomEntry(ENEMY_POOLS[act][EnemyTier.COMMON]).id;
+    return randomEntry(ENEMY_POOLS[act][EnemyTier.COMMON], rng).id;
   }
 
   if (type === NodeType.ELITE) {
-    return randomEntry(ENEMY_POOLS[act][EnemyTier.ELITE]).id;
+    return randomEntry(ENEMY_POOLS[act][EnemyTier.ELITE], rng).id;
   }
 
   if (type === NodeType.BOSS) {
-    return randomEntry(ENEMY_POOLS[act][EnemyTier.BOSS]).id;
+    return randomEntry(ENEMY_POOLS[act][EnemyTier.BOSS], rng).id;
   }
 
   return undefined;
 };
 
-const getEventIdForNode = (type: NodeType): string | undefined => {
+const getEventIdForNode = (type: NodeType, rng: RandomSource): string | undefined => {
   if (type !== NodeType.EVENT) return undefined;
-  return randomEntry(GAME_EVENTS).id;
+  return randomEntry(GAME_EVENTS, rng).id;
 };
 
-export const createActMap = (act: 1 | 2 | 3): MapNode[] => {
+export const createActMap = (act: 1 | 2 | 3, rng: RandomSource = Math.random): MapNode[] => {
   const nodes = MAP_NODE_LAYOUTS[act].flatMap((floorLayout, floorIndex) => {
     const floor = floorIndex + 1;
 
@@ -75,8 +76,8 @@ export const createActMap = (act: 1 | 2 | 3): MapNode[] => {
         name: meta.name,
         description: meta.description,
         icon: meta.icon,
-        enemyId: getEnemyIdForNode(act, type),
-        eventId: getEventIdForNode(type),
+        enemyId: getEnemyIdForNode(act, type, rng),
+        eventId: getEventIdForNode(type, rng),
         nextNodeIds: []
       };
     });

@@ -41,6 +41,7 @@ export interface CardEffectContext {
   effectMultiplier: number;
   remainingEnergyAfterCost: number;
   growingCrystalBonus: number;
+  rng?: () => number;
   showFeedback: (msg: string, type?: 'good' | 'bad') => void;
 }
 
@@ -97,7 +98,7 @@ registerEffect({
   slot: 'handle',
   phase: 'PRE_DAMAGE',
   execute: (ctx) => {
-    const randomMultiplier = Math.floor(Math.random() * 3) + 1;
+    const randomMultiplier = Math.floor((ctx.rng || Math.random)() * 3) + 1;
     const { head, deco } = ctx.slots;
     const baseValue = head!.value + (deco ? deco.value : 0);
     const newDamage = Math.floor(baseValue * randomMultiplier);

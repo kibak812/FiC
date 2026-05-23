@@ -6,7 +6,11 @@
   "scripts": {
     "dev": "vite",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "npm run test:logic && npm run test:e2e",
+    "test:logic": "tsx scripts/testCore.ts && tsx scripts/simulateRuns.ts",
+    "test:e2e": "playwright test",
+    "test:balance": "tsx scripts/validateBalance.ts"
   },
   "dependencies": {
     "lucide-react": "^0.562.0",
@@ -14,6 +18,7 @@
     "react-dom": "^19.2.3"
   },
   "devDependencies": {
+    "@playwright/test": "^1.60.0",
     "@types/node": "^22.14.0",
     "@vitejs/plugin-react": "^5.0.0",
     "tsx": "^4.21.0",

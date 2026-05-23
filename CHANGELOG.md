@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.8.0] - 2026-05-23
+
+### Added
+- Automated core combat tests for weapon stat calculation, card effects, enemy status ticks, blocked damage, enemy intent planning, static reward determinism, and archetype coverage.
+- Seed-based 1000-run simulation script that exercises map routing, combat, rewards, shops, events, rests, and boss rewards without UI.
+- Playwright UI e2e smoke test for menu, map entry, first combat, card slotting, and forge attack resolution.
+
+### Changed
+- CI now runs balance validation, logic tests, seeded simulations, Playwright UI e2e, type checking, and production build before passing.
+- Map generation and Gambler's Handle effect can now receive seeded RNG for deterministic testing while preserving default runtime randomness.
+
+### Fixed
+- Development dependency audit now reports 0 vulnerabilities after updating vulnerable transitive Vite/Rollup/PostCSS/Picomatch packages.
+
+### Design Notes
+- The simulation currently verifies that seeded runs close cleanly through win/loss terminal states and static data paths; win-rate tuning remains a later balance task.
+
+---
+
 ## [1.7.0] - 2026-05-23
 
 ### Added

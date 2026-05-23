@@ -18,7 +18,10 @@ npm run dev
 ```bash
 npx tsc --noEmit
 npm run build
-npx tsx scripts/validateBalance.ts
+npm run test:balance
+npm run test:logic
+npx playwright install chromium # first time only
+npm run test:e2e
 ```
 
 The game is designed to run fully offline from the bundled card and enemy databases.

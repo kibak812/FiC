@@ -1,0 +1,356 @@
+import { CARD_ARCHETYPES, ENEMIES, ENEMY_POOLS } from '../constants';
+import { CardRarity, CardType, EnemyTier, IntentType, PlayerStats } from '../types';
+import { createCardInstance } from '../utils/cardUtils';
+import {
+  applyModifierActions,
+  CardEffectContext,
+  EffectModifiers,
+  executeEffectsForPhase,
+  isTwinHandle
+} from '../utils/cardEffects';
+import {
+  calculateBlockedDamage,
+  calculateEnemyIntentPlan,
+  calculateEnemyStrengthGain,
+  calculateWeaponStats,
+  resolveEnemyTurnStartStatuses
+} from '../utils/combatEngine';
+import {
+  createCombatCardRewards,
+  createRandomCardReward,
+  getCombatRewardRule,
+  rollGoldReward
+} from '../utils/rewardUtils';
+import { assert, assertDeepEqual, assertEqual, createSeededRng, runSuite, test } from './testUtils';
+
+const createPlayer = (overrides: Partial<PlayerStats> = {}): PlayerStats => ({
+  hp: 50,
+  maxHp: 50,
+  energy: 3,
+  maxEnergy: 3,
+  block: 0,
+  gold: 0,
+  costLimit: null,
+  disarmed: false,
+  nextTurnDraw: 0,
+  overheat: 0,
+  weaponsUsedThisTurn: 0,
+  dodgeNextAttack: false,
+  selfDamageThisTurn: 0,
+  ...overrides
+});
+
+const createEffectContext = (
+  cardIds: { handle: number; head: number; deco?: number },
+  overrides: Partial<CardEffectContext> = {}
+): CardEffectContext => {
+  const rng = createSeededRng(`effect-${cardIds.handle}-${cardIds.head}-${cardIds.deco || 0}`);
+  const slots = {
+    handle: createCardInstance(cardIds.handle, rng),
+    head: createCardInstance(cardIds.head, rng),
+    deco: cardIds.deco ? createCardInstance(cardIds.deco, rng) : null
+  };
+  const enemy = JSON.parse(JSON.stringify(ENEMIES.RUST_SLIME));
+  const player = createPlayer();
+  const stats = calculateWeaponStats({
+    slots,
+    playerBlock: player.block,
+    weaponsUsedThisTurn: player.weaponsUsedThisTurn,
+    enemyStatuses: enemy.statuses,
+    growingCrystalBonus: 0
+  });
+
+  return {
+    slots,
+    stats,
+    player,
+    enemy,
+    effectMultiplier: isTwinHandle(slots.handle?.id || 0) ? 2 : 1,
+    remainingEnergyAfterCost: Math.max(0, player.energy - stats.totalCost),
+    growingCrystalBonus: 0,
+    rng,
+    showFeedback: () => undefined,
+    ...overrides
+  };
+};
+
+const getEnemyById = (enemyId: string) => {
+  const enemy = Object.values(ENEMIES).find(candidate => candidate.id === enemyId);
+  assert(!!enemy, `Enemy ${enemyId} should exist`);
+  return JSON.parse(JSON.stringify(enemy!));
+};
+
+const findIntentIndex = (enemyId: string, predicate: (intentIndex: number) => boolean): number => {
+  const enemy = getEnemyById(enemyId);
+
+  for (let i = 0; i < enemy.intents.length; i++) {
+    enemy.currentIntentIndex = i;
+    if (predicate(i)) return i;
+  }
+
+  throw new Error(`No matching intent found for ${enemyId}`);
+};
+
+runSuite('Core combat tests', [
+  test('starter weapon calculates base damage and cost', () => {
+    const rng = createSeededRng('starter');
+    const enemy = JSON.parse(JSON.stringify(ENEMIES.RUST_SLIME));
+    const stats = calculateWeaponStats({
+      slots: {
+        handle: createCardInstance(101, rng),
+        head: createCardInstance(103, rng),
+        deco: null
+      },
+      playerBlock: 0,
+      weaponsUsedThisTurn: 0,
+      enemyStatuses: enemy.statuses,
+      growingCrystalBonus: 0
+    });
+
+    assertEqual(stats.totalCost, 2, 'Starter weapon cost should be handle + head');
+    assertEqual(stats.damage, 6, 'Starter weapon damage should come from the head value');
+    assertEqual(stats.block, 0, 'Starter weapon should not produce block');
+    assertEqual(stats.hitCount, 1, 'Starter weapon should hit once');
+  }),
+
+  test('defensive handle converts weapon damage into block', () => {
+    const rng = createSeededRng('defense');
+    const enemy = JSON.parse(JSON.stringify(ENEMIES.RUST_SLIME));
+    const stats = calculateWeaponStats({
+      slots: {
+        handle: createCardInstance(102, rng),
+        head: createCardInstance(103, rng),
+        deco: null
+      },
+      playerBlock: 0,
+      weaponsUsedThisTurn: 0,
+      enemyStatuses: enemy.statuses,
+      growingCrystalBonus: 0
+    });
+
+    assertEqual(stats.damage, 0, 'Defensive weapon should not deal direct damage');
+    assertEqual(stats.block, 6, 'Defensive weapon should grant the forged value as block');
+  }),
+
+  test('multi-hit cards expose deterministic hit count and damage bonuses', () => {
+    const rng = createSeededRng('multi-hit');
+    const enemy = JSON.parse(JSON.stringify(ENEMIES.RUST_SLIME));
+    const stats = calculateWeaponStats({
+      slots: {
+        handle: createCardInstance(101, rng),
+        head: createCardInstance(233, rng),
+        deco: createCardInstance(243, rng)
+      },
+      playerBlock: 0,
+      weaponsUsedThisTurn: 0,
+      enemyStatuses: enemy.statuses,
+      growingCrystalBonus: 0
+    });
+
+    assertEqual(stats.hitCount, 3, 'Three-pronged awl should hit three times');
+    assertEqual(stats.damage, 7, 'Twin needle deco should add the multi-hit bonus');
+  }),
+
+  test('status-scaling heads read current enemy status stacks', () => {
+    const rng = createSeededRng('status-scaling');
+    const enemy = JSON.parse(JSON.stringify(ENEMIES.RUST_SLIME));
+    enemy.statuses.bleed = 5;
+    const stats = calculateWeaponStats({
+      slots: {
+        handle: createCardInstance(101, rng),
+        head: createCardInstance(209, rng),
+        deco: null
+      },
+      playerBlock: 0,
+      weaponsUsedThisTurn: 0,
+      enemyStatuses: enemy.statuses,
+      growingCrystalBonus: 0
+    });
+
+    assertEqual(stats.damage, 10, 'Cog head should gain +1 damage per bleed stack');
+  }),
+
+  test('self-damage bonuses use damage taken earlier in the same forge', () => {
+    const ctx = createEffectContext({ handle: 318, head: 103, deco: 320 });
+    let modifiers: EffectModifiers = {
+      finalDamage: ctx.stats.damage,
+      finalBlock: ctx.stats.block,
+      ignoreBlock: false,
+      selfDamage: 0
+    };
+
+    const selfDamageActions = executeEffectsForPhase(ctx, modifiers, 'SELF_DAMAGE');
+    modifiers = applyModifierActions(modifiers, selfDamageActions);
+    const preDamageActions = executeEffectsForPhase(ctx, modifiers, 'PRE_DAMAGE');
+    modifiers = applyModifierActions(modifiers, preDamageActions);
+
+    assertEqual(modifiers.selfDamage, 4, 'Blood handle should register 4 self damage');
+    assertEqual(modifiers.finalDamage, 10, 'Berserker rune should add the self damage to final damage');
+  }),
+
+  test('twin handles double head status application through effect multiplier', () => {
+    const ctx = createEffectContext({ handle: 225, head: 203 });
+    const actions = executeEffectsForPhase(ctx, {
+      finalDamage: ctx.stats.damage,
+      finalBlock: ctx.stats.block,
+      ignoreBlock: false,
+      selfDamage: 0
+    }, 'POST_DAMAGE');
+
+    const bleedAction = actions.find(action => action.type === 'ENEMY_APPLY_STATUS' && action.status === 'bleed');
+    assert(!!bleedAction, 'Saw blade should apply bleed');
+    assertEqual(bleedAction!.type === 'ENEMY_APPLY_STATUS' ? bleedAction!.amount : 0, 6, 'Twin handle should double saw blade bleed application');
+  }),
+
+  test('energy and draw loop cards emit explicit effect actions', () => {
+    const ctx = createEffectContext({ handle: 222, head: 230, deco: 425 });
+    const actions = executeEffectsForPhase(ctx, {
+      finalDamage: ctx.stats.damage,
+      finalBlock: ctx.stats.block,
+      ignoreBlock: false,
+      selfDamage: 0
+    }, 'POST_DAMAGE');
+
+    assertEqual(actions.filter(action => action.type === 'PLAYER_GAIN_ENERGY').length, 2, 'Handle and head should both restore energy');
+    assertEqual(actions.filter(action => action.type === 'DRAW_CARDS').length, 1, 'Infinite battery feather should draw cards');
+    assertEqual(actions.filter(action => action.type === 'PLAYER_NEXT_TURN_DRAW').length, 1, 'Infinite battery feather should add next-turn draw');
+  }),
+
+  test('turn-start statuses tick poison, burn, weak, vulnerable, and stun predictably', () => {
+    const result = resolveEnemyTurnStartStatuses({
+      poison: 4,
+      bleed: 2,
+      stunned: 0,
+      strength: 0,
+      vulnerable: 2,
+      weak: 1,
+      burn: 3
+    });
+
+    assertEqual(result.poisonDamage, 4, 'Poison should deal current stack damage');
+    assertEqual(result.burnDamage, 3, 'Burn should deal current stack damage');
+    assertEqual(result.statuses.poison, 3, 'Poison should decay by one');
+    assertEqual(result.statuses.burn, 3, 'Burn should not decay');
+    assertEqual(result.statuses.vulnerable, 1, 'Vulnerable should decay by one');
+    assertEqual(result.statuses.weak, 0, 'Weak should decay by one');
+  }),
+
+  test('blocked damage exposes unblocked damage and remaining block', () => {
+    assertDeepEqual(calculateBlockedDamage(9, 4), { unblockedDamage: 5, nextBlock: 0 }, 'Damage above block should spill over');
+    assertDeepEqual(calculateBlockedDamage(3, 8), { unblockedDamage: 0, nextBlock: 5 }, 'Damage below block should preserve the remainder');
+  })
+]);
+
+runSuite('Enemy pattern tests', [
+  test('structured enemy intent plans preserve special enemy counter patterns', () => {
+    const player = createPlayer({ block: 12, weaponsUsedThisTurn: 3 });
+    const hammerhead = getEnemyById('hammerhead');
+    hammerhead.currentIntentIndex = findIntentIndex('hammerhead', index =>
+      hammerhead.intents[index].effect?.type === 'INCREASE_RANDOM_HANDLE_COST' ||
+      hammerhead.intents[index].type === IntentType.DEBUFF
+    );
+    assertEqual(calculateEnemyIntentPlan(hammerhead, player).handleCostIncrease, 1, 'Hammerhead should pressure handle costs');
+
+    const deus = getEnemyById('deus_ex_machina');
+    deus.currentIntentIndex = findIntentIndex('deus_ex_machina', index => deus.intents[index].effect?.type === 'SET_PLAYER_COST_LIMIT');
+    assertEqual(calculateEnemyIntentPlan(deus, player).costLimit, 2, 'Deus Ex Machina should set a cost limit');
+
+    const smith = getEnemyById('corrupted_smith');
+    smith.currentIntentIndex = findIntentIndex('corrupted_smith', index => smith.intents[index].effect?.type === 'DISARM_HEAD');
+    assert(calculateEnemyIntentPlan(smith, player).disarmsHead, 'Corrupted Smith should disarm head cards');
+
+    const mimic = getEnemyById('mimic_anvil');
+    mimic.damageTakenThisTurn = 17;
+    mimic.currentIntentIndex = findIntentIndex('mimic_anvil', index => mimic.intents[index].effect?.type === 'REFLECT_DAMAGE_TAKEN');
+    assertEqual(calculateEnemyIntentPlan(mimic, player).attackDamage, 17, 'Mimic Anvil should reflect damage taken this turn');
+  }),
+
+  test('enemy plans include defense, combo, cleanse, heal, and junk effects', () => {
+    const player = createPlayer({ block: 10, weaponsUsedThisTurn: 4 });
+    const blockCounter = getEnemyById('shield_mite');
+    blockCounter.currentIntentIndex = findIntentIndex('shield_mite', index => blockCounter.intents[index].effect?.type === 'ATTACK_FROM_PLAYER_BLOCK');
+    assertEqual(calculateEnemyIntentPlan(blockCounter, player).blockCounterBonus, 5, 'Block counter should scale from player block');
+
+    const comboCounter = getEnemyById('paradox_jailer');
+    comboCounter.currentIntentIndex = findIntentIndex('paradox_jailer', index => comboCounter.intents[index].effect?.type === 'ATTACK_FROM_WEAPONS_USED');
+    assertEqual(calculateEnemyIntentPlan(comboCounter, player).weaponCounterBonus, 8, 'Combo counter should scale from weapons used');
+
+    const cleanser = getEnemyById('spore_totem');
+    cleanser.statuses.poison = 2;
+    cleanser.statuses.burn = 1;
+    cleanser.currentIntentIndex = findIntentIndex('spore_totem', index => cleanser.intents[index].effect?.type === 'CLEANSE_STATUSES_GAIN_STRENGTH');
+    assertEqual(calculateEnemyIntentPlan(cleanser, player).statusCleanseStrengthGain, 3, 'Cleanse should convert status stacks into strength');
+
+    const healer = getEnemyById('gear_leech');
+    healer.currentIntentIndex = findIntentIndex('gear_leech', index => healer.intents[index].effect?.type === 'HEAL_SELF');
+    assertEqual(calculateEnemyIntentPlan(healer, player).healAmount, 15, 'Healer intent should expose heal amount');
+
+    const polluter = getEnemyById('cave_heart');
+    polluter.currentIntentIndex = findIntentIndex('cave_heart', index => polluter.intents[index].effect?.type === 'ADD_JUNK');
+    assertEqual(calculateEnemyIntentPlan(polluter, player).junkCount, 2, 'Junk intent should expose junk count');
+  }),
+
+  test('each act pool covers the required enemy pressure families', () => {
+    const requiredFamilies = ['statusCounter', 'defenseCounter', 'multiHitPressure', 'costPressure', 'deckPollution'] as const;
+
+    for (const act of [1, 2, 3] as const) {
+      const enemies = Object.values(ENEMY_POOLS[act]).flat();
+
+      const coverage = {
+        statusCounter: enemies.some(enemy => enemy.intents.some(intent => intent.effect?.type === 'CLEANSE_STATUSES_GAIN_STRENGTH')),
+        defenseCounter: enemies.some(enemy => enemy.intents.some(intent => intent.effect?.type === 'ATTACK_FROM_PLAYER_BLOCK')),
+        multiHitPressure: enemies.some(enemy => enemy.intents.some(intent => (intent.hits || 1) > 1 || intent.description.includes('(x3)'))),
+        costPressure: enemies.some(enemy => enemy.intents.some(intent =>
+          intent.effect?.type === 'SET_PLAYER_COST_LIMIT' ||
+          intent.effect?.type === 'INCREASE_RANDOM_HANDLE_COST' ||
+          (enemy.id === 'hammerhead' && intent.type === IntentType.DEBUFF)
+        )),
+        deckPollution: enemies.some(enemy => enemy.intents.some(intent =>
+          intent.effect?.type === 'ADD_JUNK' ||
+          (intent.type === IntentType.DEBUFF && !intent.effect && enemy.id !== 'hammerhead' && enemy.id !== 'deus_ex_machina')
+        ))
+      };
+
+      for (const family of requiredFamilies) {
+        assert(coverage[family], `Act ${act} should include ${family}`);
+      }
+    }
+  }),
+
+  test('strength gain helper makes random and fixed buffs deterministic under seeded RNG', () => {
+    const kobold = getEnemyById('kobold_scrapper');
+    kobold.currentIntentIndex = findIntentIndex('kobold_scrapper', index => kobold.intents[index].type === IntentType.BUFF);
+    assertEqual(calculateEnemyStrengthGain(kobold, kobold.intents[kobold.currentIntentIndex], () => 0), 1, 'Kobold minimum random strength should be 1');
+    assertEqual(calculateEnemyStrengthGain(kobold, kobold.intents[kobold.currentIntentIndex], () => 0.99), 3, 'Kobold maximum random strength should be 3');
+
+    const ledgerWraith = getEnemyById('ledger_wraith');
+    ledgerWraith.currentIntentIndex = findIntentIndex('ledger_wraith', index => ledgerWraith.intents[index].effect?.type === 'GAIN_STRENGTH');
+    assertEqual(calculateEnemyStrengthGain(ledgerWraith, ledgerWraith.intents[ledgerWraith.currentIntentIndex], () => 0.5), 3, 'Fixed strength gain should ignore RNG');
+  })
+]);
+
+runSuite('Static reward and archetype tests', [
+  test('reward generation is deterministic when seeded', () => {
+    const rule = getCombatRewardRule(EnemyTier.COMMON);
+    const firstRng = createSeededRng('reward-seed');
+    const secondRng = createSeededRng('reward-seed');
+    const firstRewardIds = createCombatCardRewards(rule, firstRng).map(card => card.id);
+    const secondRewardIds = createCombatCardRewards(rule, secondRng).map(card => card.id);
+
+    assertDeepEqual(firstRewardIds, secondRewardIds, 'Seeded card rewards should be repeatable');
+    assertEqual(rollGoldReward(rule, () => 0), rule.gold.min, 'Gold reward should include minimum bound');
+    assertEqual(rollGoldReward(rule, () => 0.999), rule.gold.max, 'Gold reward should include maximum bound');
+    assertEqual(createRandomCardReward(CardRarity.RARE, CardType.HEAD, () => 0).type, CardType.HEAD, 'Random typed rewards should honor requested slot');
+  }),
+
+  test('archetypes have entry, mid, late, and all slot connections', () => {
+    for (const archetype of CARD_ARCHETYPES) {
+      assert(archetype.entryCardIds.length > 0, `${archetype.name} should have entry cards`);
+      assert(archetype.midCardIds.length > 0, `${archetype.name} should have mid cards`);
+      assert(archetype.lateCardIds.length > 0, `${archetype.name} should have late cards`);
+      assert(archetype.slotCardIds[CardType.HANDLE].length > 0, `${archetype.name} should have handle cards`);
+      assert(archetype.slotCardIds[CardType.HEAD].length > 0, `${archetype.name} should have head cards`);
+      assert(archetype.slotCardIds[CardType.DECO].length > 0, `${archetype.name} should have deco cards`);
+    }
+  })
+]);
