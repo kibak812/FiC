@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.11.25] - 2026-05-23
+
+### Added
+- Expanded UI-free card effect regression coverage across self-damage, pre-damage, on-hit, and post-damage phases.
+- Added static weapon stat regression coverage for cost override, block conversion, poison/combo scaling, growth, hit counts, and damage multipliers.
+
+### Changed
+- Product readiness now requires card effect registry and static weapon stat regression tests to stay present.
+- Menu version updated to v1.11.25.
+
+### Design Notes
+- The larger card pool now has a direct safety net for archetype mechanics, so future content and art passes can move without silently breaking combat effects.
+
+---
+
 ## [1.11.24] - 2026-05-23
 
 ### Changed

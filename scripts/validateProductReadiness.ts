@@ -435,9 +435,15 @@ section('Validation and CI gates', () => {
   const eventUtilsSource = readText('utils/eventUtils.ts');
   const appSource = readText('App.tsx');
   const simSource = readText('scripts/simulateRuns.ts');
+  const testCoreSource = readText('scripts/testCore.ts');
 
   requireReady(exists('scripts/validateBalance.ts'), 'Balance validator script should exist.');
   requireReady(exists('scripts/testCore.ts'), 'Core combat and static data tests should exist.');
+  requireReady(
+    testCoreSource.includes('registered card effects expose expected actions across all combat phases') &&
+      testCoreSource.includes('static weapon stat table covers non-action card mechanics'),
+    'Core tests should include card effect registry and static weapon stat regression coverage.'
+  );
   requireReady(exists('scripts/simulateRuns.ts'), 'Seeded run simulation should exist.');
   requireReady(exists('tests/e2e/run-smoke.spec.ts'), 'Main UI e2e smoke test should exist.');
   requireReady(combatEngineSource.includes('applyCombatEffectActions') && combatEngineSource.includes('CombatEffectSideEffect'), 'Combat engine should expose a UI-free effect action reducer and explicit deck side effects.');

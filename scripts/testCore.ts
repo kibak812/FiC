@@ -12,10 +12,15 @@ import { CardRarity, CardType, EnemyTier, EventOptionType, IntentType, NodeType,
 import { cleanJunkFromDeck, createCardInstance, resetTemporaryDeckModifiers } from '../utils/cardUtils';
 import {
   applyModifierActions,
-  CardEffectContext,
-  EffectModifiers,
   executeEffectsForPhase,
   isTwinHandle
+} from '../utils/cardEffects';
+import type {
+  CardEffectContext,
+  EffectAction,
+  EffectModifiers,
+  EffectPhase,
+  SlotType
 } from '../utils/cardEffects';
 import {
   applyCombatEffectActions,
@@ -112,6 +117,92 @@ const findIntentIndex = (enemyId: string, predicate: (intentIndex: number) => bo
   }
 
   throw new Error(`No matching intent found for ${enemyId}`);
+};
+
+const calculateStatsForCards = (
+  cardIds: { handle: number; head: number; deco?: number },
+  overrides: {
+    playerBlock?: number;
+    weaponsUsedThisTurn?: number;
+    enemyStatuses?: Partial<typeof ENEMIES.RUST_SLIME.statuses>;
+    growingCrystalBonus?: number;
+  } = {}
+) => {
+  const rng = createSeededRng(`stats-${cardIds.handle}-${cardIds.head}-${cardIds.deco || 0}`);
+
+  return calculateWeaponStats({
+    slots: {
+      handle: createCardInstance(cardIds.handle, rng),
+      head: createCardInstance(cardIds.head, rng),
+      deco: cardIds.deco ? createCardInstance(cardIds.deco, rng) : null
+    },
+    playerBlock: overrides.playerBlock || 0,
+    weaponsUsedThisTurn: overrides.weaponsUsedThisTurn || 0,
+    enemyStatuses: {
+      ...ENEMIES.RUST_SLIME.statuses,
+      ...(overrides.enemyStatuses || {})
+    },
+    growingCrystalBonus: overrides.growingCrystalBonus || 0
+  });
+};
+
+type ExpectedEffectAction = {
+  type: EffectAction['type'];
+  [key: string]: string | number | boolean;
+};
+
+type CardEffectRegressionCase = {
+  label: string;
+  cardId: number;
+  slot: SlotType;
+  phase: EffectPhase;
+  expected: ExpectedEffectAction[];
+  modifiers?: Partial<EffectModifiers>;
+  overrides?: Partial<CardEffectContext>;
+};
+
+const createContextForEffectCase = (currentCase: CardEffectRegressionCase): CardEffectContext => {
+  if (currentCase.slot === 'handle') {
+    return createEffectContext({ handle: currentCase.cardId, head: 103 }, currentCase.overrides);
+  }
+
+  if (currentCase.slot === 'head') {
+    return createEffectContext({ handle: 101, head: currentCase.cardId }, currentCase.overrides);
+  }
+
+  return createEffectContext({ handle: 101, head: 103, deco: currentCase.cardId }, currentCase.overrides);
+};
+
+const createEffectModifiers = (
+  ctx: CardEffectContext,
+  overrides: Partial<EffectModifiers> = {}
+): EffectModifiers => ({
+  finalDamage: ctx.stats.damage,
+  finalBlock: ctx.stats.block,
+  ignoreBlock: false,
+  selfDamage: 0,
+  ...overrides
+});
+
+const effectActionMatches = (action: EffectAction, expected: ExpectedEffectAction): boolean => {
+  const actionRecord = action as unknown as Record<string, unknown>;
+
+  return Object.entries(expected).every(([key, value]) => actionRecord[key] === value);
+};
+
+const assertActionsInclude = (
+  actions: EffectAction[],
+  expectedActions: ExpectedEffectAction[],
+  label: string
+): void => {
+  const missingActions = expectedActions.filter(expected =>
+    !actions.some(action => effectActionMatches(action, expected))
+  );
+
+  assert(
+    missingActions.length === 0,
+    `${label} expected actions ${JSON.stringify(missingActions)} in ${JSON.stringify(actions)}`
+  );
 };
 
 runSuite('Core combat tests', [
@@ -272,6 +363,219 @@ runSuite('Core combat tests', [
 
     assertEqual(firstWeaponActions.filter(action => action.type === 'DRAW_CARDS').length, 1, 'Counterweight Handle should draw on the first weapon');
     assertEqual(laterWeaponActions.filter(action => action.type === 'DRAW_CARDS').length, 0, 'Counterweight Handle should not draw after another weapon was forged');
+  }),
+
+  test('registered card effects expose expected actions across all combat phases', () => {
+    const preDamageCases: CardEffectRegressionCase[] = [
+      {
+        label: 'Gambler handle sets deterministic preview damage from RNG',
+        cardId: 309,
+        slot: 'handle',
+        phase: 'PRE_DAMAGE',
+        overrides: { rng: () => 0.99 },
+        expected: [{ type: 'MODIFY_DAMAGE', amount: 18, mode: 'set' }]
+      },
+      {
+        label: 'Capacitor converts floating energy into damage',
+        cardId: 211,
+        slot: 'deco',
+        phase: 'PRE_DAMAGE',
+        overrides: { remainingEnergyAfterCost: 2 },
+        expected: [{ type: 'MODIFY_DAMAGE', amount: 8, mode: 'add' }]
+      },
+      {
+        label: 'Piercing handle ignores enemy block',
+        cardId: 317,
+        slot: 'handle',
+        phase: 'PRE_DAMAGE',
+        expected: [{ type: 'SET_IGNORE_BLOCK', value: true }]
+      },
+      {
+        label: 'Berserker rune converts self damage into damage',
+        cardId: 320,
+        slot: 'deco',
+        phase: 'PRE_DAMAGE',
+        modifiers: { selfDamage: 5 },
+        expected: [{ type: 'MODIFY_DAMAGE', amount: 5, mode: 'add' }]
+      },
+      {
+        label: 'Dragon sigil doubles final damage',
+        cardId: 413,
+        slot: 'deco',
+        phase: 'PRE_DAMAGE',
+        expected: [{ type: 'MODIFY_DAMAGE', amount: 2, mode: 'multiply' }]
+      },
+      {
+        label: 'Bloodstone rune scales from self damage',
+        cardId: 337,
+        slot: 'deco',
+        phase: 'PRE_DAMAGE',
+        modifiers: { selfDamage: 5 },
+        expected: [{ type: 'MODIFY_DAMAGE', amount: 5, mode: 'add' }]
+      },
+      {
+        label: 'Heart shard doubles self-damage scaling',
+        cardId: 422,
+        slot: 'deco',
+        phase: 'PRE_DAMAGE',
+        modifiers: { selfDamage: 5 },
+        expected: [{ type: 'MODIFY_DAMAGE', amount: 10, mode: 'add' }]
+      }
+    ];
+    const selfDamageCases: CardEffectRegressionCase[] = [
+      { label: 'Blood handle self damage', cardId: 318, slot: 'handle', phase: 'SELF_DAMAGE', expected: [{ type: 'PLAYER_SELF_DAMAGE', amount: 4 }] },
+      { label: 'Frenzy blade self damage', cardId: 314, slot: 'head', phase: 'SELF_DAMAGE', expected: [{ type: 'PLAYER_SELF_DAMAGE', amount: 4 }] },
+      { label: 'Pain grip self damage', cardId: 216, slot: 'handle', phase: 'SELF_DAMAGE', expected: [{ type: 'PLAYER_SELF_DAMAGE', amount: 2 }] },
+      { label: 'Pain edge self damage', cardId: 226, slot: 'head', phase: 'SELF_DAMAGE', expected: [{ type: 'PLAYER_SELF_DAMAGE', amount: 2 }] },
+      { label: 'Pain charm self damage', cardId: 236, slot: 'deco', phase: 'SELF_DAMAGE', expected: [{ type: 'PLAYER_SELF_DAMAGE', amount: 2 }] },
+      { label: 'Blood spike self damage', cardId: 321, slot: 'handle', phase: 'SELF_DAMAGE', expected: [{ type: 'PLAYER_SELF_DAMAGE', amount: 4 }] },
+      { label: 'Blood blade self damage', cardId: 329, slot: 'head', phase: 'SELF_DAMAGE', expected: [{ type: 'PLAYER_SELF_DAMAGE', amount: 4 }] },
+      { label: 'Bloodstone rune self damage', cardId: 337, slot: 'deco', phase: 'SELF_DAMAGE', expected: [{ type: 'PLAYER_SELF_DAMAGE', amount: 3 }] },
+      { label: 'Giant grip self damage', cardId: 414, slot: 'handle', phase: 'SELF_DAMAGE', expected: [{ type: 'PLAYER_SELF_DAMAGE', amount: 8 }] },
+      { label: 'Void crystal self damage', cardId: 418, slot: 'head', phase: 'SELF_DAMAGE', expected: [{ type: 'PLAYER_SELF_DAMAGE', amount: 8 }] },
+      { label: 'Heart shard self damage', cardId: 422, slot: 'deco', phase: 'SELF_DAMAGE', expected: [{ type: 'PLAYER_SELF_DAMAGE', amount: 4 }] }
+    ];
+    const onHitCases: CardEffectRegressionCase[] = [
+      { label: 'Midas touch grants gold per hit', cardId: 307, slot: 'handle', phase: 'ON_HIT', expected: [{ type: 'PLAYER_GAIN_GOLD', amount: 5 }] },
+      {
+        label: 'Vampiric handle heals from hit damage',
+        cardId: 302,
+        slot: 'handle',
+        phase: 'ON_HIT',
+        modifiers: { finalDamage: 9 },
+        expected: [{ type: 'PLAYER_HEAL', amount: 4 }]
+      }
+    ];
+    const postDamageCases: CardEffectRegressionCase[] = [
+      { label: 'Swift dagger hilt applies weak', cardId: 201, slot: 'handle', phase: 'POST_DAMAGE', expected: [{ type: 'ENEMY_APPLY_STATUS', status: 'weak', amount: 1 }] },
+      { label: 'Bone handle applies vulnerable', cardId: 206, slot: 'handle', phase: 'POST_DAMAGE', expected: [{ type: 'ENEMY_APPLY_STATUS', status: 'vulnerable', amount: 2 }] },
+      { label: 'Charged gem restores energy', cardId: 208, slot: 'deco', phase: 'POST_DAMAGE', expected: [{ type: 'PLAYER_GAIN_ENERGY', amount: 1 }] },
+      { label: 'Meteor shard hurts the player', cardId: 404, slot: 'head', phase: 'POST_DAMAGE', expected: [{ type: 'PLAYER_SELF_DAMAGE', amount: 6 }] },
+      { label: 'Serrated blade applies bleed', cardId: 203, slot: 'head', phase: 'POST_DAMAGE', expected: [{ type: 'ENEMY_APPLY_STATUS', status: 'bleed', amount: 3 }] },
+      { label: 'Flamethrower applies burn', cardId: 303, slot: 'head', phase: 'POST_DAMAGE', expected: [{ type: 'ENEMY_APPLY_STATUS', status: 'burn', amount: 3 }] },
+      { label: 'Poison vial applies poison', cardId: 205, slot: 'deco', phase: 'POST_DAMAGE', expected: [{ type: 'ENEMY_APPLY_STATUS', status: 'poison', amount: 4 }] },
+      { label: 'Furnace blade reduces player block', cardId: 304, slot: 'head', phase: 'POST_DAMAGE', expected: [{ type: 'PLAYER_REDUCE_BLOCK', amount: 5 }] },
+      { label: 'Thunder handle applies stun', cardId: 401, slot: 'handle', phase: 'POST_DAMAGE', expected: [{ type: 'ENEMY_APPLY_STATUS', status: 'stunned', amount: 1 }] },
+      { label: 'Light feather draws immediately', cardId: 204, slot: 'deco', phase: 'POST_DAMAGE', expected: [{ type: 'DRAW_CARDS', count: 1 }] },
+      { label: 'Starter feather draws next turn', cardId: 106, slot: 'deco', phase: 'POST_DAMAGE', expected: [{ type: 'PLAYER_NEXT_TURN_DRAW', amount: 1 }] },
+      { label: 'Echo forge creates a replica side effect', cardId: 305, slot: 'deco', phase: 'POST_DAMAGE', expected: [{ type: 'CREATE_REPLICA', baseDamage: 6 }] },
+      { label: 'Lightweight handle draws on low-cost weapons', cardId: 212, slot: 'handle', phase: 'POST_DAMAGE', expected: [{ type: 'DRAW_CARDS', count: 1 }] },
+      { label: 'Counterweight handle draws on the first weapon', cardId: 248, slot: 'handle', phase: 'POST_DAMAGE', expected: [{ type: 'DRAW_CARDS', count: 1 }] },
+      { label: 'Blunt club applies weak', cardId: 214, slot: 'head', phase: 'POST_DAMAGE', expected: [{ type: 'ENEMY_APPLY_STATUS', status: 'weak', amount: 1 }] },
+      { label: 'Furnace core adds overheat', cardId: 308, slot: 'head', phase: 'POST_DAMAGE', expected: [{ type: 'PLAYER_OVERHEAT', amount: 1 }] },
+      { label: 'Lava blade applies stronger burn', cardId: 312, slot: 'head', phase: 'POST_DAMAGE', expected: [{ type: 'ENEMY_APPLY_STATUS', status: 'burn', amount: 4 }] },
+      { label: 'Agile blade draws next turn', cardId: 215, slot: 'head', phase: 'POST_DAMAGE', expected: [{ type: 'PLAYER_NEXT_TURN_DRAW', amount: 1 }] },
+      { label: 'Weakening sigil applies weak', cardId: 219, slot: 'deco', phase: 'POST_DAMAGE', expected: [{ type: 'ENEMY_APPLY_STATUS', status: 'weak', amount: 1 }] },
+      { label: 'Mana blade restores energy', cardId: 313, slot: 'head', phase: 'POST_DAMAGE', expected: [{ type: 'PLAYER_GAIN_ENERGY', amount: 1 }] },
+      { label: 'Blood whetstone applies bleed', cardId: 319, slot: 'deco', phase: 'POST_DAMAGE', expected: [{ type: 'ENEMY_APPLY_STATUS', status: 'bleed', amount: 2 }] },
+      { label: 'Frost blade applies stun', cardId: 408, slot: 'head', phase: 'POST_DAMAGE', expected: [{ type: 'ENEMY_APPLY_STATUS', status: 'stunned', amount: 1 }] },
+      { label: 'Executioner blade exposes execute threshold', cardId: 409, slot: 'head', phase: 'POST_DAMAGE', expected: [{ type: 'ENEMY_EXECUTE_THRESHOLD', threshold: 0.2 }] },
+      { label: 'Evasion handle sets dodge', cardId: 412, slot: 'handle', phase: 'POST_DAMAGE', expected: [{ type: 'PLAYER_SET_DODGE', value: true }] },
+      {
+        label: 'Time cog stuns and skips the next intent',
+        cardId: 406,
+        slot: 'head',
+        phase: 'POST_DAMAGE',
+        expected: [
+          { type: 'ENEMY_APPLY_STATUS', status: 'stunned', amount: 1 },
+          { type: 'ENEMY_SKIP_INTENT' }
+        ]
+      },
+      { label: 'Growing crystal exposes its permanent growth side effect', cardId: 407, slot: 'deco', phase: 'POST_DAMAGE', expected: [{ type: 'GROW_CRYSTAL', amount: 2, max: 16 }] },
+      { label: 'Poison grip applies poison', cardId: 220, slot: 'handle', phase: 'POST_DAMAGE', expected: [{ type: 'ENEMY_APPLY_STATUS', status: 'poison', amount: 2 }] },
+      { label: 'Ignition grip applies burn', cardId: 221, slot: 'handle', phase: 'POST_DAMAGE', expected: [{ type: 'ENEMY_APPLY_STATUS', status: 'burn', amount: 2 }] },
+      { label: 'Plague needle applies poison', cardId: 228, slot: 'head', phase: 'POST_DAMAGE', expected: [{ type: 'ENEMY_APPLY_STATUS', status: 'poison', amount: 3 }] },
+      { label: 'Ember edge applies burn', cardId: 229, slot: 'head', phase: 'POST_DAMAGE', expected: [{ type: 'ENEMY_APPLY_STATUS', status: 'burn', amount: 2 }] },
+      { label: 'Venom charm applies poison', cardId: 238, slot: 'deco', phase: 'POST_DAMAGE', expected: [{ type: 'ENEMY_APPLY_STATUS', status: 'poison', amount: 2 }] },
+      { label: 'Flame charm applies burn', cardId: 239, slot: 'deco', phase: 'POST_DAMAGE', expected: [{ type: 'ENEMY_APPLY_STATUS', status: 'burn', amount: 2 }] },
+      { label: 'Weak charm applies weak', cardId: 244, slot: 'deco', phase: 'POST_DAMAGE', expected: [{ type: 'ENEMY_APPLY_STATUS', status: 'weak', amount: 1 }] },
+      { label: 'Plague grip applies poison', cardId: 323, slot: 'handle', phase: 'POST_DAMAGE', expected: [{ type: 'ENEMY_APPLY_STATUS', status: 'poison', amount: 4 }] },
+      { label: 'Ignition core applies burn', cardId: 324, slot: 'handle', phase: 'POST_DAMAGE', expected: [{ type: 'ENEMY_APPLY_STATUS', status: 'burn', amount: 3 }] },
+      { label: 'Plague scythe applies poison', cardId: 331, slot: 'head', phase: 'POST_DAMAGE', expected: [{ type: 'ENEMY_APPLY_STATUS', status: 'poison', amount: 5 }] },
+      { label: 'Storm trident applies burn', cardId: 332, slot: 'head', phase: 'POST_DAMAGE', expected: [{ type: 'ENEMY_APPLY_STATUS', status: 'burn', amount: 5 }] },
+      { label: 'Venom lens applies poison', cardId: 339, slot: 'deco', phase: 'POST_DAMAGE', expected: [{ type: 'ENEMY_APPLY_STATUS', status: 'poison', amount: 5 }] },
+      { label: 'Flame lens applies burn', cardId: 340, slot: 'deco', phase: 'POST_DAMAGE', expected: [{ type: 'ENEMY_APPLY_STATUS', status: 'burn', amount: 4 }] },
+      {
+        label: 'Phoenix talon applies poison and burn',
+        cardId: 420,
+        slot: 'head',
+        phase: 'POST_DAMAGE',
+        expected: [
+          { type: 'ENEMY_APPLY_STATUS', status: 'poison', amount: 8 },
+          { type: 'ENEMY_APPLY_STATUS', status: 'burn', amount: 6 }
+        ]
+      },
+      { label: 'Dynamo grip restores energy', cardId: 222, slot: 'handle', phase: 'POST_DAMAGE', expected: [{ type: 'PLAYER_GAIN_ENERGY', amount: 1 }] },
+      { label: 'Mana shard restores energy', cardId: 230, slot: 'head', phase: 'POST_DAMAGE', expected: [{ type: 'PLAYER_GAIN_ENERGY', amount: 1 }] },
+      { label: 'Battery charm restores energy', cardId: 240, slot: 'deco', phase: 'POST_DAMAGE', expected: [{ type: 'PLAYER_GAIN_ENERGY', amount: 1 }] },
+      { label: 'Overcharge grip restores energy', cardId: 325, slot: 'handle', phase: 'POST_DAMAGE', expected: [{ type: 'PLAYER_GAIN_ENERGY', amount: 1 }] },
+      { label: 'Arc blade restores energy', cardId: 333, slot: 'head', phase: 'POST_DAMAGE', expected: [{ type: 'PLAYER_GAIN_ENERGY', amount: 1 }] },
+      { label: 'Overcharge coil restores energy', cardId: 341, slot: 'deco', phase: 'POST_DAMAGE', expected: [{ type: 'PLAYER_GAIN_ENERGY', amount: 1 }] },
+      { label: 'Singularity battery restores two energy', cardId: 424, slot: 'deco', phase: 'POST_DAMAGE', expected: [{ type: 'PLAYER_GAIN_ENERGY', amount: 2 }] },
+      { label: 'Cycle grip draws immediately', cardId: 223, slot: 'handle', phase: 'POST_DAMAGE', expected: [{ type: 'DRAW_CARDS', count: 1 }] },
+      { label: 'Flow blade draws immediately', cardId: 231, slot: 'head', phase: 'POST_DAMAGE', expected: [{ type: 'DRAW_CARDS', count: 1 }] },
+      { label: 'Clone grip draws immediately', cardId: 326, slot: 'handle', phase: 'POST_DAMAGE', expected: [{ type: 'DRAW_CARDS', count: 1 }] },
+      { label: 'Flow edge draws immediately', cardId: 334, slot: 'head', phase: 'POST_DAMAGE', expected: [{ type: 'DRAW_CARDS', count: 1 }] },
+      { label: 'Flow feather draws immediately', cardId: 342, slot: 'deco', phase: 'POST_DAMAGE', expected: [{ type: 'DRAW_CARDS', count: 1 }] },
+      { label: 'Dream grip draws immediately', cardId: 416, slot: 'handle', phase: 'POST_DAMAGE', expected: [{ type: 'DRAW_CARDS', count: 1 }] },
+      { label: 'Ribbon charm draws next turn', cardId: 241, slot: 'deco', phase: 'POST_DAMAGE', expected: [{ type: 'PLAYER_NEXT_TURN_DRAW', amount: 1 }] },
+      {
+        label: 'Infinite battery feather draws now and next turn',
+        cardId: 425,
+        slot: 'deco',
+        phase: 'POST_DAMAGE',
+        expected: [
+          { type: 'DRAW_CARDS', count: 2 },
+          { type: 'PLAYER_NEXT_TURN_DRAW', amount: 1 }
+        ]
+      }
+    ];
+
+    for (const currentCase of [...preDamageCases, ...selfDamageCases, ...onHitCases, ...postDamageCases]) {
+      const ctx = createContextForEffectCase(currentCase);
+      const actions = executeEffectsForPhase(
+        ctx,
+        createEffectModifiers(ctx, currentCase.modifiers),
+        currentCase.phase
+      );
+
+      assertActionsInclude(actions, currentCase.expected, currentCase.label);
+    }
+  }),
+
+  test('static weapon stat table covers non-action card mechanics', () => {
+    const baseStrike = calculateStatsForCards({ handle: 101, head: 103 });
+    const zeroCost = calculateStatsForCards({ handle: 101, head: 103, deco: 403 });
+    const timeCog = calculateStatsForCards({ handle: 101, head: 406 });
+    const crystalFresh = calculateStatsForCards({ handle: 101, head: 103, deco: 407 });
+    const crystalGrown = calculateStatsForCards({ handle: 101, head: 103, deco: 407 }, { growingCrystalBonus: 6 });
+    const thornPlate = calculateStatsForCards({ handle: 101, head: 103, deco: 207 }, { playerBlock: 10 });
+    const thornMark = calculateStatsForCards({ handle: 101, head: 103, deco: 210 }, { playerBlock: 10 });
+    const poisonNeedleBase = calculateStatsForCards({ handle: 101, head: 213 });
+    const poisonNeedleScaled = calculateStatsForCards({ handle: 101, head: 213 }, { enemyStatuses: { poison: 4 } });
+    const comboBase = calculateStatsForCards({ handle: 101, head: 310 });
+    const comboScaled = calculateStatsForCards({ handle: 101, head: 310 }, { weaponsUsedThisTurn: 3 });
+    const steelPlateBase = calculateStatsForCards({ handle: 102, head: 103 });
+    const steelPlate = calculateStatsForCards({ handle: 102, head: 103, deco: 311 });
+    const wallLens = calculateStatsForCards({ handle: 102, head: 103, deco: 338 }, { playerBlock: 7 });
+    const eternalWall = calculateStatsForCards({ handle: 102, head: 103, deco: 423 }, { playerBlock: 10 });
+    const growthCrest = calculateStatsForCards({ handle: 101, head: 103, deco: 343 });
+    const meteorCluster = calculateStatsForCards({ handle: 101, head: 421 });
+
+    assertEqual(zeroCost.totalCost, 0, 'Philosopher stone should zero weapon cost');
+    assertEqual(timeCog.damage, 0, 'Time cog should deal no direct damage');
+    assertEqual(crystalGrown.damage, crystalFresh.damage + 6, 'Growing crystal should add stored combat growth to damage');
+    assertEqual(thornPlate.damage, baseStrike.damage + 10, 'Iron thorn should convert current block into damage');
+    assertEqual(thornMark.damage, baseStrike.damage + 5, 'Thorn mark should convert half of current block into damage');
+    assertEqual(poisonNeedleScaled.damage, poisonNeedleBase.damage + 4, 'Poison-scaling heads should read current poison stacks');
+    assertEqual(comboScaled.damage, comboBase.damage + 6, 'Combo heads should scale from weapons used this turn');
+    assertEqual(steelPlate.block, steelPlateBase.block * 2, 'Steel plating should double defensive weapon block');
+    assertEqual(wallLens.block, steelPlateBase.block * 2, 'Wall lens should double defensive weapon block');
+    assertEqual(wallLens.damage, 7, 'Wall lens should convert current block into damage');
+    assertEqual(eternalWall.block, steelPlateBase.block * 2, 'Eternal wall should double defensive weapon block');
+    assertEqual(eternalWall.damage, 15, 'Eternal wall should convert 150% of current block into damage');
+    assertEqual(growthCrest.damage, Math.floor(baseStrike.damage * 1.5), 'Growth crest should multiply positive damage by 1.5');
+    assertEqual(meteorCluster.hitCount, 4, 'Meteor cluster should expose four hits');
   }),
 
   test('turn-start statuses tick poison, burn, weak, vulnerable, and stun predictably', () => {
