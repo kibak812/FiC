@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.11.22] - 2026-05-23
+
+### Added
+- Hand-reviewed pixel sprites for 15 starter and early-run reward cards, covering old wooden grips, parry guards, rusty blades, pot lids, whetstones, swift dagger grips, longswords, sawblades, feathers, poison cloth, bone grips, spiked armor, charged gems, agile blades, and weakening sigils.
+
+### Changed
+- Starter and early-run cards now use detailed object silhouettes instead of low-detail legacy blocks.
+- Product readiness now enforces detail and color-separation checks on the starter and early common sprite set.
+- Menu version updated to v1.11.22.
+
+### Design Notes
+- First-run cards carry the player's first impression of crafting, so the starter set now favors readable material cues like wood grain, rust, shield plates, cloth folds, bone knots, and gem facets.
+
+---
+
 ## [1.11.21] - 2026-05-23
 
 ### Added

@@ -1471,6 +1471,7 @@ const generatedCardSprite = ({ kind, theme, rarity, variant = 0, motif }: Genera
 
 export const HAND_DRAWN_CARD_SPRITE_IDS = new Set<number>([
   101, 102, 103, 104, 105, 106,
+  201, 202, 203, 204, 205, 206, 207, 208, 215, 219,
   212, 216, 217, 218, 220, 221, 222, 223, 224, 225,
   301, 302, 307, 309, 317, 318, 321, 322, 323, 324, 325, 326, 327, 328,
   209, 213, 214, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 246, 248, 249,
@@ -3301,6 +3302,292 @@ const reviewedDecoSprites: Record<number, React.FC<{ className?: string }>> = {
 };
 
 Object.assign(CardSprites, reviewedDecoSprites);
+
+const renderEarlyRunFrame = (accent: string) => (
+  <>
+    <rect x="4" y="4" width="2" height="2" fill="#09070D"/>
+    <rect x="18" y="4" width="2" height="2" fill="#09070D"/>
+    <rect x="5" y="5" width="14" height="1" fill="#261B16"/>
+    <rect x="5" y="18" width="14" height="1" fill="#261B16"/>
+    <rect x="6" y="6" width="1" height="12" fill="#120C0A"/>
+    <rect x="17" y="6" width="1" height="12" fill="#120C0A"/>
+    <rect x="7" y="20" width="10" height="1" fill="#09070D" opacity="0.5"/>
+    <rect x="5" y="7" width="1" height="2" fill={accent}/>
+    <rect x="18" y="15" width="1" height="2" fill={accent}/>
+    <rect x="18" y="18" width="1" height="1" fill="#F7E7B2"/>
+  </>
+);
+
+const earlyRunCardSprites: Record<number, React.FC<{ className?: string }>> = {
+  101: ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      {renderEarlyRunFrame("#A66A3A")}
+      <rect x="10" y="5" width="4" height="14" fill="#3A2418"/>
+      <rect x="9" y="7" width="6" height="10" fill="#8B5A2B"/>
+      <rect x="11" y="6" width="2" height="12" fill="#C08A4A"/>
+      <rect x="8" y="8" width="8" height="2" fill="#5A3822"/>
+      <rect x="8" y="14" width="8" height="2" fill="#2E1C12"/>
+      <rect x="9" y="18" width="6" height="2" fill="#1B100A"/>
+      <rect x="7" y="6" width="2" height="3" fill="#D6A15A"/>
+      <rect x="15" y="11" width="2" height="4" fill="#6B3E24"/>
+      <rect x="10" y="10" width="1" height="4" fill="#F1C27D"/>
+      <rect x="13" y="8" width="1" height="6" fill="#4C2F1E"/>
+      <rect x="7" y="16" width="3" height="1" fill="#D6B26A"/>
+      <rect x="14" y="6" width="3" height="1" fill="#D6B26A"/>
+    </svg>
+  ),
+  102: ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      {renderEarlyRunFrame("#78D6FF")}
+      <rect x="10" y="5" width="4" height="14" fill="#2C1D14"/>
+      <rect x="9" y="8" width="6" height="8" fill="#6A4A2C"/>
+      <rect x="11" y="6" width="2" height="12" fill="#C28B55"/>
+      <rect x="6" y="8" width="5" height="8" fill="#25343B"/>
+      <rect x="13" y="8" width="5" height="8" fill="#25343B"/>
+      <rect x="7" y="9" width="3" height="5" fill="#557080"/>
+      <rect x="14" y="9" width="3" height="5" fill="#557080"/>
+      <rect x="8" y="10" width="2" height="3" fill="#D7F4FF"/>
+      <rect x="15" y="10" width="2" height="3" fill="#A9DDF0"/>
+      <rect x="8" y="15" width="8" height="2" fill="#78D6FF"/>
+      <rect x="10" y="18" width="4" height="2" fill="#1A1110"/>
+      <rect x="7" y="7" width="2" height="1" fill="#FFFFFF"/>
+      <rect x="16" y="7" width="2" height="1" fill="#FFFFFF"/>
+    </svg>
+  ),
+  103: ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      {renderEarlyRunFrame("#C9793A")}
+      <rect x="11" y="3" width="2" height="13" fill="#4E5960"/>
+      <rect x="10" y="5" width="2" height="10" fill="#A9B0B5"/>
+      <rect x="12" y="5" width="2" height="10" fill="#6B7378"/>
+      <rect x="11" y="2" width="2" height="2" fill="#E3E7EA"/>
+      <rect x="9" y="8" width="2" height="2" fill="#C9793A"/>
+      <rect x="13" y="11" width="2" height="2" fill="#8B4513"/>
+      <rect x="10" y="14" width="4" height="2" fill="#5A2A17"/>
+      <rect x="8" y="16" width="8" height="2" fill="#7A4A28"/>
+      <rect x="10" y="18" width="4" height="3" fill="#3A2418"/>
+      <rect x="9" y="17" width="2" height="1" fill="#D6B26A"/>
+      <rect x="13" y="17" width="2" height="1" fill="#D6B26A"/>
+      <rect x="14" y="6" width="1" height="4" fill="#E08A3E"/>
+    </svg>
+  ),
+  104: ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      {renderEarlyRunFrame("#9BB2C8")}
+      <rect x="5" y="9" width="14" height="9" fill="#39434D"/>
+      <rect x="6" y="8" width="12" height="2" fill="#6F7F89"/>
+      <rect x="7" y="10" width="10" height="6" fill="#A9B7C0"/>
+      <rect x="8" y="11" width="8" height="4" fill="#D8E0E6"/>
+      <rect x="10" y="5" width="4" height="4" fill="#4B555B"/>
+      <rect x="9" y="6" width="6" height="2" fill="#90A4AE"/>
+      <rect x="11" y="11" width="2" height="5" fill="#FFFFFF"/>
+      <rect x="6" y="16" width="12" height="2" fill="#263238"/>
+      <rect x="4" y="12" width="2" height="4" fill="#5B666D"/>
+      <rect x="18" y="12" width="2" height="4" fill="#5B666D"/>
+      <rect x="7" y="18" width="3" height="1" fill="#78D6FF"/>
+      <rect x="15" y="7" width="2" height="1" fill="#F7E7B2"/>
+    </svg>
+  ),
+  105: ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      {renderEarlyRunFrame("#B0BEC5")}
+      <rect x="5" y="10" width="14" height="6" fill="#30343A"/>
+      <rect x="7" y="8" width="10" height="2" fill="#6B6F75"/>
+      <rect x="7" y="16" width="10" height="2" fill="#24272B"/>
+      <rect x="8" y="11" width="8" height="3" fill="#A9B0B5"/>
+      <rect x="9" y="12" width="6" height="1" fill="#E3E7EA"/>
+      <rect x="12" y="7" width="2" height="11" fill="#50555C"/>
+      <rect x="6" y="9" width="2" height="1" fill="#D6B26A"/>
+      <rect x="16" y="17" width="2" height="1" fill="#D6B26A"/>
+      <rect x="10" y="6" width="4" height="1" fill="#F6E1A6"/>
+      <rect x="14" y="14" width="2" height="2" fill="#7A4A28"/>
+      <rect x="8" y="14" width="2" height="2" fill="#D8E0E6"/>
+      <rect x="17" y="12" width="2" height="1" fill="#FFFFFF"/>
+    </svg>
+  ),
+  201: ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      {renderEarlyRunFrame("#AEEBFF")}
+      <rect x="10" y="5" width="4" height="13" fill="#10283F"/>
+      <rect x="9" y="7" width="6" height="9" fill="#2F4F4F"/>
+      <rect x="11" y="6" width="2" height="11" fill="#7DAFC2"/>
+      <rect x="8" y="9" width="2" height="2" fill="#C0C0C0"/>
+      <rect x="14" y="9" width="2" height="2" fill="#C0C0C0"/>
+      <rect x="8" y="13" width="2" height="2" fill="#4A6A6A"/>
+      <rect x="14" y="13" width="2" height="2" fill="#4A6A6A"/>
+      <rect x="9" y="17" width="6" height="3" fill="#1B2F3B"/>
+      <rect x="11" y="4" width="2" height="2" fill="#E8F7FF"/>
+      <rect x="6" y="8" width="3" height="1" fill="#AEEBFF"/>
+      <rect x="15" y="6" width="3" height="1" fill="#FFFFFF"/>
+      <rect x="6" y="15" width="2" height="1" fill="#56C8FF"/>
+      <rect x="16" y="16" width="2" height="1" fill="#56C8FF"/>
+    </svg>
+  ),
+  202: ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      {renderEarlyRunFrame("#D8E0E6")}
+      <rect x="11" y="2" width="2" height="14" fill="#50555C"/>
+      <rect x="10" y="4" width="2" height="11" fill="#D8E0E6"/>
+      <rect x="12" y="4" width="2" height="11" fill="#8A939B"/>
+      <rect x="11" y="2" width="2" height="2" fill="#FFFFFF"/>
+      <rect x="9" y="7" width="1" height="5" fill="#E8F7FF"/>
+      <rect x="14" y="7" width="1" height="5" fill="#4A5058"/>
+      <rect x="7" y="15" width="10" height="2" fill="#7A4A28"/>
+      <rect x="8" y="16" width="8" height="1" fill="#D6B26A"/>
+      <rect x="10" y="17" width="4" height="4" fill="#3A2418"/>
+      <rect x="11" y="18" width="2" height="2" fill="#8B5A2B"/>
+      <rect x="6" y="14" width="2" height="2" fill="#F6E1A6"/>
+      <rect x="16" y="14" width="2" height="2" fill="#F6E1A6"/>
+    </svg>
+  ),
+  203: ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      {renderEarlyRunFrame("#D94A4A")}
+      <rect x="8" y="4" width="8" height="10" fill="#30343A"/>
+      <rect x="9" y="5" width="6" height="8" fill="#8A939B"/>
+      <rect x="7" y="5" width="2" height="2" fill="#D8E0E6"/>
+      <rect x="15" y="6" width="2" height="2" fill="#D8E0E6"/>
+      <rect x="7" y="9" width="2" height="2" fill="#D8E0E6"/>
+      <rect x="15" y="10" width="2" height="2" fill="#D8E0E6"/>
+      <rect x="8" y="13" width="8" height="2" fill="#50555C"/>
+      <rect x="10" y="6" width="4" height="6" fill="#1B2F3B"/>
+      <rect x="11" y="7" width="2" height="4" fill="#C0C9D2"/>
+      <rect x="9" y="15" width="6" height="2" fill="#7A4A28"/>
+      <rect x="10" y="17" width="4" height="3" fill="#3A2418"/>
+      <rect x="12" y="11" width="2" height="2" fill="#D94A4A"/>
+      <rect x="15" y="13" width="2" height="1" fill="#F08A8A"/>
+    </svg>
+  ),
+  204: ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      {renderEarlyRunFrame("#F4ECFF")}
+      <rect x="11" y="4" width="2" height="14" fill="#6B6278"/>
+      <rect x="8" y="6" width="3" height="3" fill="#FFFFFF"/>
+      <rect x="7" y="9" width="4" height="2" fill="#E8E8E8"/>
+      <rect x="6" y="12" width="5" height="2" fill="#D8C49C"/>
+      <rect x="13" y="6" width="3" height="3" fill="#F4ECFF"/>
+      <rect x="13" y="10" width="4" height="2" fill="#C8B8E8"/>
+      <rect x="13" y="14" width="3" height="2" fill="#BFA3FF"/>
+      <rect x="8" y="16" width="3" height="2" fill="#AEEBFF"/>
+      <rect x="15" y="5" width="2" height="2" fill="#FFFFFF"/>
+      <rect x="10" y="18" width="5" height="1" fill="#2D2540"/>
+      <rect x="7" y="15" width="2" height="1" fill="#D9D0FF"/>
+      <rect x="16" y="13" width="2" height="1" fill="#FFFFFF"/>
+    </svg>
+  ),
+  205: ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      {renderEarlyRunFrame("#83F27D")}
+      <rect x="7" y="7" width="10" height="11" fill="#14331F"/>
+      <rect x="8" y="8" width="8" height="8" fill="#2E8B57"/>
+      <rect x="9" y="9" width="6" height="6" fill="#3CB371"/>
+      <rect x="10" y="10" width="4" height="3" fill="#90EE90"/>
+      <rect x="7" y="5" width="4" height="2" fill="#228B22"/>
+      <rect x="13" y="5" width="4" height="2" fill="#228B22"/>
+      <rect x="8" y="16" width="3" height="3" fill="#14331F"/>
+      <rect x="14" y="16" width="2" height="2" fill="#B8FF7A"/>
+      <rect x="6" y="11" width="2" height="2" fill="#83F27D"/>
+      <rect x="16" y="12" width="2" height="2" fill="#D9FFD2"/>
+      <rect x="11" y="11" width="2" height="2" fill="#006400"/>
+      <rect x="10" y="7" width="4" height="1" fill="#D8C49C"/>
+      <rect x="15" y="8" width="2" height="1" fill="#FFFFFF"/>
+    </svg>
+  ),
+  206: ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      {renderEarlyRunFrame("#E8E2C9")}
+      <rect x="10" y="5" width="4" height="13" fill="#6B5A45"/>
+      <rect x="9" y="7" width="6" height="9" fill="#D8D8CC"/>
+      <rect x="11" y="6" width="2" height="11" fill="#FFF7D6"/>
+      <rect x="7" y="6" width="4" height="4" fill="#E8E8DC"/>
+      <rect x="13" y="6" width="4" height="4" fill="#E8E8DC"/>
+      <rect x="7" y="14" width="4" height="4" fill="#D8D8CC"/>
+      <rect x="13" y="14" width="4" height="4" fill="#D8D8CC"/>
+      <rect x="8" y="7" width="2" height="2" fill="#FFFFFF"/>
+      <rect x="14" y="15" width="2" height="2" fill="#FFFFFF"/>
+      <rect x="11" y="10" width="2" height="2" fill="#A89F8B"/>
+      <rect x="9" y="18" width="6" height="2" fill="#3A2418"/>
+      <rect x="6" y="11" width="2" height="1" fill="#C0C0B0"/>
+      <rect x="16" y="12" width="2" height="1" fill="#C0C0B0"/>
+    </svg>
+  ),
+  207: ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      {renderEarlyRunFrame("#DCE6F0")}
+      <rect x="7" y="8" width="10" height="9" fill="#30343A"/>
+      <rect x="8" y="9" width="8" height="7" fill="#708090"/>
+      <rect x="9" y="10" width="6" height="4" fill="#B0BEC5"/>
+      <rect x="11" y="4" width="2" height="4" fill="#DCE6F0"/>
+      <rect x="5" y="11" width="4" height="2" fill="#DCE6F0"/>
+      <rect x="15" y="11" width="4" height="2" fill="#DCE6F0"/>
+      <rect x="11" y="17" width="2" height="4" fill="#C0C9D2"/>
+      <rect x="10" y="7" width="4" height="2" fill="#4A5058"/>
+      <rect x="6" y="14" width="3" height="2" fill="#4A5058"/>
+      <rect x="15" y="14" width="3" height="2" fill="#4A5058"/>
+      <rect x="11" y="11" width="2" height="2" fill="#FFFFFF"/>
+      <rect x="9" y="15" width="6" height="2" fill="#78D6FF"/>
+      <rect x="7" y="7" width="2" height="1" fill="#F7E7B2"/>
+      <rect x="16" y="17" width="2" height="1" fill="#F7E7B2"/>
+    </svg>
+  ),
+  208: ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      {renderEarlyRunFrame("#56C8FF")}
+      <rect x="8" y="7" width="8" height="10" fill="#10283F"/>
+      <rect x="9" y="6" width="6" height="12" fill="#4169E1"/>
+      <rect x="10" y="8" width="4" height="8" fill="#6495ED"/>
+      <rect x="11" y="10" width="2" height="4" fill="#87CEEB"/>
+      <rect x="10" y="5" width="4" height="2" fill="#AEEBFF"/>
+      <rect x="10" y="17" width="4" height="2" fill="#143B8F"/>
+      <rect x="6" y="10" width="3" height="4" fill="#2D6D9B"/>
+      <rect x="15" y="10" width="3" height="4" fill="#2D6D9B"/>
+      <rect x="11" y="11" width="2" height="2" fill="#FFFFFF"/>
+      <rect x="7" y="7" width="2" height="2" fill="#FFE66D"/>
+      <rect x="16" y="15" width="2" height="2" fill="#FFE66D"/>
+      <rect x="12" y="7" width="1" height="9" fill="#FFFFFF"/>
+      <rect x="9" y="18" width="6" height="1" fill="#09070D"/>
+    </svg>
+  ),
+  215: ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      {renderEarlyRunFrame("#AEEBFF")}
+      <rect x="11" y="3" width="2" height="12" fill="#4A5058"/>
+      <rect x="10" y="5" width="2" height="9" fill="#C0C9D2"/>
+      <rect x="12" y="5" width="2" height="9" fill="#7A858C"/>
+      <rect x="11" y="2" width="2" height="2" fill="#FFFFFF"/>
+      <rect x="9" y="8" width="1" height="4" fill="#E8F7FF"/>
+      <rect x="14" y="7" width="1" height="5" fill="#50555C"/>
+      <rect x="8" y="14" width="8" height="2" fill="#87CEEB"/>
+      <rect x="10" y="16" width="4" height="4" fill="#4A3828"/>
+      <rect x="6" y="6" width="3" height="1" fill="#AEEBFF"/>
+      <rect x="5" y="9" width="4" height="1" fill="#DFFFFF"/>
+      <rect x="15" y="7" width="3" height="1" fill="#AEEBFF"/>
+      <rect x="16" y="12" width="2" height="1" fill="#FFFFFF"/>
+      <rect x="9" y="17" width="6" height="1" fill="#D6B26A"/>
+    </svg>
+  ),
+  219: ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      {renderEarlyRunFrame("#BFA3FF")}
+      <rect x="7" y="8" width="10" height="9" fill="#1B1428"/>
+      <rect x="8" y="7" width="8" height="11" fill="#4A4A58"/>
+      <rect x="9" y="8" width="6" height="8" fill="#6B6278"/>
+      <rect x="10" y="9" width="4" height="4" fill="#D8D0B0"/>
+      <rect x="10" y="13" width="4" height="2" fill="#A0A0A0"/>
+      <rect x="11" y="10" width="1" height="1" fill="#120C14"/>
+      <rect x="13" y="10" width="1" height="1" fill="#120C14"/>
+      <rect x="11" y="12" width="2" height="1" fill="#3A303A"/>
+      <rect x="9" y="6" width="6" height="2" fill="#2D2540"/>
+      <rect x="6" y="11" width="2" height="2" fill="#BFA3FF"/>
+      <rect x="16" y="12" width="2" height="2" fill="#D9D0FF"/>
+      <rect x="9" y="17" width="6" height="2" fill="#2D2540"/>
+      <rect x="11" y="5" width="2" height="2" fill="#F4ECFF"/>
+      <rect x="15" y="16" width="2" height="2" fill="#FFFFFF"/>
+    </svg>
+  )
+};
+
+Object.assign(CardSprites, earlyRunCardSprites);
 
 const renderLegendPayoffFrame = (accent: string) => (
   <>
