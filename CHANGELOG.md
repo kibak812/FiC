@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.9.0] - 2026-05-23
+
+### Added
+- First-combat tutorial that explains handle, head, deco, forge prediction, enemy intent, and status inspection.
+- Combat help modal with card type explanations, enemy intent guide, and a full status-effect dictionary.
+- Failure feedback on the game-over screen with contextual next-run learning tips.
+- Settings action to replay the first-combat tutorial.
+
+### Changed
+- Settings save data migrated to version 2 to persist tutorial completion.
+- UI e2e smoke test now verifies the first-combat tutorial and combat help dictionary.
+
+### Design Notes
+- Onboarding now teaches the crafting rules inside the first real combat instead of front-loading a separate manual.
+
+---
+
 ## [1.8.0] - 2026-05-23
 
 ### Added

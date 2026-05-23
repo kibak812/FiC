@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { HelpCircle } from 'lucide-react';
 import { 
   CardInstance, CardType, CombatState, PlayerStats, EnemyData, 
   IntentType, EnemyTrait, EnemyTier, BossRewardId, ShopItemId,
@@ -61,6 +62,8 @@ import PlayerHUD from './components/PlayerHUD';
 import EnemySection from './components/EnemySection';
 import IntentDetailModal from './components/IntentDetailModal';
 import StatusDetailModal from './components/StatusDetailModal';
+import CombatHelpModal from './components/CombatHelpModal';
+import TutorialOverlay, { TUTORIAL_STEP_COUNT } from './components/TutorialOverlay';
 
 // --- Main App ---
 
@@ -128,6 +131,8 @@ const [player, setPlayer] = useState<PlayerStats>({
 
   // Status effect detail modal
   const [showStatusDetail, setShowStatusDetail] = useState<string | null>(null); // Status key or null
+  const [showCombatHelp, setShowCombatHelp] = useState(false);
+  const [tutorialStep, setTutorialStep] = useState(0);
 
   // --- Touch Drag State ---
   const [dragState, setDragState] = useState<{
@@ -360,6 +365,20 @@ const startCombat = (enemyData: EnemyData) => {
           gold: savedRun.player.gold
       });
       showFeedback("저장된 런을 불러왔습니다.");
+  };
+
+  const completeTutorial = () => {
+      setTutorialStep(0);
+      setSettings(prev => ({ ...prev, tutorialCompleted: true }));
+  };
+
+  const advanceTutorial = () => {
+      if (tutorialStep >= TUTORIAL_STEP_COUNT - 1) {
+          completeTutorial();
+          return;
+      }
+
+      setTutorialStep(prev => prev + 1);
   };
 
   useEffect(() => {
@@ -1423,6 +1442,12 @@ case 'PLAYER_DRAW':
   const weaponPrediction = calculateCurrentWeaponStats();
   const canCraft = !!(slots.handle && slots.head);
   const availableMapNodeIds = getAvailableMapNodeIds(mapNodes, currentMapNodeId);
+  const shouldShowFirstCombatTutorial =
+    gameState === 'PLAYING' &&
+    combatState.phase === 'PLAYER_ACTION' &&
+    act === 1 &&
+    floor === 1 &&
+    !settings.tutorialCompleted;
 
   // --- Render Sub-Screens ---
 
@@ -1606,6 +1631,27 @@ case 'PLAYER_DRAW':
           onClose={() => setShowStatusDetail(null)}
         />
       )}
+
+      {showCombatHelp && (
+        <CombatHelpModal onClose={() => setShowCombatHelp(false)} />
+      )}
+
+      {shouldShowFirstCombatTutorial && (
+        <TutorialOverlay
+          step={tutorialStep}
+          totalSteps={TUTORIAL_STEP_COUNT}
+          onNext={advanceTutorial}
+          onSkip={completeTutorial}
+        />
+      )}
+
+      <button
+        onClick={() => setShowCombatHelp(true)}
+        className="absolute top-2 left-1/2 -translate-x-1/2 z-40 px-2.5 py-1.5 pixel-border border-2 border-cyan-500 bg-cyan-950/80 text-cyan-200 font-pixel-kr text-[10px] flex items-center gap-1.5 hover:bg-cyan-900/90"
+        aria-label="전투 사전 열기"
+      >
+        <HelpCircle size={14} /> 도움
+      </button>
 
       {/* Enemy Section */}
       <EnemySection

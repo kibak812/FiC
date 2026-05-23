@@ -35,6 +35,7 @@ export type RemovalContext = 'REST' | 'SHOP' | 'EVENT' | null;
 export interface GameSettings {
   animationsEnabled: boolean;
   screenShake: boolean;
+  tutorialCompleted: boolean;
 }
 
 export type CardArchetypeId =

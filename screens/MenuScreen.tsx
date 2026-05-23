@@ -112,6 +112,15 @@ const MenuScreen: React.FC<MenuScreenProps> = ({
                   {settings.screenShake ? 'ON' : 'OFF'}
                 </span>
               </button>
+              <button
+                onClick={() => updateSetting('tutorialCompleted', false)}
+                className="w-full px-4 py-3 pixel-border border-2 border-orange-600 bg-orange-950/40 flex items-center justify-between font-pixel-kr text-sm"
+              >
+                <span>첫 전투 튜토리얼</span>
+                <span className="px-3 py-1 pixel-border border-2 border-orange-500 bg-orange-900/50 text-orange-200 font-pixel text-[10px]">
+                  RESET
+                </span>
+              </button>
             </div>
           </div>
         </div>
@@ -197,7 +206,7 @@ const MenuScreen: React.FC<MenuScreenProps> = ({
 
       {/* Version */}
       <div className="absolute bottom-4 right-4 text-xs text-stone-600 font-pixel">
-        v1.8.0
+        v1.9.0
       </div>
     </div>
   );

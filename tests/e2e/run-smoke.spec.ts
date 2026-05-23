@@ -32,13 +32,20 @@ test('menu to first forge attack flow works without console errors', async ({ pa
 
   await expect(page).toHaveTitle('Forged in Chaos');
   await expect(page.getByRole('heading', { name: 'FORGED IN CHAOS' })).toBeVisible();
-  await expect(page.getByText('v1.8.0')).toBeVisible();
+  await expect(page.getByText('v1.9.0')).toBeVisible();
 
   await page.getByRole('button', { name: '대장간 입장' }).click();
   await expect(page.getByRole('heading', { name: 'ACT 1 MAP' })).toBeVisible();
 
   await page.locator('button:not(:disabled)').filter({ hasText: '전투' }).click();
+  await expect(page.getByRole('heading', { name: '무기는 두 조각부터' })).toBeVisible();
+  await page.getByRole('button', { name: '건너뛰기' }).click();
   await expect(page.getByRole('button', { name: 'END' })).toBeVisible();
+
+  await page.getByRole('button', { name: '전투 사전 열기' }).click();
+  await expect(page.getByRole('heading', { name: '전투 사전' })).toBeVisible();
+  await expect(page.getByRole('heading', { name: '상태이상' })).toBeVisible();
+  await page.getByRole('button', { name: '전투 사전 닫기' }).click();
 
   const starterHandle = page.getByRole('heading', { name: '낡은 나무 손잡이' }).first();
   const starterHead = page.getByRole('heading', { name: '녹슨 철 칼날' }).first();

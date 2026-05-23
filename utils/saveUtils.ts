@@ -14,11 +14,12 @@ import {
 const RUN_SAVE_KEY = 'fic.runSave';
 const SETTINGS_SAVE_KEY = 'fic.settings';
 const CURRENT_RUN_SAVE_VERSION = 2;
-const CURRENT_SETTINGS_VERSION = 1;
+const CURRENT_SETTINGS_VERSION = 2;
 
 export const DEFAULT_GAME_SETTINGS: GameSettings = {
   animationsEnabled: true,
-  screenShake: true
+  screenShake: true,
+  tutorialCompleted: false
 };
 
 export interface SaveSlots {
@@ -204,7 +205,10 @@ const migrateSettings = (value: unknown): SavedSettingsData => {
         : DEFAULT_GAME_SETTINGS.animationsEnabled,
       screenShake: typeof rawSettings.screenShake === 'boolean'
         ? rawSettings.screenShake
-        : DEFAULT_GAME_SETTINGS.screenShake
+        : DEFAULT_GAME_SETTINGS.screenShake,
+      tutorialCompleted: typeof rawSettings.tutorialCompleted === 'boolean'
+        ? rawSettings.tutorialCompleted
+        : DEFAULT_GAME_SETTINGS.tutorialCompleted
     }
   };
 };
