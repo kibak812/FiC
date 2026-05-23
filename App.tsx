@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { 
   CardInstance, CardType, CombatState, PlayerStats, EnemyData, 
   IntentType, CraftedWeapon, EnemyTrait, EnemyTier, BossRewardId, ShopItemId,
-  GameEvent, EventOption, CardRarity, MapNode, NodeType
+  GameEvent, EventOption, CardRarity, MapNode, NodeType, GameState, RemovalContext, GameSettings
 } from './types';
 import { INITIAL_DECK_IDS, ENEMIES, GAME_EVENTS } from './constants';
 import CardComponent from './components/CardComponent';
@@ -24,6 +24,16 @@ import {
   executeEffectsForPhase, applyModifierActions,
   isExhaustCard, isInfiniteLoopCard, isTwinHandle
 } from './utils/cardEffects';
+import {
+  clearSavedRun,
+  loadGameSettings,
+  loadSavedRun,
+  loadSavedRunSummary,
+  saveGameSettings,
+  saveRun,
+  isRunStateSaveable
+} from './utils/saveUtils';
+import type { SavedRunData, SavedRunSummary } from './utils/saveUtils';
 
 // --- Hooks ---
 import { useAnimations } from './hooks/useAnimations';
@@ -46,9 +56,6 @@ import IntentDetailModal from './components/IntentDetailModal';
 import StatusDetailModal from './components/StatusDetailModal';
 
 // --- Main App ---
-
-type GameState = 'MENU' | 'MAP' | 'PLAYING' | 'REWARD' | 'BOSS_REWARD' | 'REST' | 'SHOP' | 'EVENT' | 'REMOVE_CARD' | 'WIN' | 'LOSE';
-type RemovalContext = 'REST' | 'SHOP' | 'EVENT' | null;
 
 const ACT_LENGTH = 15;
 const DEFENSIVE_HANDLE_IDS = new Set([102, 217, 322, 415]);
@@ -93,6 +100,8 @@ const DECO_DAMAGE_MULTIPLIER_BY_ID: Record<number, number> = {
 export default function App() {
   // Game State
   const [gameState, setGameState] = useState<GameState>('MENU');
+  const [savedRunSummary, setSavedRunSummary] = useState<SavedRunSummary | null>(() => loadSavedRunSummary());
+  const [settings, setSettings] = useState<GameSettings>(() => loadGameSettings());
   const [floor, setFloor] = useState(0);
   const [act, setAct] = useState(1);
   const [hasRested, setHasRested] = useState(false); // New state to track if player used Heal/Smelt this rest
@@ -145,6 +154,7 @@ const [player, setPlayer] = useState<PlayerStats>({
   // Balance Patch v1.0 - New card states
   const [growingCrystalBonus, setGrowingCrystalBonus] = useState(0); // 407: Permanent damage bonus per combat
   const [infiniteLoopUsed, setInfiniteLoopUsed] = useState(false); // 405: Once per turn
+  const [isResolvingAction, setIsResolvingAction] = useState(false);
 
   // Intent detail modal (long-press on mobile)
   const [showIntentDetail, setShowIntentDetail] = useState(false);
@@ -211,6 +221,37 @@ const [player, setPlayer] = useState<PlayerStats>({
     return cleanCards;
   };
 
+  const applySavedRun = (savedRun: SavedRunData) => {
+    setGameState(savedRun.gameState);
+    setFloor(savedRun.floor);
+    setAct(savedRun.act);
+    setHasRested(savedRun.hasRested);
+    setPlayer(savedRun.player);
+    setEnemy(savedRun.enemy);
+    setDeck(savedRun.deck);
+    setHand(savedRun.hand);
+    setDiscardPile(savedRun.discardPile);
+    setRewardOptions(savedRun.rewardOptions);
+    setSelectedCardId(savedRun.selectedCardId);
+    setRemovalContext(savedRun.removalContext);
+    setCurrentEvent(savedRun.currentEvent);
+    setPendingEventRemovalOption(savedRun.pendingEventRemovalOption);
+    setMapNodes(savedRun.mapNodes);
+    setCurrentMapNodeId(savedRun.currentMapNodeId);
+    setCompletedMapNodeIds(savedRun.completedMapNodeIds);
+    setActiveMapNode(savedRun.activeMapNode);
+    setSlots(savedRun.slots);
+    setCombatState(savedRun.combatState);
+    setGrowingCrystalBonus(savedRun.growingCrystalBonus);
+    setInfiniteLoopUsed(savedRun.infiniteLoopUsed);
+    setIsResolvingAction(false);
+    setAcquiredCard(null);
+    setDiscardingCardIds(new Set());
+    setShowIntentDetail(false);
+    setShowStatusDetail(null);
+    setDragState(null);
+  };
+
   // --- Progression Logic (Replaces Map) ---
 
 const startCombat = (enemyData: EnemyData) => {
@@ -226,6 +267,7 @@ const startCombat = (enemyData: EnemyData) => {
     // Reset combat-specific states
     setGrowingCrystalBonus(0);
     setInfiniteLoopUsed(false);
+    setIsResolvingAction(false);
   };
 
   const startEvent = (eventId?: string) => {
@@ -302,9 +344,13 @@ const startCombat = (enemyData: EnemyData) => {
     const newDeck = INITIAL_DECK_IDS.map(id => createCardInstance(id));
     const firstActMap = createActMap(1);
 
+    clearSavedRun();
+    setSavedRunSummary(null);
     setDeck(shuffle(newDeck));
     setHand([]);
     setDiscardPile([]);
+    setRewardOptions([]);
+    setSelectedCardId(null);
     setCurrentEvent(null);
     setPendingEventRemovalOption(null);
     setRemovalContext(null);
@@ -312,13 +358,117 @@ const startCombat = (enemyData: EnemyData) => {
     setCurrentMapNodeId(null);
     setCompletedMapNodeIds([]);
     setActiveMapNode(null);
+    setSlots({ handle: null, head: null, deco: null });
+    setCombatState({ turn: 1, phase: 'PLAYER_DRAW' });
+    setGrowingCrystalBonus(0);
+    setInfiniteLoopUsed(false);
+    setIsResolvingAction(false);
+    setAcquiredCard(null);
+    setDiscardingCardIds(new Set());
     
     setPlayer({ hp: 50, maxHp: 50, energy: 3, maxEnergy: 3, block: 0, gold: 0, costLimit: null, disarmed: false, nextTurnDraw: 0, overheat: 0, weaponsUsedThisTurn: 0, dodgeNextAttack: false, selfDamageThisTurn: 0 });
     
     setFloor(0);
     setAct(1);
+    setHasRested(false);
     setGameState('MAP');
   };
+
+  const continueSavedRun = () => {
+      const savedRun = loadSavedRun();
+      if (!savedRun) {
+          setSavedRunSummary(null);
+          showFeedback("이어할 저장 파일이 없습니다.");
+          return;
+      }
+
+      applySavedRun(savedRun);
+      setSavedRunSummary({
+          savedAt: savedRun.savedAt,
+          act: savedRun.act,
+          floor: savedRun.floor,
+          gameState: savedRun.gameState,
+          hp: savedRun.player.hp,
+          maxHp: savedRun.player.maxHp,
+          gold: savedRun.player.gold
+      });
+      showFeedback("저장된 런을 불러왔습니다.");
+  };
+
+  useEffect(() => {
+      saveGameSettings(settings);
+  }, [settings]);
+
+  useEffect(() => {
+      if (gameState === 'WIN' || gameState === 'LOSE') {
+          clearSavedRun();
+          setSavedRunSummary(null);
+          return;
+      }
+
+      if (!isRunStateSaveable(gameState, combatState) || isResolvingAction) return;
+
+      const savedRun = saveRun({
+          gameState,
+          floor,
+          act,
+          hasRested,
+          player,
+          enemy,
+          deck,
+          hand,
+          discardPile,
+          rewardOptions,
+          selectedCardId,
+          removalContext,
+          currentEvent,
+          pendingEventRemovalOption,
+          mapNodes,
+          currentMapNodeId,
+          completedMapNodeIds,
+          activeMapNode,
+          slots,
+          combatState,
+          growingCrystalBonus,
+          infiniteLoopUsed
+      });
+
+      if (savedRun) {
+          setSavedRunSummary({
+              savedAt: savedRun.savedAt,
+              act: savedRun.act,
+              floor: savedRun.floor,
+              gameState: savedRun.gameState,
+              hp: savedRun.player.hp,
+              maxHp: savedRun.player.maxHp,
+              gold: savedRun.player.gold
+          });
+      }
+  }, [
+      gameState,
+      floor,
+      act,
+      hasRested,
+      player,
+      enemy,
+      deck,
+      hand,
+      discardPile,
+      rewardOptions,
+      selectedCardId,
+      removalContext,
+      currentEvent,
+      pendingEventRemovalOption,
+      mapNodes,
+      currentMapNodeId,
+      completedMapNodeIds,
+      activeMapNode,
+      slots,
+      combatState,
+      growingCrystalBonus,
+      infiniteLoopUsed,
+      isResolvingAction
+  ]);
 
   const handleWinCombat = () => {
       cleanAndConsolidateDeck();
@@ -934,6 +1084,9 @@ const calculateWeaponStats = (): CraftedWeapon => {
       return;
     }
 
+    setIsResolvingAction(true);
+
+    try {
     const effectMultiplier = isTwinHandle(slots.handle?.id || 0) ? 2 : 1;
     const remainingEnergyAfterCost = player.energy - stats.totalCost;
 
@@ -1080,6 +1233,9 @@ const calculateWeaponStats = (): CraftedWeapon => {
 
     setDiscardPile(prev => [...prev, ...usedCards]);
     setSlots({ handle: null, head: null, deco: null });
+    } finally {
+      setIsResolvingAction(false);
+    }
   };
 
   const endTurn = () => {
@@ -1420,7 +1576,15 @@ if (enemy.statuses.poison > 0) {
   // --- Render Sub-Screens ---
 
   if (gameState === 'MENU') {
-    return <MenuScreen onStartGame={startGame} />;
+    return (
+      <MenuScreen
+        onStartGame={startGame}
+        onContinueRun={continueSavedRun}
+        savedRunSummary={savedRunSummary}
+        settings={settings}
+        onSettingsChange={setSettings}
+      />
+    );
   }
 
   if (gameState === 'WIN' || gameState === 'LOSE') {
@@ -1511,7 +1675,7 @@ if (enemy.statuses.poison > 0) {
 
   // --- Main Gameplay Screen ---
   return (
-    <div className={`w-full h-screen-safe flex flex-col bg-stone-950 text-stone-200 overflow-hidden relative ${shake ? 'animate-shake' : ''} ${shieldEffect ? 'animate-shield-pulse' : ''} ${playerHit ? 'animate-player-hit' : ''}`}>
+    <div className={`w-full h-screen-safe flex flex-col bg-stone-950 text-stone-200 overflow-hidden relative ${settings.screenShake && shake ? 'animate-shake' : ''} ${settings.animationsEnabled && shieldEffect ? 'animate-shield-pulse' : ''} ${settings.animationsEnabled && playerHit ? 'animate-player-hit' : ''}`}>
       
       {/* Acquired Card Overlay - Pixel Style */}
       {acquiredCard && (
@@ -1598,11 +1762,11 @@ if (enemy.statuses.poison > 0) {
         act={act}
         floor={floor}
         playerGold={player.gold}
-        shake={shake}
-        enemyPoisoned={enemyPoisoned}
-        enemyBurning={enemyBurning}
-        enemyBleeding={enemyBleeding}
-        enemyAttacking={enemyAttacking}
+        shake={settings.screenShake && shake}
+        enemyPoisoned={settings.animationsEnabled && enemyPoisoned}
+        enemyBurning={settings.animationsEnabled && enemyBurning}
+        enemyBleeding={settings.animationsEnabled && enemyBleeding}
+        enemyAttacking={settings.animationsEnabled && enemyAttacking}
         onIntentClick={() => setShowIntentDetail(true)}
         onStatusClick={(status) => setShowStatusDetail(status)}
       />
@@ -1618,9 +1782,9 @@ if (enemy.statuses.poison > 0) {
           maxEnergy={player.maxEnergy}
           disarmed={player.disarmed}
           costLimit={player.costLimit}
-          playerHealing={playerHealing}
-          playerHit={playerHit}
-          playerBlocking={playerBlocking}
+          playerHealing={settings.animationsEnabled && playerHealing}
+          playerHit={settings.animationsEnabled && playerHit}
+          playerBlocking={settings.animationsEnabled && playerBlocking}
         />
 
         {/* Deck/Discard HUD */}

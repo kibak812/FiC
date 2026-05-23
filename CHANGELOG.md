@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.6.0] - 2026-05-23
+
+### Added
+- Run autosave with continue support across map, combat action, reward, shop, rest, event, boss reward, and card removal screens.
+- New run confirmation when an existing save is present.
+- Persistent settings for combat animation and screen shake preferences.
+- Versioned save/settings migration helpers for future save format changes.
+
+### Design Notes
+- Combat autosaves only on stable player-action frames to avoid replaying draw, discard, or enemy-turn side effects after continue.
+
+---
+
 ## [1.5.2] - 2026-05-23
 
 ### Changed

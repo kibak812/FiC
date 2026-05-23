@@ -29,6 +29,14 @@ export interface CardInstance extends CardData {
   instanceId: string; // Unique ID for runtime tracking
 }
 
+export type GameState = 'MENU' | 'MAP' | 'PLAYING' | 'REWARD' | 'BOSS_REWARD' | 'REST' | 'SHOP' | 'EVENT' | 'REMOVE_CARD' | 'WIN' | 'LOSE';
+export type RemovalContext = 'REST' | 'SHOP' | 'EVENT' | null;
+
+export interface GameSettings {
+  animationsEnabled: boolean;
+  screenShake: boolean;
+}
+
 export type CardArchetypeId =
   | 'SELF_DAMAGE'
   | 'DEFENSE_CONVERSION'
