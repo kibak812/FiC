@@ -3,7 +3,7 @@ import { HelpCircle } from 'lucide-react';
 import { 
   CardInstance, CardType, CombatState, PlayerStats, EnemyData, 
   EnemyTier, BossRewardId, ShopItemId,
-  GameEvent, EventOption, CardRarity, MapNode, NodeType, GameState, RemovalContext, GameSettings
+  GameEvent, EventOption, MapNode, NodeType, GameState, RemovalContext, GameSettings
 } from './types';
 import { INITIAL_DECK_IDS, ENEMIES, GAME_EVENTS } from './constants';
 import CardComponent from './components/CardComponent';
@@ -14,10 +14,13 @@ import { cleanJunkFromDeck, createCardInstance, resetTemporaryDeckModifiers, shu
 import { createInitialPlayerStats } from './utils/playerUtils';
 import {
   createCombatRewardBundle,
-  createRandomCardReward,
   resolveBossReward,
   resolveShopPurchase
 } from './utils/rewardUtils';
+import {
+  resolveEventCardRemoval,
+  resolveEventOption
+} from './utils/eventUtils';
 import { createActMap, getAvailableMapNodeIds } from './utils/mapUtils';
 import {
   CardEffectContext, EffectModifiers, EffectAction,
@@ -616,23 +619,6 @@ const startCombat = (enemyData: EnemyData) => {
       setGameState('REST');
   };
 
-  const canPayEventOption = (option: EventOption): boolean => {
-      if (!option.cost || !option.costResource) return true;
-      if (option.costResource === 'GOLD') return player.gold >= option.cost;
-      return player.hp > option.cost;
-  };
-
-  const payEventCost = (option: EventOption) => {
-      if (!option.cost || !option.costResource) return;
-
-      if (option.costResource === 'GOLD') {
-          setPlayer(prev => ({ ...prev, gold: Math.max(0, prev.gold - option.cost!) }));
-      } else {
-          setPlayer(prev => ({ ...prev, hp: Math.max(1, prev.hp - option.cost!) }));
-          triggerPlayerHit();
-      }
-  };
-
   const finishEvent = () => {
       setCurrentEvent(null);
       setPendingEventRemovalOption(null);
@@ -642,37 +628,16 @@ const startCombat = (enemyData: EnemyData) => {
       completeActiveMapNode();
   };
 
-  const upgradeRandomDeckCard = () => {
-      const candidates = deck.filter(card =>
-          card.rarity !== CardRarity.RARE &&
-          card.rarity !== CardRarity.LEGEND &&
-          card.rarity !== CardRarity.JUNK &&
-          card.rarity !== CardRarity.SPECIAL
-      );
-
-      if (candidates.length === 0) {
-          showFeedback("강화할 카드가 없습니다.");
-          return;
-      }
-
-      const target = candidates[Math.floor(Math.random() * candidates.length)];
-      const upgradedCard = {
-          ...createRandomCardReward(CardRarity.RARE, target.type),
-          instanceId: target.instanceId
-      };
-
-      setDeck(prev => prev.map(card => card.instanceId === target.instanceId ? upgradedCard : card));
-      showFeedback(`${target.name} 강화: ${upgradedCard.name}`);
-  };
-
   const handleEventOption = (option: EventOption) => {
-      if (!canPayEventOption(option)) {
+      const result = resolveEventOption(player, deck, option);
+
+      if (result.event.type === 'INSUFFICIENT_RESOURCE') {
           showFeedback("조건을 충족하지 못했습니다.");
           playSound('bad');
           return;
       }
 
-      if (option.type === 'REMOVE_CARD') {
+      if (result.event.type === 'REQUEST_CARD_REMOVAL') {
           playSound('ui');
           setRemovalContext('EVENT');
           setPendingEventRemovalOption(option);
@@ -681,55 +646,54 @@ const startCombat = (enemyData: EnemyData) => {
           return;
       }
 
-      payEventCost(option);
+      setPlayer(result.player);
+      setDeck(result.deck);
+      if (result.playerHit) {
+          triggerPlayerHit();
+      }
 
-      switch (option.type) {
+      switch (result.event.type) {
           case 'HEAL':
-              setPlayer(prev => ({ ...prev, hp: Math.min(prev.maxHp, prev.hp + (option.value || 0)) }));
-              showFeedback(`체력 +${option.value || 0}`);
+              showFeedback(`체력 +${result.event.amount}`);
               playSound('reward');
               break;
-          case 'DAMAGE': {
-              const damage = option.value || 0;
-              const nextHp = player.hp - damage;
-              setPlayer(prev => ({ ...prev, hp: Math.max(0, prev.hp - damage) }));
-              triggerPlayerHit();
-              showFeedback(`체력 -${damage}`, 'bad');
+          case 'DAMAGE':
+              showFeedback(`체력 -${result.event.amount}`, 'bad');
               playSound('bad');
-              if (nextHp <= 0) {
+              if (result.defeat) {
                   setGameState('LOSE');
                   return;
               }
               break;
-          }
-          case 'GAIN_CARD_RARE': {
-              const newCard = createRandomCardReward(CardRarity.RARE);
-              setDeck(prev => [...prev, newCard]);
-              showFeedback(`${newCard.name} 획득!`);
+          case 'GAIN_CARD':
+              showFeedback(`${result.event.card.name} 획득!`);
               playSound('reward');
               break;
-          }
           case 'GAIN_GOLD':
-              setPlayer(prev => ({ ...prev, gold: prev.gold + (option.value || 0) }));
-              showFeedback(`${option.value || 0} 골드 획득`);
+              showFeedback(`${result.event.amount} 골드 획득`);
               playSound('reward');
               break;
           case 'LOSE_GOLD':
-              setPlayer(prev => ({ ...prev, gold: Math.max(0, prev.gold - (option.value || 0)) }));
-              showFeedback(`${option.value || 0} 골드 상실`, 'bad');
+              showFeedback(`${result.event.amount} 골드 상실`, 'bad');
               playSound('bad');
               break;
           case 'FULL_HEAL':
-              setPlayer(prev => ({ ...prev, hp: prev.maxHp }));
               showFeedback("체력 완전 회복!");
               playSound('reward');
               break;
-          case 'RANDOM_UPGRADE':
-              upgradeRandomDeckCard();
+          case 'UPGRADE_CARD':
+              showFeedback(`${result.event.from.name} 강화: ${result.event.to.name}`);
+              playSound('reward');
+              break;
+          case 'UPGRADE_UNAVAILABLE':
+              showFeedback("강화할 카드가 없습니다.");
+              playSound('ui');
               break;
           case 'LEAVE':
               showFeedback("아무 일도 일어나지 않았습니다.");
               playSound('ui');
+              break;
+          case 'REMOVE_CARD':
               break;
       }
 
@@ -740,12 +704,23 @@ const startCombat = (enemyData: EnemyData) => {
       if (!selectedCardId) return;
       
       if (removalContext === 'EVENT' && pendingEventRemovalOption) {
-          if (!canPayEventOption(pendingEventRemovalOption)) {
+          const result = resolveEventCardRemoval(player, deck, pendingEventRemovalOption, selectedCardId);
+
+          if (result.event.type === 'INSUFFICIENT_RESOURCE') {
               showFeedback("조건을 충족하지 못했습니다.");
               playSound('bad');
               return;
           }
-          payEventCost(pendingEventRemovalOption);
+
+          setPlayer(result.player);
+          setDeck(result.deck);
+          if (result.playerHit) {
+              triggerPlayerHit();
+          }
+          showFeedback("카드 제거 완료!");
+          playSound('reward');
+          finishEvent();
+          return;
       }
 
       setDeck(prev => prev.filter(c => c.instanceId !== selectedCardId));

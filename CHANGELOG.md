@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.11.11] - 2026-05-23
+
+### Added
+- UI-free GAME_EVENTS option resolver for event costs, healing, damage, rare-card gains, gold changes, full heals, random upgrades, and card-removal confirmation.
+- Core logic coverage for event cost payment, rare event rewards, lethal damage, random upgrades, and selected card removal.
+
+### Changed
+- Runtime events and the seeded simulation now share static event option resolution instead of maintaining separate effect switches.
+- Product readiness now checks that App.tsx and the seeded simulation route GAME_EVENTS through the shared event utilities.
+- Menu version updated to v1.11.11.
+
+### Design Notes
+- Events are part of the offline run spine, so their effects now have the same deterministic, UI-free verification path as combat rewards and shops.
+
+---
+
 ## [1.11.10] - 2026-05-23
 
 ### Added

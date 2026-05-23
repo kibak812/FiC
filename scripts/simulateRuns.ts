@@ -15,7 +15,12 @@ import {
 import { applyCombatEffectActions, calculateEnemyIntentPlan, calculateWeaponStats, resolveEnemyTurn, resolvePlayerWeaponAttack } from '../utils/combatEngine';
 import { createActMap, getAvailableMapNodeIds } from '../utils/mapUtils';
 import { createInitialPlayerStats } from '../utils/playerUtils';
-import { createCombatRewardBundle, createRandomCardReward, resolveBossReward, resolveShopPurchase } from '../utils/rewardUtils';
+import {
+  applyEventOptionCost,
+  canPayEventOption,
+  resolveEventOption
+} from '../utils/eventUtils';
+import { createCombatRewardBundle, resolveBossReward, resolveShopPurchase } from '../utils/rewardUtils';
 import { assert, createSeededRng, pick } from './testUtils';
 
 const RUN_COUNT = Number(process.env.SIM_RUNS || 1000);
@@ -547,12 +552,6 @@ const simulateCombat = (state: SimState, enemyData: EnemyData, rng: () => number
   return { won: false, turns: MAX_COMBAT_TURNS, lossReason: 'TIMEOUT', enemyHp: enemy.currentHp };
 };
 
-const canPayEventOption = (state: SimState, option: EventOption): boolean => {
-  if (!option.cost || !option.costResource) return true;
-  if (option.costResource === 'GOLD') return state.player.gold >= option.cost;
-  return state.player.hp > option.cost;
-};
-
 const removeLowestValueCard = (state: SimState): void => {
   const allCards = [...state.deck, ...state.discard];
   if (allCards.length === 0) return;
@@ -613,55 +612,17 @@ const scoreEventOption = (state: SimState, option: EventOption): number => {
 };
 
 const applyEventOption = (state: SimState, option: EventOption, rng: () => number): void => {
-  if (option.cost && option.costResource === 'GOLD') {
-    state.player.gold = Math.max(0, state.player.gold - option.cost);
-  } else if (option.cost && option.costResource === 'HP') {
-    state.player.hp = Math.max(1, state.player.hp - option.cost);
+  const result = resolveEventOption(state.player, state.deck, option, rng);
+
+  if (result.event.type === 'REQUEST_CARD_REMOVAL') {
+    const costResult = applyEventOptionCost(state.player, option);
+    state.player = costResult.player;
+    removeLowestValueCard(state);
+    return;
   }
 
-  switch (option.type) {
-    case 'HEAL':
-      state.player.hp = Math.min(state.player.maxHp, state.player.hp + (option.value || 0));
-      break;
-    case 'DAMAGE':
-      state.player.hp = Math.max(0, state.player.hp - (option.value || 0));
-      break;
-    case 'GAIN_CARD_RARE':
-      state.deck.push(createRandomCardReward(CardRarity.RARE, undefined, rng));
-      break;
-    case 'REMOVE_CARD':
-      removeLowestValueCard(state);
-      break;
-    case 'GAIN_GOLD':
-      state.player.gold += option.value || 0;
-      break;
-    case 'LOSE_GOLD':
-      state.player.gold = Math.max(0, state.player.gold - (option.value || 0));
-      break;
-    case 'FULL_HEAL':
-      state.player.hp = state.player.maxHp;
-      break;
-    case 'RANDOM_UPGRADE': {
-      const candidates = state.deck.filter(card =>
-        card.rarity !== CardRarity.RARE &&
-        card.rarity !== CardRarity.LEGEND &&
-        card.rarity !== CardRarity.JUNK &&
-        card.rarity !== CardRarity.SPECIAL
-      );
-
-      if (candidates.length > 0) {
-        const target = pick(candidates, rng);
-        const upgradedCard = {
-          ...createRandomCardReward(CardRarity.RARE, target.type, rng),
-          instanceId: target.instanceId
-        };
-        state.deck = state.deck.map(card => card.instanceId === target.instanceId ? upgradedCard : card);
-      }
-      break;
-    }
-    case 'LEAVE':
-      break;
-  }
+  state.player = result.player;
+  state.deck = result.deck;
 };
 
 const applyShopItem = (state: SimState, item: ShopItemDefinition, rng: () => number): void => {
@@ -738,7 +699,7 @@ const processNonCombatNode = (state: SimState, node: MapNode, rng: () => number)
   if (node.type === NodeType.EVENT) {
     const event = GAME_EVENTS.find(candidate => candidate.id === node.eventId);
     assert(!!event, `Event node ${node.id} should reference a valid event`);
-    const payableOptions = event!.options.filter(option => canPayEventOption(state, option));
+    const payableOptions = event!.options.filter(option => canPayEventOption(state.player, option));
     assert(payableOptions.length > 0, `Event ${event!.id} should have at least one payable option`);
     const bestOption = payableOptions
       .map(option => ({ option, score: scoreEventOption(state, option) + rng() * 0.01 }))

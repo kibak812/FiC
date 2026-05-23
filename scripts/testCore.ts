@@ -36,6 +36,12 @@ import {
   resolveShopPurchase,
   rollGoldReward
 } from '../utils/rewardUtils';
+import {
+  applyEventOptionCost,
+  canPayEventOption,
+  resolveEventCardRemoval,
+  resolveEventOption
+} from '../utils/eventUtils';
 import { createActMap } from '../utils/mapUtils';
 import { assert, assertDeepEqual, assertEqual, createSeededRng, runSuite, test } from './testUtils';
 
@@ -712,6 +718,64 @@ runSuite('Static reward, map, and archetype tests', [
     const maxHpReward = resolveBossReward(createPlayer({ hp: 35, maxHp: 80 }), 'MAX_HP', true);
     assertEqual(maxHpReward.player.maxHp, 110, 'Boss max HP reward should increase max HP');
     assertEqual(maxHpReward.player.hp, 110, 'Boss max HP reward should full repair to the new max when requested');
+  }),
+
+  test('event options resolve from static data without UI state', () => {
+    const deck = [
+      createCardInstance(101, createSeededRng('event-card-1')),
+      createCardInstance(103, createSeededRng('event-card-2'))
+    ];
+
+    const hpCostOption = {
+      label: 'Risk',
+      description: 'Pay HP for gold',
+      type: 'GAIN_GOLD' as const,
+      value: 25,
+      cost: 5,
+      costResource: 'HP' as const
+    };
+    const paidGold = resolveEventOption(createPlayer({ hp: 30, gold: 4 }), deck, hpCostOption, () => 0);
+    assert(canPayEventOption(createPlayer({ hp: 6 }), hpCostOption), 'Event cost helper should allow payable HP costs');
+    assert(!canPayEventOption(createPlayer({ hp: 5 }), hpCostOption), 'Event cost helper should reject lethal HP costs');
+    assertEqual(applyEventOptionCost(createPlayer({ hp: 9 }), hpCostOption).player.hp, 4, 'Event cost helper should apply HP costs before effects');
+    assertEqual(paidGold.player.hp, 25, 'Event resolver should apply HP costs');
+    assertEqual(paidGold.player.gold, 29, 'Event resolver should apply gold gains after costs');
+    assert(paidGold.playerHit, 'Event resolver should expose HP-cost hit feedback');
+
+    const rareCard = resolveEventOption(createPlayer(), deck, {
+      label: 'Blueprint',
+      description: 'Gain a rare card',
+      type: 'GAIN_CARD_RARE'
+    }, createSeededRng('event-rare'));
+    assertEqual(rareCard.deck.length, 3, 'Rare-card event should add one card to deck');
+    assert(rareCard.event.type === 'GAIN_CARD' && rareCard.event.card.rarity === CardRarity.RARE, 'Rare-card event should expose the generated card');
+
+    const lethalDamage = resolveEventOption(createPlayer({ hp: 5 }), deck, {
+      label: 'Trap',
+      description: 'Take damage',
+      type: 'DAMAGE',
+      value: 7
+    });
+    assert(lethalDamage.defeat, 'Damage events should report defeat when HP reaches zero');
+
+    const upgraded = resolveEventOption(createPlayer(), deck, {
+      label: 'Upgrade',
+      description: 'Upgrade a random card',
+      type: 'RANDOM_UPGRADE'
+    }, createSeededRng('event-upgrade'));
+    assert(upgraded.event.type === 'UPGRADE_CARD', 'Upgrade event should expose the upgraded card pair');
+    assertEqual(upgraded.deck.length, deck.length, 'Upgrade event should preserve deck size');
+
+    const removed = resolveEventCardRemoval(createPlayer({ gold: 20 }), deck, {
+      label: 'Purge',
+      description: 'Remove a card',
+      type: 'REMOVE_CARD',
+      cost: 10,
+      costResource: 'GOLD'
+    }, deck[0].instanceId);
+    assertEqual(removed.player.gold, 10, 'Removal event should charge its static cost');
+    assertEqual(removed.deck.length, 1, 'Removal event should remove the selected card');
+    assert(removed.event.type === 'REMOVE_CARD' && removed.event.removedCard?.instanceId === deck[0].instanceId, 'Removal event should expose the removed card');
   }),
 
   test('archetypes have entry, mid, late, and all slot connections', () => {

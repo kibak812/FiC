@@ -388,6 +388,7 @@ section('Validation and CI gates', () => {
   const ciSource = readText('.github/workflows/ci.yml');
   const combatEngineSource = readText('utils/combatEngine.ts');
   const rewardUtilsSource = readText('utils/rewardUtils.ts');
+  const eventUtilsSource = readText('utils/eventUtils.ts');
   const appSource = readText('App.tsx');
   const simSource = readText('scripts/simulateRuns.ts');
 
@@ -403,6 +404,9 @@ section('Validation and CI gates', () => {
   requireReady(rewardUtilsSource.includes('createCombatRewardBundle') && rewardUtilsSource.includes('resolveShopPurchase') && rewardUtilsSource.includes('resolveBossReward'), 'Reward utilities should expose UI-free combat reward, shop, and boss reward resolution.');
   requireReady(appSource.includes('createCombatRewardBundle(enemy.tier)') && appSource.includes('resolveShopPurchase(player, itemId)') && appSource.includes('resolveBossReward(player, rewardId'), 'Runtime reward, shop, and boss reward flows should use shared static-data resolvers.');
   requireReady(simSource.includes('createCombatRewardBundle(enemyTier') && simSource.includes('resolveShopPurchase(state.player') && simSource.includes('resolveBossReward(state.player'), 'Seeded simulation should use the same reward, shop, and boss reward resolvers as runtime.');
+  requireReady(eventUtilsSource.includes('resolveEventOption') && eventUtilsSource.includes('resolveEventCardRemoval') && eventUtilsSource.includes('canPayEventOption'), 'Event utilities should expose UI-free GAME_EVENTS option resolution and removal handling.');
+  requireReady(appSource.includes('resolveEventOption(player, deck, option)') && appSource.includes('resolveEventCardRemoval(player, deck'), 'Runtime events should use shared static-data event resolvers.');
+  requireReady(simSource.includes('resolveEventOption(state.player, state.deck, option') && simSource.includes('canPayEventOption(state.player, option)'), 'Seeded simulation should use the same static event option resolver as runtime.');
   requireReady(typeof scripts['test:balance'] === 'string', 'package.json should expose test:balance.');
   requireReady(typeof scripts['test:logic'] === 'string' && String(scripts['test:logic']).includes('simulateRuns.ts'), 'package.json should expose logic tests with seeded simulation.');
   requireReady(typeof scripts['test:e2e'] === 'string', 'package.json should expose e2e tests.');
