@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.11.26] - 2026-05-23
+
+### Changed
+- Reworked the starter and first-reward card icons toward simpler, larger silhouettes that read as a handle, pot lid, whetstone, cord, blade, feather, cloth, bone, thorn plate, gem, and sigil at card size.
+- Product readiness now enforces a stricter low-detail threshold for first-impression card sprites so early cards cannot drift back into noisy pixel clusters.
+- Menu version updated to v1.11.26.
+
+### Design Notes
+- First-run card art now prioritizes one identifiable object shape over material flecks or decorative spark pixels; card identity has to land before texture.
+
+---
+
 ## [1.11.25] - 2026-05-23
 
 ### Added
