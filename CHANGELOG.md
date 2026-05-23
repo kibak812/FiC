@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.11.3] - 2026-05-23
+
+### Changed
+- Seeded run simulation now enforces a 5% minimum win-rate gate, up from 1%.
+- Simulation combat scoring now evaluates real card effects, block piercing, thorns risk, lethal risk, event choices, shop purchases, and boss reward timing more deliberately.
+- Cave Heart, Corrupted Smith, and Molten Overseer received narrow endurance and burst reductions while keeping their status cleanse, disarm, cost pressure, and block-counter identities intact.
+- Menu version updated to v1.11.3.
+
+### Design Notes
+- This pass raises the automated run from a bare survivability smoke test into a stronger balance guard without flattening enemy patterns. The boss changes target overlong attrition points, while the simulator changes better reflect a careful player choosing around card effects.
+
+---
+
 ## [1.11.2] - 2026-05-23
 
 ### Added

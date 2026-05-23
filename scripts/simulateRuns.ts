@@ -1,5 +1,5 @@
 import { BOSS_REWARDS, CARD_DATABASE, ENEMIES, GAME_EVENTS, INITIAL_DECK_IDS, SHOP_ITEMS } from '../constants';
-import { CardInstance, CardRarity, CardType, EnemyData, EnemyTier, EnemyTrait, EventOption, MapNode, NodeType, PlayerStats } from '../types';
+import { CardInstance, CardRarity, CardType, EnemyData, EnemyTier, EnemyTrait, EventOption, MapNode, NodeType, PlayerStats, ShopItemDefinition } from '../types';
 import { createCardInstance, shuffle } from '../utils/cardUtils';
 import {
   applyModifierActions,
@@ -19,7 +19,7 @@ import { createCombatCardRewards, createRandomCardReward, getCombatRewardRule, r
 import { assert, createSeededRng, pick } from './testUtils';
 
 const RUN_COUNT = Number(process.env.SIM_RUNS || 1000);
-const MIN_WIN_RATE = Number(process.env.SIM_MIN_WIN_RATE || 0.01);
+const MIN_WIN_RATE = Number(process.env.SIM_MIN_WIN_RATE || 0.05);
 const MAX_COMBAT_TURNS = 60;
 const MAX_WEAPONS_PER_TURN = 5;
 
@@ -129,7 +129,121 @@ const scoreRewardCard = (state: SimState, card: CardInstance): number => {
 
 const chooseRewardCard = (state: SimState, cards: CardInstance[]): CardInstance | null => {
   if (cards.length === 0) return null;
-  return [...cards].sort((a, b) => scoreRewardCard(state, b) - scoreRewardCard(state, a))[0];
+  const ranked = [...cards].sort((a, b) => scoreRewardCard(state, b) - scoreRewardCard(state, a));
+  const bestCard = ranked[0];
+  const allCards = [...state.deck, ...state.hand, ...state.discard]
+    .filter(card => card.type !== CardType.JUNK && card.rarity !== CardRarity.SPECIAL);
+  const averageDeckScore = allCards.reduce((sum, card) => sum + scoreCard(card), 0) / Math.max(1, allCards.length);
+  const bestScore = scoreRewardCard(state, bestCard);
+
+  if (allCards.length >= 18 && bestScore < averageDeckScore + 4) {
+    return null;
+  }
+
+  return bestCard;
+};
+
+const createScoringEffectContext = (
+  state: SimState,
+  enemy: EnemyData,
+  slots: WeaponSlots,
+  stats: ReturnType<typeof calculateWeaponStats>
+): CardEffectContext => ({
+  slots,
+  stats,
+  player: state.player,
+  enemy,
+  effectMultiplier: isTwinHandle(slots.handle?.id || 0) ? 2 : 1,
+  remainingEnergyAfterCost: Math.max(0, state.player.energy - stats.totalCost),
+  growingCrystalBonus: state.growingCrystalBonus,
+  rng: () => 0.5,
+  showFeedback: () => undefined
+});
+
+const scoreEffectAction = (
+  action: EffectAction,
+  state: SimState,
+  enemy: EnemyData,
+  incomingDamage: number
+): number => {
+  switch (action.type) {
+    case 'MODIFY_DAMAGE':
+      return 0;
+    case 'MODIFY_BLOCK':
+      return 0;
+    case 'SET_IGNORE_BLOCK':
+      return action.value && enemy.block > 0 ? Math.min(12, enemy.block * 0.65) : 0;
+    case 'PLAYER_SELF_DAMAGE':
+      return -action.amount * (state.player.hp < state.player.maxHp * 0.4 ? 2.5 : 1.2);
+    case 'PLAYER_HEAL':
+      return Math.min(action.amount, state.player.maxHp - state.player.hp) * 0.8;
+    case 'PLAYER_GAIN_ENERGY':
+      return action.amount * 5;
+    case 'PLAYER_GAIN_BLOCK':
+      return Math.min(action.amount, incomingDamage) * 0.9;
+    case 'PLAYER_REDUCE_BLOCK':
+      return -action.amount;
+    case 'PLAYER_GAIN_GOLD':
+      return action.amount * 0.25;
+    case 'PLAYER_SET_DODGE':
+      return action.value ? Math.max(6, incomingDamage) : 0;
+    case 'PLAYER_OVERHEAT':
+      return -action.amount * 7;
+    case 'PLAYER_NEXT_TURN_DRAW':
+      return action.amount * 3;
+    case 'ENEMY_APPLY_STATUS': {
+      const bossMultiplier = enemy.tier === EnemyTier.BOSS ? 1.35 : 1;
+      const statusValues = {
+        poison: 3.2,
+        bleed: 2.2,
+        burn: 3.4,
+        vulnerable: 7,
+        weak: incomingDamage > 0 ? 5 : 2,
+        stunned: 12,
+        strength: 0
+      };
+      return action.amount * statusValues[action.status] * bossMultiplier;
+    }
+    case 'ENEMY_SKIP_INTENT':
+      return 8;
+    case 'ENEMY_EXECUTE_THRESHOLD':
+      return enemy.currentHp <= enemy.maxHp * action.threshold ? 40 : 5;
+    case 'DRAW_CARDS':
+      return action.count * 5;
+    case 'CREATE_REPLICA':
+      return Math.min(12, Math.max(4, action.baseDamage * 0.4));
+    case 'GROW_CRYSTAL':
+      return state.growingCrystalBonus < action.max ? 10 : 0;
+  }
+};
+
+const evaluateWeaponChoice = (
+  state: SimState,
+  enemy: EnemyData,
+  slots: WeaponSlots,
+  stats: ReturnType<typeof calculateWeaponStats>,
+  incomingDamage: number
+): { finalDamage: number; finalBlock: number; ignoreBlock: boolean; effectScore: number } => {
+  let modifiers: EffectModifiers = {
+    finalDamage: stats.damage,
+    finalBlock: stats.block,
+    ignoreBlock: false,
+    selfDamage: state.player.selfDamageThisTurn
+  };
+  const ctx = createScoringEffectContext(state, enemy, slots, stats);
+  const selfDamageActions = executeEffectsForPhase(ctx, modifiers, 'SELF_DAMAGE');
+  modifiers = applyModifierActions(modifiers, selfDamageActions);
+  const preDamageActions = executeEffectsForPhase(ctx, modifiers, 'PRE_DAMAGE');
+  modifiers = applyModifierActions(modifiers, preDamageActions);
+  const postDamageActions = executeEffectsForPhase(ctx, modifiers, 'POST_DAMAGE');
+  const allActions = [...selfDamageActions, ...preDamageActions, ...postDamageActions];
+
+  return {
+    finalDamage: modifiers.finalDamage,
+    finalBlock: modifiers.finalBlock,
+    ignoreBlock: modifiers.ignoreBlock,
+    effectScore: allActions.reduce((sum, action) => sum + scoreEffectAction(action, state, enemy, incomingDamage), 0)
+  };
 };
 
 const chooseBestWeapon = (state: SimState, enemy: EnemyData): WeaponChoice | null => {
@@ -158,12 +272,42 @@ const chooseBestWeapon = (state: SimState, enemy: EnemyData): WeaponChoice | nul
         if (state.player.costLimit !== null && stats.totalCost > state.player.costLimit) continue;
         if (stats.totalCost > state.player.energy) continue;
 
+        const evaluation = evaluateWeaponChoice(state, enemy, slots, stats, incomingDamage);
         const twinMultiplier = isTwinHandle(handle.id) ? 2 : 1;
-        const totalDamageEstimate = stats.damage * stats.hitCount * twinMultiplier;
-        const effectScore =
-          [handle, head, deco].filter(Boolean).reduce((sum, card) => sum + scoreCard(card!), 0) * 0.08;
-        const expectedBlockedDamage = Math.min(incomingDamage, stats.block + state.player.block);
-        const score = totalDamageEstimate + stats.block * blockWeight + expectedBlockedDamage * 0.75 + effectScore - stats.totalCost * 0.5;
+        let perHitDamage = evaluation.finalDamage;
+        if (enemy.statuses.vulnerable > 0) perHitDamage = Math.floor(perHitDamage * 1.5);
+        if (enemy.traits.includes(EnemyTrait.DAMAGE_CAP_15) && perHitDamage > 15) perHitDamage = 15;
+
+        const hitLoops = stats.hitCount * twinMultiplier;
+        const totalDamageEstimate = perHitDamage * hitLoops;
+        const enemyHpDamageEstimate = evaluation.ignoreBlock
+          ? totalDamageEstimate
+          : Math.max(0, totalDamageEstimate - enemy.block);
+        const enemyBlockChipEstimate = evaluation.ignoreBlock ? 0 : Math.min(enemy.block, totalDamageEstimate);
+        const slotQualityScore =
+          [handle, head, deco].filter(Boolean).reduce((sum, card) => sum + scoreCard(card!), 0) * 0.04;
+        const expectedBlockedDamage = Math.min(incomingDamage, evaluation.finalBlock + state.player.block);
+        const expectedHpLoss = Math.max(0, incomingDamage - state.player.block - evaluation.finalBlock);
+        const currentExpectedHpLoss = Math.max(0, incomingDamage - state.player.block);
+        const preventedHpLoss = Math.max(0, currentExpectedHpLoss - expectedHpLoss);
+        const lethalRiskPenalty = expectedHpLoss >= state.player.hp && incomingDamage > 0 ? 70 : 0;
+        const bossSurvivalBonus = enemy.tier === EnemyTier.BOSS ? preventedHpLoss * 1.3 : 0;
+        const thornsPenalty = enemy.traits.includes(EnemyTrait.THORNS_5) && totalDamageEstimate > 0
+          ? hitLoops * 5 * (state.player.hp < state.player.maxHp * 0.45 ? 1.8 : 0.9)
+          : 0;
+        const lethalBonus = enemyHpDamageEstimate >= enemy.currentHp ? 25 : 0;
+        const score =
+          enemyHpDamageEstimate +
+          enemyBlockChipEstimate * 0.35 +
+          evaluation.finalBlock * blockWeight +
+          expectedBlockedDamage * 0.75 +
+          bossSurvivalBonus +
+          evaluation.effectScore +
+          slotQualityScore +
+          lethalBonus -
+          lethalRiskPenalty -
+          thornsPenalty -
+          stats.totalCost * 0.35;
 
         if (!bestChoice || score > bestChoice.score) {
           bestChoice = { slots, stats, score };
@@ -484,6 +628,57 @@ const removeLowestValueCard = (state: SimState): void => {
   state.discard = state.discard.filter(card => card.instanceId !== target.instanceId);
 };
 
+const scoreCardRemoval = (state: SimState): number => {
+  const allCards = [...state.deck, ...state.discard];
+  if (allCards.length === 0) return 0;
+  const target = [...allCards].sort((a, b) => scoreCard(a) - scoreCard(b))[0];
+
+  if (target.type === CardType.JUNK) return 45;
+  if (target.rarity === CardRarity.STARTER) return 24;
+  if (scoreCard(target) < 14) return 16;
+  return 6;
+};
+
+const scoreEventOption = (state: SimState, option: EventOption): number => {
+  const missingHp = state.player.maxHp - state.player.hp;
+  const hpCostWeight = state.player.hp < state.player.maxHp * 0.45 ? 3.2 : 1.6;
+  let score = 0;
+
+  if (option.cost && option.costResource === 'GOLD') score -= option.cost * 0.3;
+  if (option.cost && option.costResource === 'HP') score -= option.cost * hpCostWeight;
+
+  switch (option.type) {
+    case 'HEAL':
+      score += Math.min(option.value || 0, missingHp) * 1.25;
+      break;
+    case 'DAMAGE':
+      score -= (option.value || 0) * hpCostWeight;
+      break;
+    case 'GAIN_CARD_RARE':
+      score += state.deck.length > 22 ? 14 : 30;
+      break;
+    case 'REMOVE_CARD':
+      score += scoreCardRemoval(state);
+      break;
+    case 'GAIN_GOLD':
+      score += (option.value || 0) * 0.34;
+      break;
+    case 'LOSE_GOLD':
+      score -= (option.value || 0) * 0.35;
+      break;
+    case 'FULL_HEAL':
+      score += missingHp * 1.15;
+      break;
+    case 'RANDOM_UPGRADE':
+      score += 22 + Math.min(10, scoreCardRemoval(state) * 0.25);
+      break;
+    case 'LEAVE':
+      break;
+  }
+
+  return score;
+};
+
 const applyEventOption = (state: SimState, option: EventOption, rng: () => number): void => {
   if (option.cost && option.costResource === 'GOLD') {
     state.player.gold = Math.max(0, state.player.gold - option.cost);
@@ -536,6 +731,49 @@ const applyEventOption = (state: SimState, option: EventOption, rng: () => numbe
   }
 };
 
+const applyShopItem = (state: SimState, item: ShopItemDefinition, rng: () => number): void => {
+  state.player.gold -= item.price;
+
+  switch (item.effect.type) {
+    case 'HEAL_PERCENT':
+      state.player.hp = Math.min(state.player.maxHp, state.player.hp + Math.floor(state.player.maxHp * item.effect.percent));
+      break;
+    case 'REMOVE_CARD':
+      removeLowestValueCard(state);
+      break;
+    case 'GAIN_RANDOM_CARD':
+      state.deck.push(createRandomCardReward(item.effect.rarity, undefined, rng));
+      break;
+    case 'MAX_ENERGY':
+      state.player.maxEnergy += item.effect.amount;
+      break;
+  }
+};
+
+const scoreShopItem = (state: SimState, item: ShopItemDefinition): number => {
+  const missingHp = state.player.maxHp - state.player.hp;
+  let score = -item.price * 0.25;
+
+  switch (item.effect.type) {
+    case 'HEAL_PERCENT': {
+      const healAmount = Math.min(missingHp, Math.floor(state.player.maxHp * item.effect.percent));
+      score += healAmount * (state.player.hp < state.player.maxHp * 0.5 ? 1.45 : 0.9);
+      break;
+    }
+    case 'REMOVE_CARD':
+      score += scoreCardRemoval(state);
+      break;
+    case 'GAIN_RANDOM_CARD':
+      score += state.deck.length > 22 ? 18 : 34;
+      break;
+    case 'MAX_ENERGY':
+      score += state.player.maxEnergy < 6 ? 80 + (6 - state.player.maxEnergy) * 8 : -100;
+      break;
+  }
+
+  return score;
+};
+
 const processNonCombatNode = (state: SimState, node: MapNode, rng: () => number): void => {
   if (node.type === NodeType.REST) {
     if (state.player.hp < state.player.maxHp) {
@@ -547,26 +785,19 @@ const processNonCombatNode = (state: SimState, node: MapNode, rng: () => number)
   }
 
   if (node.type === NodeType.SHOP) {
-    const energyItem = SHOP_ITEMS.find(item => item.effect.type === 'MAX_ENERGY');
-    const rareItem = SHOP_ITEMS.find(item => item.effect.type === 'GAIN_RANDOM_CARD');
-    const healItem = SHOP_ITEMS.find(item => item.effect.type === 'HEAL_PERCENT');
-    const removeItem = SHOP_ITEMS.find(item => item.effect.type === 'REMOVE_CARD');
+    const purchasedItemIds = new Set<string>();
 
-    if (healItem && state.player.gold >= healItem.price && healItem.effect.type === 'HEAL_PERCENT' && state.player.hp < state.player.maxHp * 0.65) {
-      state.player.gold -= healItem.price;
-      state.player.hp = Math.min(state.player.maxHp, state.player.hp + Math.floor(state.player.maxHp * healItem.effect.percent));
-    } else if (energyItem && state.player.gold >= energyItem.price) {
-      state.player.gold -= energyItem.price;
-      state.player.maxEnergy += energyItem.effect.type === 'MAX_ENERGY' ? energyItem.effect.amount : 0;
-    } else if (rareItem && state.player.gold >= rareItem.price && rareItem.effect.type === 'GAIN_RANDOM_CARD') {
-      state.player.gold -= rareItem.price;
-      state.deck.push(createRandomCardReward(rareItem.effect.rarity, undefined, rng));
-    } else if (healItem && state.player.gold >= healItem.price && healItem.effect.type === 'HEAL_PERCENT' && state.player.hp < state.player.maxHp) {
-      state.player.gold -= healItem.price;
-      state.player.hp = Math.min(state.player.maxHp, state.player.hp + Math.floor(state.player.maxHp * healItem.effect.percent));
-    } else if (removeItem && state.player.gold >= removeItem.price) {
-      state.player.gold -= removeItem.price;
-      removeLowestValueCard(state);
+    for (let purchaseCount = 0; purchaseCount < 4; purchaseCount++) {
+      const affordableItems = SHOP_ITEMS.filter(item => state.player.gold >= item.price && !purchasedItemIds.has(item.id));
+      if (affordableItems.length === 0) break;
+
+      const bestItem = affordableItems
+        .map(item => ({ item, score: scoreShopItem(state, item) }))
+        .sort((a, b) => b.score - a.score)[0];
+
+      if (!bestItem || bestItem.score <= 0) break;
+      applyShopItem(state, bestItem.item, rng);
+      purchasedItemIds.add(bestItem.item.id);
     }
     return;
   }
@@ -576,8 +807,10 @@ const processNonCombatNode = (state: SimState, node: MapNode, rng: () => number)
     assert(!!event, `Event node ${node.id} should reference a valid event`);
     const payableOptions = event!.options.filter(option => canPayEventOption(state, option));
     assert(payableOptions.length > 0, `Event ${event!.id} should have at least one payable option`);
-    const preferredOptions = payableOptions.filter(option => option.type !== 'LEAVE');
-    applyEventOption(state, preferredOptions.length > 0 ? pick(preferredOptions, rng) : pick(payableOptions, rng), rng);
+    const bestOption = payableOptions
+      .map(option => ({ option, score: scoreEventOption(state, option) + rng() * 0.01 }))
+      .sort((a, b) => b.score - a.score)[0].option;
+    applyEventOption(state, bestOption, rng);
   }
 };
 
@@ -594,8 +827,8 @@ const applyCombatReward = (state: SimState, enemyTier: EnemyTier, rng: () => num
   result.rewards += 1;
 };
 
-const applyBossReward = (state: SimState, rng: () => number): void => {
-  const reward = state.player.maxEnergy < 6
+const applyBossReward = (state: SimState, act: 1 | 2, rng: () => number): void => {
+  const reward = act === 1 && state.player.maxEnergy < 5
     ? BOSS_REWARDS.find(candidate => candidate.effect.type === 'MAX_ENERGY') || pick(BOSS_REWARDS, rng)
     : state.player.maxHp < 100
       ? BOSS_REWARDS.find(candidate => candidate.effect.type === 'MAX_HP') || pick(BOSS_REWARDS, rng)
@@ -718,7 +951,7 @@ const simulateRun = (seed: number): SimResult => {
             return result;
           }
 
-          applyBossReward(state, rng);
+          applyBossReward(state, act, rng);
           break;
         }
       } else {

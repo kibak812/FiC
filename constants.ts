@@ -421,12 +421,12 @@ export const ENEMIES: Record<string, EnemyData> = {
     'cave_heart',
     '광산의 심장 (보스)',
     EnemyTier.BOSS,
-    100,
+    98,
     [
       { type: IntentType.ATTACK, value: 8, description: '맥동 충격' },
       { type: IntentType.BUFF, value: 0, description: '오염 정화', effect: { type: 'CLEANSE_STATUSES_GAIN_STRENGTH', amountPerStatus: 0.5, minGain: 2, maxGain: 7 } },
       { type: IntentType.DEBUFF, value: 0, description: '폐석 붕괴', effect: { type: 'ADD_JUNK', count: 1 } },
-      { type: IntentType.ATTACK, value: 13, description: '방어 파쇄 맥동', effect: { type: 'ATTACK_FROM_PLAYER_BLOCK', multiplier: 0.5 } },
+      { type: IntentType.ATTACK, value: 12, description: '방어 파쇄 맥동', effect: { type: 'ATTACK_FROM_PLAYER_BLOCK', multiplier: 0.5 } },
     ]
   ),
 
@@ -545,20 +545,20 @@ export const ENEMIES: Record<string, EnemyData> = {
     'corrupted_smith',
     '타락한 대장장이 (보스)',
     EnemyTier.BOSS,
-    130,
+    124,
     [
       { type: IntentType.ATTACK, value: 12, description: '달궈진 망치' },
       { type: IntentType.SPECIAL, value: 0, description: '다음 턴 무기 파괴', effect: { type: 'DISARM_HEAD' } },
-      { type: IntentType.ATTACK, value: 18, description: '대멸종' },
+      { type: IntentType.ATTACK, value: 17, description: '대멸종' },
     ]
   ),
   MOLTEN_OVERSEER: defineEnemy(
     'molten_overseer',
     '용광로 감독관 (보스)',
     EnemyTier.BOSS,
-    155,
+    148,
     [
-      { type: IntentType.ATTACK, value: 11, hits: 2, description: '쌍망치 압연 (x2)' },
+      { type: IntentType.ATTACK, value: 10, hits: 2, description: '쌍망치 압연 (x2)' },
       { type: IntentType.DEBUFF, value: 0, description: '공정 지연', effect: { type: 'INCREASE_RANDOM_HANDLE_COST', amount: 1 } },
       { type: IntentType.BUFF, value: 0, description: '슬래그 정화', effect: { type: 'CLEANSE_STATUSES_GAIN_STRENGTH', amountPerStatus: 0.75, minGain: 3, maxGain: 8 } },
       { type: IntentType.ATTACK, value: 16, description: '용융 강타' },
