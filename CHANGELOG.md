@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.11.14] - 2026-05-23
+
+### Added
+- Hand-reviewed pixel sprites for 15 common head cards, covering bleed gears, poison needles, clubs, axes, elemental blades, draw blades, heavy cleavers, tridents, saw heads, mace heads, and twin hooks.
+
+### Changed
+- Common head cards now render with clear weapon-head silhouettes and archetype-specific blades/teeth/edges instead of relying on generic generated head shapes.
+- Product readiness now treats those common head sprites as hand-reviewed art with detail and color-separation checks.
+- Menu version updated to v1.11.14.
+
+### Design Notes
+- Heads define the weapon's attack identity, so this pass makes each entry card read as a specific implement rather than an abstract icon.
+
+---
+
 ## [1.11.13] - 2026-05-23
 
 ### Added

@@ -1472,7 +1472,7 @@ const generatedCardSprite = ({ kind, theme, rarity, variant = 0, motif }: Genera
 export const HAND_DRAWN_CARD_SPRITE_IDS = new Set<number>([
   101, 102, 103, 104, 105,
   212, 216, 217, 218, 220, 221, 222, 223, 224, 225,
-  248, 249,
+  209, 213, 214, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 246, 248, 249,
   405, 407,
   414, 415, 416, 417, 418, 419, 420, 421, 422, 423, 424, 425
 ]);
@@ -2280,6 +2280,285 @@ const reviewedCommonHandleSprites: Record<number, React.FC<{ className?: string 
 };
 
 Object.assign(CardSprites, reviewedCommonHandleSprites);
+
+type ReviewedHeadMotif =
+  | 'gear'
+  | 'needle'
+  | 'club'
+  | 'rake'
+  | 'axe'
+  | 'venomBlade'
+  | 'flameBlade'
+  | 'sparkDagger'
+  | 'scribeBlade'
+  | 'cleaver'
+  | 'trident'
+  | 'chainSaw'
+  | 'corrosion'
+  | 'mace'
+  | 'twinHook';
+
+interface ReviewedHeadSpriteConfig {
+  metal: string;
+  edge: string;
+  dark: string;
+  accent: string;
+  hilt: string;
+  motif: ReviewedHeadMotif;
+}
+
+const renderReviewedHeadFrame = (accent: string) => (
+  <>
+    <rect x="4" y="4" width="2" height="2" fill="#09070D"/>
+    <rect x="18" y="4" width="2" height="2" fill="#09070D"/>
+    <rect x="5" y="5" width="14" height="1" fill="#221821"/>
+    <rect x="5" y="18" width="14" height="1" fill="#221821"/>
+    <rect x="6" y="6" width="1" height="12" fill="#120C14"/>
+    <rect x="17" y="6" width="1" height="12" fill="#120C14"/>
+    <rect x="7" y="20" width="10" height="1" fill="#09070D" opacity="0.5"/>
+    <rect x="5" y="15" width="2" height="1" fill={accent}/>
+    <rect x="17" y="7" width="2" height="1" fill={accent}/>
+  </>
+);
+
+const renderReviewedHeadHilt = ({ hilt, dark, accent }: ReviewedHeadSpriteConfig) => (
+  <>
+    <rect x="8" y="15" width="8" height="2" fill={hilt}/>
+    <rect x="10" y="17" width="4" height="4" fill={dark}/>
+    <rect x="11" y="18" width="2" height="2" fill={hilt}/>
+    <rect x="9" y="16" width="6" height="1" fill={accent}/>
+  </>
+);
+
+const renderReviewedHeadMotif = (config: ReviewedHeadSpriteConfig) => {
+  const { metal, edge, dark, accent } = config;
+
+  switch (config.motif) {
+    case 'gear':
+      return (
+        <>
+          <rect x="8" y="5" width="8" height="8" fill={dark}/>
+          <rect x="10" y="3" width="4" height="2" fill={metal}/>
+          <rect x="10" y="13" width="4" height="2" fill={metal}/>
+          <rect x="6" y="7" width="2" height="4" fill={metal}/>
+          <rect x="16" y="7" width="2" height="4" fill={metal}/>
+          <rect x="9" y="6" width="6" height="6" fill={metal}/>
+          <rect x="10" y="7" width="4" height="4" fill={edge}/>
+          <rect x="11" y="8" width="2" height="2" fill="#120C14"/>
+          <rect x="7" y="12" width="2" height="2" fill={accent}/>
+          <rect x="15" y="4" width="2" height="2" fill={accent}/>
+        </>
+      );
+    case 'needle':
+      return (
+        <>
+          <rect x="11" y="3" width="2" height="12" fill={metal}/>
+          <rect x="10" y="5" width="1" height="8" fill={edge}/>
+          <rect x="13" y="5" width="1" height="8" fill={dark}/>
+          <rect x="11" y="2" width="2" height="2" fill="#DFFFF0"/>
+          <rect x="9" y="7" width="2" height="2" fill={accent}/>
+          <rect x="13" y="9" width="2" height="2" fill="#7CFF8A"/>
+          <rect x="8" y="12" width="2" height="1" fill="#143B26"/>
+          <rect x="14" y="12" width="2" height="1" fill="#143B26"/>
+        </>
+      );
+    case 'club':
+      return (
+        <>
+          <rect x="8" y="4" width="8" height="10" fill={dark}/>
+          <rect x="9" y="5" width="6" height="8" fill={metal}/>
+          <rect x="10" y="6" width="4" height="6" fill={edge}/>
+          <rect x="7" y="7" width="2" height="4" fill={dark}/>
+          <rect x="15" y="7" width="2" height="4" fill={dark}/>
+          <rect x="10" y="4" width="1" height="9" fill={accent}/>
+          <rect x="13" y="5" width="1" height="7" fill="#F0E2B6"/>
+        </>
+      );
+    case 'rake':
+      return (
+        <>
+          <rect x="9" y="5" width="6" height="8" fill={dark}/>
+          <rect x="7" y="4" width="2" height="7" fill={metal}/>
+          <rect x="10" y="3" width="2" height="9" fill={metal}/>
+          <rect x="13" y="4" width="2" height="7" fill={metal}/>
+          <rect x="16" y="5" width="2" height="5" fill={metal}/>
+          <rect x="8" y="10" width="9" height="2" fill={edge}/>
+          <rect x="8" y="12" width="2" height="2" fill={accent}/>
+          <rect x="14" y="12" width="2" height="2" fill="#F08A8A"/>
+        </>
+      );
+    case 'axe':
+      return (
+        <>
+          <rect x="10" y="3" width="4" height="12" fill={dark}/>
+          <rect x="6" y="6" width="6" height="7" fill={metal}/>
+          <rect x="12" y="6" width="6" height="7" fill={metal}/>
+          <rect x="7" y="7" width="4" height="4" fill={edge}/>
+          <rect x="13" y="7" width="4" height="4" fill={edge}/>
+          <rect x="11" y="5" width="2" height="9" fill={accent}/>
+          <rect x="6" y="13" width="2" height="2" fill="#D7F4FF"/>
+          <rect x="16" y="13" width="2" height="2" fill="#D7F4FF"/>
+        </>
+      );
+    case 'venomBlade':
+      return (
+        <>
+          <rect x="11" y="3" width="2" height="12" fill={dark}/>
+          <rect x="9" y="5" width="3" height="9" fill={metal}/>
+          <rect x="12" y="5" width="3" height="9" fill={edge}/>
+          <rect x="10" y="4" width="4" height="2" fill="#DFFFF0"/>
+          <rect x="8" y="8" width="2" height="2" fill={accent}/>
+          <rect x="14" y="11" width="2" height="2" fill="#7CFF8A"/>
+          <rect x="9" y="13" width="1" height="2" fill="#143B26"/>
+        </>
+      );
+    case 'flameBlade':
+      return (
+        <>
+          <rect x="10" y="3" width="4" height="12" fill={dark}/>
+          <rect x="9" y="6" width="3" height="8" fill={metal}/>
+          <rect x="12" y="5" width="3" height="9" fill={edge}/>
+          <rect x="10" y="3" width="2" height="4" fill="#FFD166"/>
+          <rect x="13" y="4" width="2" height="5" fill="#FF9F1A"/>
+          <rect x="8" y="10" width="2" height="3" fill={accent}/>
+          <rect x="15" y="11" width="1" height="2" fill="#FFE08A"/>
+        </>
+      );
+    case 'sparkDagger':
+      return (
+        <>
+          <rect x="11" y="3" width="2" height="12" fill={metal}/>
+          <rect x="10" y="5" width="1" height="9" fill={edge}/>
+          <rect x="13" y="5" width="1" height="9" fill={dark}/>
+          <rect x="11" y="2" width="2" height="2" fill="#FFFFFF"/>
+          <rect x="7" y="7" width="3" height="1" fill={accent}/>
+          <rect x="15" y="9" width="3" height="1" fill={accent}/>
+          <rect x="8" y="12" width="2" height="1" fill="#FFE66D"/>
+          <rect x="15" y="13" width="2" height="1" fill="#FFE66D"/>
+        </>
+      );
+    case 'scribeBlade':
+      return (
+        <>
+          <rect x="10" y="3" width="4" height="12" fill={dark}/>
+          <rect x="9" y="5" width="3" height="9" fill={metal}/>
+          <rect x="12" y="5" width="3" height="9" fill={edge}/>
+          <rect x="10" y="6" width="4" height="1" fill="#2D2540"/>
+          <rect x="10" y="9" width="4" height="1" fill="#2D2540"/>
+          <rect x="10" y="12" width="3" height="1" fill="#2D2540"/>
+          <rect x="15" y="6" width="2" height="8" fill={accent}/>
+        </>
+      );
+    case 'cleaver':
+      return (
+        <>
+          <rect x="8" y="3" width="8" height="12" fill={dark}/>
+          <rect x="9" y="4" width="6" height="10" fill={metal}/>
+          <rect x="10" y="5" width="4" height="8" fill={edge}/>
+          <rect x="13" y="4" width="3" height="4" fill="#F6E1A6"/>
+          <rect x="7" y="12" width="2" height="3" fill={dark}/>
+          <rect x="9" y="13" width="6" height="1" fill={accent}/>
+        </>
+      );
+    case 'trident':
+      return (
+        <>
+          <rect x="11" y="3" width="2" height="12" fill={metal}/>
+          <rect x="7" y="4" width="2" height="7" fill={metal}/>
+          <rect x="15" y="4" width="2" height="7" fill={metal}/>
+          <rect x="8" y="3" width="1" height="2" fill={edge}/>
+          <rect x="11" y="2" width="2" height="2" fill={edge}/>
+          <rect x="15" y="3" width="1" height="2" fill={edge}/>
+          <rect x="8" y="10" width="8" height="2" fill={accent}/>
+          <rect x="10" y="12" width="4" height="2" fill={dark}/>
+        </>
+      );
+    case 'chainSaw':
+      return (
+        <>
+          <rect x="8" y="4" width="8" height="10" fill={dark}/>
+          <rect x="9" y="5" width="6" height="8" fill={metal}/>
+          <rect x="7" y="5" width="2" height="2" fill={edge}/>
+          <rect x="15" y="6" width="2" height="2" fill={edge}/>
+          <rect x="7" y="9" width="2" height="2" fill={edge}/>
+          <rect x="15" y="10" width="2" height="2" fill={edge}/>
+          <rect x="10" y="6" width="4" height="6" fill="#1B2F3B"/>
+          <rect x="11" y="7" width="2" height="4" fill={accent}/>
+        </>
+      );
+    case 'corrosion':
+      return (
+        <>
+          <rect x="8" y="5" width="8" height="8" fill={dark}/>
+          <rect x="10" y="3" width="4" height="2" fill={metal}/>
+          <rect x="10" y="13" width="4" height="2" fill={metal}/>
+          <rect x="6" y="7" width="2" height="4" fill={metal}/>
+          <rect x="16" y="7" width="2" height="4" fill={metal}/>
+          <rect x="9" y="6" width="6" height="6" fill={edge}/>
+          <rect x="11" y="8" width="2" height="2" fill="#143B26"/>
+          <rect x="8" y="12" width="2" height="2" fill={accent}/>
+          <rect x="15" y="5" width="2" height="2" fill="#D9FFD2"/>
+        </>
+      );
+    case 'mace':
+      return (
+        <>
+          <rect x="8" y="5" width="8" height="8" fill={dark}/>
+          <rect x="9" y="6" width="6" height="6" fill={metal}/>
+          <rect x="10" y="7" width="4" height="4" fill={edge}/>
+          <rect x="7" y="4" width="2" height="2" fill={metal}/>
+          <rect x="15" y="4" width="2" height="2" fill={metal}/>
+          <rect x="7" y="12" width="2" height="2" fill={metal}/>
+          <rect x="15" y="12" width="2" height="2" fill={metal}/>
+          <rect x="11" y="5" width="2" height="8" fill={accent}/>
+        </>
+      );
+    case 'twinHook':
+      return (
+        <>
+          <rect x="7" y="4" width="4" height="10" fill={dark}/>
+          <rect x="13" y="4" width="4" height="10" fill={dark}/>
+          <rect x="8" y="5" width="2" height="7" fill={metal}/>
+          <rect x="14" y="5" width="2" height="7" fill={metal}/>
+          <rect x="6" y="7" width="3" height="2" fill={edge}/>
+          <rect x="15" y="7" width="3" height="2" fill={edge}/>
+          <rect x="9" y="12" width="6" height="2" fill={accent}/>
+          <rect x="10" y="14" width="4" height="1" fill="#DFFFFF"/>
+        </>
+      );
+  }
+};
+
+const reviewedHeadSprite = (config: ReviewedHeadSpriteConfig): React.FC<{ className?: string }> => {
+  return ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      {renderReviewedHeadFrame(config.accent)}
+      {renderReviewedHeadMotif(config)}
+      {renderReviewedHeadHilt(config)}
+      <rect x="18" y="18" width="1" height="1" fill={config.edge}/>
+    </svg>
+  );
+};
+
+const reviewedCommonHeadSprites: Record<number, React.FC<{ className?: string }>> = {
+  209: reviewedHeadSprite({ metal: '#77848A', edge: '#C5D1D6', dark: '#30383D', accent: '#D94A4A', hilt: '#6B3A2A', motif: 'gear' }),
+  213: reviewedHeadSprite({ metal: '#61C96F', edge: '#DFFFF0', dark: '#143B26', accent: '#83F27D', hilt: '#3A5A32', motif: 'needle' }),
+  214: reviewedHeadSprite({ metal: '#8A7B5B', edge: '#D7C49A', dark: '#3A2C1B', accent: '#BFA36A', hilt: '#5C3A24', motif: 'club' }),
+  226: reviewedHeadSprite({ metal: '#8B1E2D', edge: '#F08A8A', dark: '#3A1014', accent: '#D94A4A', hilt: '#5C2A24', motif: 'rake' }),
+  227: reviewedHeadSprite({ metal: '#5F7884', edge: '#D7F4FF', dark: '#25343B', accent: '#78D6FF', hilt: '#4A3828', motif: 'axe' }),
+  228: reviewedHeadSprite({ metal: '#3D8B4D', edge: '#D9FFD2', dark: '#14331F', accent: '#83F27D', hilt: '#314A28', motif: 'venomBlade' }),
+  229: reviewedHeadSprite({ metal: '#B84A24', edge: '#FFE08A', dark: '#3A130E', accent: '#FF9F1A', hilt: '#5A2C1B', motif: 'flameBlade' }),
+  230: reviewedHeadSprite({ metal: '#2D6D9B', edge: '#FFFFFF', dark: '#10283F', accent: '#56C8FF', hilt: '#2C3850', motif: 'sparkDagger' }),
+  231: reviewedHeadSprite({ metal: '#7E6AA8', edge: '#F4ECFF', dark: '#2D2540', accent: '#BFA3FF', hilt: '#4A3828', motif: 'scribeBlade' }),
+  232: reviewedHeadSprite({ metal: '#7A5636', edge: '#F6E1A6', dark: '#2E2118', accent: '#D6B26A', hilt: '#4A2C1C', motif: 'cleaver' }),
+  233: reviewedHeadSprite({ metal: '#4E6D82', edge: '#FFFFFF', dark: '#1B2F3B', accent: '#8FE8FF', hilt: '#314A58', motif: 'trident' }),
+  234: reviewedHeadSprite({ metal: '#586875', edge: '#D8E8F0', dark: '#1B2F3B', accent: '#8FE8FF', hilt: '#3A2E24', motif: 'chainSaw' }),
+  235: reviewedHeadSprite({ metal: '#5AA05F', edge: '#D9FFD2', dark: '#14331F', accent: '#B8FF7A', hilt: '#344A24', motif: 'corrosion' }),
+  246: reviewedHeadSprite({ metal: '#6B6F75', edge: '#D8E0E6', dark: '#30343A', accent: '#D6B26A', hilt: '#4A2C1C', motif: 'mace' }),
+  249: reviewedHeadSprite({ metal: '#4E6D82', edge: '#DFFFFF', dark: '#1B2F3B', accent: '#8FE8FF', hilt: '#314A58', motif: 'twinHook' })
+};
+
+Object.assign(CardSprites, reviewedCommonHeadSprites);
 
 const renderLegendPayoffFrame = (accent: string) => (
   <>
