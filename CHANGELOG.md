@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.7.0] - 2026-05-23
+
+### Added
+- UI 없이 호출 가능한 `utils/combatEngine.ts` for weapon stat calculation, enemy turn-start statuses, blocked damage, and enemy intent planning.
+- Deterministic RNG injection for card instance creation, shuffling, gold rewards, combat card rewards, and random card rewards.
+
+### Changed
+- Combat weapon preview, forge resolution, enemy turn status ticks, and enemy intent effects now use shared pure calculation helpers instead of duplicating math in `App.tsx`.
+
+### Design Notes
+- This keeps existing card and enemy behavior grounded in the static data while preparing the combat layer for unit tests and seeded run simulations.
+
+---
+
 ## [1.6.0] - 2026-05-23
 
 ### Added

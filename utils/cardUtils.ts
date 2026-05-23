@@ -1,25 +1,34 @@
 import { CardInstance, CardType } from '../types';
 import { CARD_DATABASE } from '../constants';
 
+export type RandomSource = () => number;
+
 /**
  * Generate a unique ID for card instances
  */
-export const generateId = (): string => Math.random().toString(36).substr(2, 9);
+export const generateId = (rng: RandomSource = Math.random): string => rng().toString(36).substr(2, 9);
 
 /**
  * Create a card instance from the database by ID
  */
-export const createCardInstance = (id: number): CardInstance => {
+export const createCardInstance = (id: number, rng: RandomSource = Math.random): CardInstance => {
   const data = CARD_DATABASE.find(c => c.id === id);
   if (!data) throw new Error(`Card ${id} not found`);
-  return { ...data, instanceId: generateId() };
+  return { ...data, instanceId: generateId(rng) };
 };
 
 /**
- * Shuffle an array using Fisher-Yates-like algorithm
+ * Shuffle an array using Fisher-Yates algorithm
  */
-export const shuffle = <T,>(array: T[]): T[] => {
-  return [...array].sort(() => Math.random() - 0.5);
+export const shuffle = <T,>(array: T[], rng: RandomSource = Math.random): T[] => {
+  const shuffled = [...array];
+
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(rng() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+
+  return shuffled;
 };
 
 /**

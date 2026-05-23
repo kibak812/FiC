@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { 
   CardInstance, CardType, CombatState, PlayerStats, EnemyData, 
-  IntentType, CraftedWeapon, EnemyTrait, EnemyTier, BossRewardId, ShopItemId,
+  IntentType, EnemyTrait, EnemyTier, BossRewardId, ShopItemId,
   GameEvent, EventOption, CardRarity, MapNode, NodeType, GameState, RemovalContext, GameSettings
 } from './types';
 import { INITIAL_DECK_IDS, ENEMIES, GAME_EVENTS } from './constants';
@@ -34,6 +34,13 @@ import {
   isRunStateSaveable
 } from './utils/saveUtils';
 import type { SavedRunData, SavedRunSummary } from './utils/saveUtils';
+import {
+  calculateBlockedDamage,
+  calculateEnemyIntentPlan,
+  calculateEnemyStrengthGain,
+  calculateWeaponStats,
+  resolveEnemyTurnStartStatuses
+} from './utils/combatEngine';
 
 // --- Hooks ---
 import { useAnimations } from './hooks/useAnimations';
@@ -56,46 +63,6 @@ import IntentDetailModal from './components/IntentDetailModal';
 import StatusDetailModal from './components/StatusDetailModal';
 
 // --- Main App ---
-
-const ACT_LENGTH = 15;
-const DEFENSIVE_HANDLE_IDS = new Set([102, 217, 322, 415]);
-const DEFENSIVE_HEAD_IDS = new Set([104, 227, 330, 419]);
-const HEAD_HIT_COUNTS: Record<number, number> = {
-  233: 3,
-  306: 2,
-  335: 3,
-  421: 4
-};
-const HEAD_BLEED_SCALING: Record<number, number> = {
-  209: 1
-};
-const HEAD_POISON_SCALING: Record<number, number> = {
-  213: 1,
-  235: 1
-};
-const HEAD_WEAPON_SCALING: Record<number, number> = {
-  234: 1,
-  310: 2
-};
-const BLOCK_TO_DAMAGE_RATIO_BY_DECO_ID: Record<number, number> = {
-  207: 1,
-  210: 0.5,
-  237: 0.4,
-  338: 1,
-  423: 1.5
-};
-const BLOCK_MULTIPLIER_BY_DECO_ID: Record<number, number> = {
-  311: 2,
-  338: 2,
-  423: 2
-};
-const MULTI_HIT_DAMAGE_BONUS_BY_DECO_ID: Record<number, number> = {
-  243: 4,
-  344: 6
-};
-const DECO_DAMAGE_MULTIPLIER_BY_ID: Record<number, number> = {
-  343: 1.5
-};
 
 export default function App() {
   // Game State
@@ -786,79 +753,14 @@ const startCombat = (enemyData: EnemyData) => {
     setHand(prev => [...prev, ...drawn]);
   };
 
-const calculateWeaponStats = (): CraftedWeapon => {
-    const { handle, head, deco } = slots;
-    if (!handle || !head) return { totalCost: 0, damage: 0, block: 0, effects: [], hitCount: 1 };
-
-    let totalCost = handle.cost + head.cost + (deco ? deco.cost : 0);
-    
-    // PRD: (Head + Deco) * Handle
-    let baseValue = head.value;
-    if (deco) baseValue += deco.value;
-
-    // 309: Gambler's Handle - Random multiplier 1~3 (show average x2 for prediction)
-    let handleMultiplier = handle.value;
-    if (handle.id === 309) {
-        handleMultiplier = 2; // Average for display, actual random in handleForgeAndAttack
-    }
-    // 218: Lightweight Handle - 0.75 multiplier (already in value)
-
-    let finalValue = Math.floor(baseValue * handleMultiplier);
-
-    // Handle "Cost 0" effect from Philosopher's Stone (ID 403)
-    if (deco?.id === 403) totalCost = 0;
-
-    let damage = finalValue;
-    let block = 0;
-    let hitCount = 1;
-
-    if (DEFENSIVE_HANDLE_IDS.has(handle.id) || DEFENSIVE_HEAD_IDS.has(head.id)) {
-      block = finalValue;
-      damage = 0;
-    }
-
-    // Logic for Swift Dagger Hilt (201) -> Now applies Weak instead of -2 damage
-    // Effect is applied in handleForgeAndAttack
-
-    hitCount = HEAD_HIT_COUNTS[head.id] || 1;
-
-    // === Balance Patch v1.0 - New Card Effects ===
-
-    damage += (enemy.statuses.bleed || 0) * (HEAD_BLEED_SCALING[head.id] || 0);
-
-    if (deco && BLOCK_TO_DAMAGE_RATIO_BY_DECO_ID[deco.id]) {
-        damage += Math.floor(player.block * BLOCK_TO_DAMAGE_RATIO_BY_DECO_ID[deco.id]);
-    }
-
-    // 211: Capacitor (Deco) - +4 damage per remaining energy (calculated at forge time)
-    // This is handled in handleForgeAndAttack since we need remaining energy after cost
-
-    damage += (enemy.statuses.poison || 0) * (HEAD_POISON_SCALING[head.id] || 0);
-    damage += player.weaponsUsedThisTurn * (HEAD_WEAPON_SCALING[head.id] || 0);
-
-    if (deco && MULTI_HIT_DAMAGE_BONUS_BY_DECO_ID[deco.id] && hitCount > 1) {
-        damage += MULTI_HIT_DAMAGE_BONUS_BY_DECO_ID[deco.id];
-    }
-
-    if (deco && BLOCK_MULTIPLIER_BY_DECO_ID[deco.id] && block > 0) {
-        block *= BLOCK_MULTIPLIER_BY_DECO_ID[deco.id];
-    }
-
-    if (deco && DECO_DAMAGE_MULTIPLIER_BY_ID[deco.id] && damage > 0) {
-        damage = Math.floor(damage * DECO_DAMAGE_MULTIPLIER_BY_ID[deco.id]);
-    }
-
-    // 406: Time Cog - No damage, just stun (handled in effects)
-    if (head.id === 406) {
-        damage = 0;
-    }
-
-    // 407: Growing Crystal - Add permanent bonus damage
-    if (deco?.id === 407) {
-        damage += growingCrystalBonus;
-    }
-
-    return { totalCost, damage, block, effects: [], hitCount };
+  const calculateCurrentWeaponStats = () => {
+    return calculateWeaponStats({
+      slots,
+      playerBlock: player.block,
+      weaponsUsedThisTurn: player.weaponsUsedThisTurn,
+      enemyStatuses: enemy.statuses,
+      growingCrystalBonus
+    });
   };
 
   // --- Interaction Handlers ---
@@ -1072,7 +974,7 @@ const calculateWeaponStats = (): CraftedWeapon => {
   };
 
   const handleForgeAndAttack = async () => {
-    const stats = calculateWeaponStats();
+    const stats = calculateCurrentWeaponStats();
     
     if (player.costLimit !== null && stats.totalCost > player.costLimit) {
       showFeedback(`과부하! 비용 ${player.costLimit} 이하만 가능!`);
@@ -1316,114 +1218,72 @@ case 'PLAYER_DRAW':
           
           await new Promise(r => setTimeout(r, 800));
           
-          // Debuff Decrement Phase
-          if (enemy.statuses.vulnerable > 0) {
-              setEnemy(prev => ({ ...prev, statuses: { ...prev.statuses, vulnerable: prev.statuses.vulnerable - 1 } }));
-          }
-          if (enemy.statuses.weak > 0) {
-              setEnemy(prev => ({ ...prev, statuses: { ...prev.statuses, weak: prev.statuses.weak - 1 } }));
-          }
+          const turnStartStatus = resolveEnemyTurnStartStatuses(enemy.statuses);
+          setEnemy(prev => ({ ...prev, statuses: turnStartStatus.statuses }));
 
-          if (enemy.statuses.stunned > 0) {
-              setEnemy(prev => ({
-                  ...prev,
-                  statuses: { ...prev.statuses, stunned: Math.max(0, prev.statuses.stunned - 1) }
-              }));
+          if (turnStartStatus.isStunned) {
               showFeedback("적이 기절하여 행동 불가!");
               await new Promise(r => setTimeout(r, 1000));
               setCombatState(prev => ({ ...prev, turn: prev.turn + 1, phase: 'PLAYER_DRAW' }));
               return;
           }
 
-if (enemy.statuses.poison > 0) {
-              const pDmg = enemy.statuses.poison;
+          if (turnStartStatus.poisonDamage > 0) {
               setEnemy(prev => ({
                   ...prev,
-                  currentHp: Math.max(0, prev.currentHp - pDmg),
-                  statuses: { ...prev.statuses, poison: Math.max(0, prev.statuses.poison - 1) }
+                  currentHp: Math.max(0, prev.currentHp - turnStartStatus.poisonDamage)
               }));
               triggerEnemyPoison();
-              showFeedback(`독 피해 ${pDmg}!`);
+              showFeedback(`독 피해 ${turnStartStatus.poisonDamage}!`);
               await new Promise(r => setTimeout(r, 800));
           }
 
-          // Burn damage (does NOT decay unlike poison)
-          if (enemy.statuses.burn > 0) {
-              const burnDmg = enemy.statuses.burn;
+          if (turnStartStatus.burnDamage > 0) {
               setEnemy(prev => ({
                   ...prev,
-                  currentHp: Math.max(0, prev.currentHp - burnDmg)
-                  // burn does NOT decrease
+                  currentHp: Math.max(0, prev.currentHp - turnStartStatus.burnDamage)
               }));
               triggerEnemyBurn();
-              showFeedback(`화상 피해 ${burnDmg}!`);
+              showFeedback(`화상 피해 ${turnStartStatus.burnDamage}!`);
               await new Promise(r => setTimeout(r, 800));
           }
 
-          if (enemy.currentHp <= 0) return;
+          const projectedEnemyHp = enemy.currentHp - turnStartStatus.poisonDamage - turnStartStatus.burnDamage;
+          if (projectedEnemyHp <= 0) return;
 
-          const intent = enemy.intents[enemy.currentIntentIndex];
-          let dmg = 0;
-          let handleCostIncrease = 0;
+          const intentPlan = calculateEnemyIntentPlan(enemy, player);
+          const intent = intentPlan.intent;
 
-          if (intent.effect?.type === 'INCREASE_RANDOM_HANDLE_COST') {
-            handleCostIncrease = intent.effect.amount;
-          } else if (enemy.id === 'hammerhead' && intent.type === IntentType.DEBUFF) {
-            handleCostIncrease = 1;
-          }
-
-          if (handleCostIncrease > 0) {
+          if (intentPlan.handleCostIncrease > 0) {
              const allHandles = [...deck, ...discardPile].filter(c => c.type === CardType.HANDLE);
              if (allHandles.length > 0) {
                  const target = allHandles[Math.floor(Math.random() * allHandles.length)];
-                 target.cost += handleCostIncrease;
-                 showFeedback(`[${target.name}] 비용 +${handleCostIncrease}`, 'bad');
+                 target.cost += intentPlan.handleCostIncrease;
+                 showFeedback(`[${target.name}] 비용 +${intentPlan.handleCostIncrease}`, 'bad');
              }
           }
 
-          if (intent.effect?.type === 'SET_PLAYER_COST_LIMIT' || (enemy.id === 'deus_ex_machina' && intent.description.includes('코스트 제한'))) {
-             const limit = intent.effect?.type === 'SET_PLAYER_COST_LIMIT' ? intent.effect.limit : 2;
-             setPlayer(prev => ({ ...prev, costLimit: limit }));
-             showFeedback(`과부하: 다음 턴 비용 제한 ${limit}`, 'bad');
+          if (intentPlan.costLimit !== null) {
+             setPlayer(prev => ({ ...prev, costLimit: intentPlan.costLimit }));
+             showFeedback(`과부하: 다음 턴 비용 제한 ${intentPlan.costLimit}`, 'bad');
           }
 
-          if (intent.effect?.type === 'DISARM_HEAD' || (enemy.id === 'corrupted_smith' && intent.type === IntentType.SPECIAL)) {
+          if (intentPlan.disarmsHead) {
              setPlayer(prev => ({ ...prev, disarmed: true }));
              showFeedback("무장 해제: 다음 턴 머리 사용 불가", 'bad');
           }
 
-          if (intent.effect?.type === 'REFLECT_DAMAGE_TAKEN' || (enemy.id === 'mimic_anvil' && intent.description.includes('반사'))) {
-              dmg = enemy.damageTakenThisTurn;
-          } else if (intent.type === IntentType.ATTACK) {
-              dmg = intent.value;
+          if (intentPlan.blockCounterBonus > 0) {
+              showFeedback(`방어 카운터 +${intentPlan.blockCounterBonus} 피해`, 'bad');
           }
 
-          if (intent.effect?.type === 'ATTACK_FROM_PLAYER_BLOCK') {
-              const blockBonus = Math.max(intent.effect.minimumBonus || 0, Math.floor(player.block * intent.effect.multiplier));
-              dmg += blockBonus;
-              if (blockBonus > 0) showFeedback(`방어 카운터 +${blockBonus} 피해`, 'bad');
+          if (intentPlan.weaponCounterBonus > 0) {
+              showFeedback(`연속 제작 카운터 +${intentPlan.weaponCounterBonus} 피해`, 'bad');
           }
 
-          if (intent.effect?.type === 'ATTACK_FROM_WEAPONS_USED') {
-              const comboBonus = player.weaponsUsedThisTurn * intent.effect.perWeapon;
-              dmg += comboBonus;
-              if (comboBonus > 0) showFeedback(`연속 제작 카운터 +${comboBonus} 피해`, 'bad');
-          }
-
-          if (intent.type === IntentType.ATTACK && enemy.statuses.strength > 0) {
-             dmg += enemy.statuses.strength;
-          }
-
-          // Weak Status Logic
-          if (intent.type === IntentType.ATTACK && enemy.statuses.weak > 0) {
-              dmg = Math.floor(dmg * 0.75); // 25% damage reduction
-          }
-
-          const attackCount = intent.hits || (intent.description.includes('(x3)') ? 3 : 1);
-
-          if (intent.type === IntentType.ATTACK || (enemy.id === 'mimic_anvil' && intent.description.includes('반사'))) {
+          if (intentPlan.isAttack) {
              triggerEnemyAttack();
-             for (let i = 0; i < attackCount; i++) {
+             for (let i = 0; i < intentPlan.attackCount; i++) {
                   if (enemy.statuses.bleed > 0) {
                       const bDmg = enemy.statuses.bleed;
                       setEnemy(prev => ({
@@ -1433,7 +1293,7 @@ if (enemy.statuses.poison > 0) {
                       }));
                       triggerEnemyBleed();
                       showFeedback(`출혈 피해 ${bDmg}!`);
-                      await new Promise(r => setTimeout(r, 400));
+                     await new Promise(r => setTimeout(r, 400));
                   }
                  if (enemy.currentHp <= 0) break;
 
@@ -1445,11 +1305,15 @@ if (enemy.statuses.poison > 0) {
                      continue; // Skip this attack hit
                  }
 
-                 const unblockedDmg = Math.max(0, dmg - player.block);
-                 setPlayer(p => ({ ...p, hp: Math.max(0, p.hp - unblockedDmg), block: Math.max(0, p.block - dmg) }));
+                 const { unblockedDamage } = calculateBlockedDamage(intentPlan.attackDamage, player.block);
+                 setPlayer(p => ({
+                   ...p,
+                   hp: Math.max(0, p.hp - unblockedDamage),
+                   block: Math.max(0, p.block - intentPlan.attackDamage)
+                 }));
                  
                   // Thievery Logic
-                  if (enemy.traits.includes(EnemyTrait.THIEVERY) && unblockedDmg > 0) {
+                  if (enemy.traits.includes(EnemyTrait.THIEVERY) && unblockedDamage > 0) {
                       const stolen = Math.min(player.gold, 5);
                       if (stolen > 0) {
                           setPlayer(p => ({ ...p, gold: p.gold - stolen }));
@@ -1457,15 +1321,15 @@ if (enemy.statuses.poison > 0) {
                       }
                   }
 
-                  if (unblockedDmg > 0) {
+                  if (unblockedDamage > 0) {
                     triggerPlayerHit();
-                    showFeedback(`${unblockedDmg} 피해!`, 'bad');
+                    showFeedback(`${unblockedDamage} 피해!`, 'bad');
                   } else {
                     triggerPlayerBlock();
                     showFeedback("방어 성공!", 'good');
                   }
                  
-                 if (i < attackCount - 1) await new Promise(r => setTimeout(r, 400));
+                 if (i < intentPlan.attackCount - 1) await new Promise(r => setTimeout(r, 400));
              }
 
              if (enemy.statuses.strength > 0) {
@@ -1479,27 +1343,22 @@ if (enemy.statuses.poison > 0) {
           if (enemy.currentHp <= 0) return;
 
           // DEFEND intent - enemy gains block
-          if (intent.type === IntentType.DEFEND) {
-             const blockGain = intent.value;
+          if (intentPlan.defendBlock > 0) {
+             const blockGain = intentPlan.defendBlock;
              setEnemy(prev => ({ ...prev, block: prev.block + blockGain }));
              showFeedback(`적 방어 태세! +${blockGain} 방어도`, 'bad');
           } else if (intent.effect?.type === 'GAIN_STRENGTH') {
-             const gain = intent.effect.randomMax
-               ? Math.floor(Math.random() * intent.effect.randomMax) + intent.effect.amount
-               : intent.effect.amount;
+             const gain = calculateEnemyStrengthGain(enemy, intent);
              setEnemy(prev => ({
                  ...prev,
                  statuses: { ...prev.statuses, strength: (prev.statuses.strength || 0) + gain }
              }));
              showFeedback(`적 공격력 +${gain} 증가!`, 'bad');
-          } else if (intent.effect?.type === 'HEAL_SELF') {
-             setEnemy(e => ({ ...e, currentHp: Math.min(e.maxHp, e.currentHp + intent.effect.amount) }));
-             showFeedback(`적 회복 +${intent.effect.amount} HP`, 'bad');
+          } else if (intentPlan.healAmount > 0) {
+             setEnemy(e => ({ ...e, currentHp: Math.min(e.maxHp, e.currentHp + intentPlan.healAmount) }));
+             showFeedback(`적 회복 +${intentPlan.healAmount} HP`, 'bad');
           } else if (intent.effect?.type === 'CLEANSE_STATUSES_GAIN_STRENGTH') {
-             const statusStacks = enemy.statuses.poison + enemy.statuses.bleed + enemy.statuses.burn + enemy.statuses.vulnerable + enemy.statuses.weak + enemy.statuses.stunned;
-             if (statusStacks > 0) {
-                 const rawGain = Math.max(intent.effect.minGain || 0, Math.floor(statusStacks * intent.effect.amountPerStatus));
-                 const gain = intent.effect.maxGain ? Math.min(intent.effect.maxGain, rawGain) : rawGain;
+             if (intentPlan.statusCleanseStrengthGain > 0) {
                  setEnemy(prev => ({
                      ...prev,
                      statuses: {
@@ -1510,23 +1369,20 @@ if (enemy.statuses.poison > 0) {
                          vulnerable: 0,
                          weak: 0,
                          stunned: 0,
-                         strength: (prev.statuses.strength || 0) + gain
+                         strength: (prev.statuses.strength || 0) + intentPlan.statusCleanseStrengthGain
                      }
                  }));
-                 showFeedback(`상태이상 정화! 공격력 +${gain}`, 'bad');
+                 showFeedback(`상태이상 정화! 공격력 +${intentPlan.statusCleanseStrengthGain}`, 'bad');
              } else {
                  showFeedback('상태이상 정화 실패', 'good');
              }
-          } else if (intent.effect?.type === 'ADD_JUNK') {
-             const junkCards: CardInstance[] = Array(intent.effect.count).fill(null).map(() => createCardInstance(901));
+          } else if (intentPlan.junkCount > 0) {
+             const junkCards: CardInstance[] = Array(intentPlan.junkCount).fill(null).map(() => createCardInstance(901));
              setDiscardPile(prev => [...prev, ...junkCards]);
-             showFeedback(`녹슨 덩어리 ${intent.effect.count}장 추가!`, 'bad');
+             showFeedback(`녹슨 덩어리 ${intentPlan.junkCount}장 추가!`, 'bad');
           } else if (intent.type === IntentType.BUFF) {
              if (intent.description.includes('공격력')) {
-                 let gain = intent.value;
-                 if (enemy.id === 'kobold_scrapper') {
-                     gain = Math.floor(Math.random() * 3) + 1;
-                 }
+                 const gain = calculateEnemyStrengthGain(enemy, intent);
                  if (enemy.id === 'shadow_assassin') {
                      // Assassin stacks block too
                      setEnemy(e => ({ ...e, statuses: { ...e.statuses, strength: (e.statuses.strength || 0) + gain } }));
@@ -1547,11 +1403,6 @@ if (enemy.statuses.poison > 0) {
                  setEnemy(e => ({ ...e, currentHp: Math.min(e.maxHp, e.currentHp + intent.value) }));
                  showFeedback(`적 회복 +${intent.value} HP`, 'bad');
              }
-          } else if (intent.type === IntentType.DEBUFF && !intent.effect && enemy.id !== 'hammerhead' && enemy.id !== 'deus_ex_machina') {
-             const count = intent.value || 1;
-             const junkCards: CardInstance[] = Array(count).fill(null).map(() => createCardInstance(901));
-             setDiscardPile(prev => [...prev, ...junkCards]);
-             showFeedback(`녹슨 덩어리 ${count}장 추가!`, 'bad');
           }
 
           setEnemy(prev => ({
@@ -1569,7 +1420,7 @@ if (enemy.statuses.poison > 0) {
   }, [combatState.phase, gameState]);
 
   // Derived state for Anvil
-  const weaponPrediction = calculateWeaponStats();
+  const weaponPrediction = calculateCurrentWeaponStats();
   const canCraft = !!(slots.handle && slots.head);
   const availableMapNodeIds = getAvailableMapNodeIds(mapNodes, currentMapNodeId);
 
