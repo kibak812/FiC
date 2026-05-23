@@ -327,6 +327,15 @@ registerEffect({
   execute: () => [{ type: 'DRAW_CARDS', count: 1 }]
 });
 
+// 248: Counterweight Handle - Draw 1 on the first weapon each turn
+registerEffect({
+  cardId: 248,
+  slot: 'handle',
+  phase: 'POST_DAMAGE',
+  condition: (ctx) => ctx.player.weaponsUsedThisTurn === 0,
+  execute: () => [{ type: 'DRAW_CARDS', count: 1 }]
+});
+
 // 214: Blunt Club - Apply Weak 1
 registerEffect({
   cardId: 214,

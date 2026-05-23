@@ -144,6 +144,17 @@ runSuite('Core combat tests', [
   test('multi-hit cards expose deterministic hit count and damage bonuses', () => {
     const rng = createSeededRng('multi-hit');
     const enemy = JSON.parse(JSON.stringify(ENEMIES.RUST_SLIME));
+    const twinHookStats = calculateWeaponStats({
+      slots: {
+        handle: createCardInstance(101, rng),
+        head: createCardInstance(249, rng),
+        deco: null
+      },
+      playerBlock: 0,
+      weaponsUsedThisTurn: 0,
+      enemyStatuses: enemy.statuses,
+      growingCrystalBonus: 0
+    });
     const stats = calculateWeaponStats({
       slots: {
         handle: createCardInstance(101, rng),
@@ -156,6 +167,7 @@ runSuite('Core combat tests', [
       growingCrystalBonus: 0
     });
 
+    assertEqual(twinHookStats.hitCount, 2, 'Twin Hook Awl should hit twice');
     assertEqual(stats.hitCount, 3, 'Three-pronged awl should hit three times');
     assertEqual(stats.damage, 7, 'Twin needle deco should add the multi-hit bonus');
   }),
@@ -223,6 +235,29 @@ runSuite('Core combat tests', [
     assertEqual(actions.filter(action => action.type === 'PLAYER_GAIN_ENERGY').length, 2, 'Handle and head should both restore energy');
     assertEqual(actions.filter(action => action.type === 'DRAW_CARDS').length, 1, 'Infinite battery feather should draw cards');
     assertEqual(actions.filter(action => action.type === 'PLAYER_NEXT_TURN_DRAW').length, 1, 'Infinite battery feather should add next-turn draw');
+  }),
+
+  test('counterweight handle rewards the first weapon only', () => {
+    const firstWeaponCtx = createEffectContext({ handle: 248, head: 249 });
+    const firstWeaponActions = executeEffectsForPhase(firstWeaponCtx, {
+      finalDamage: firstWeaponCtx.stats.damage,
+      finalBlock: firstWeaponCtx.stats.block,
+      ignoreBlock: false,
+      selfDamage: 0
+    }, 'POST_DAMAGE');
+    const laterWeaponCtx = createEffectContext(
+      { handle: 248, head: 249 },
+      { player: createPlayer({ weaponsUsedThisTurn: 1 }) }
+    );
+    const laterWeaponActions = executeEffectsForPhase(laterWeaponCtx, {
+      finalDamage: laterWeaponCtx.stats.damage,
+      finalBlock: laterWeaponCtx.stats.block,
+      ignoreBlock: false,
+      selfDamage: 0
+    }, 'POST_DAMAGE');
+
+    assertEqual(firstWeaponActions.filter(action => action.type === 'DRAW_CARDS').length, 1, 'Counterweight Handle should draw on the first weapon');
+    assertEqual(laterWeaponActions.filter(action => action.type === 'DRAW_CARDS').length, 0, 'Counterweight Handle should not draw after another weapon was forged');
   }),
 
   test('turn-start statuses tick poison, burn, weak, vulnerable, and stun predictably', () => {

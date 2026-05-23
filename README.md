@@ -19,9 +19,11 @@ npm run dev
 npx tsc --noEmit
 npm run build
 npm run test:balance
+npm run test:readiness
 npm run test:logic
+npm audit --audit-level=moderate
 npx playwright install chromium # first time only
 npm run test:e2e
 ```
 
-The game is designed to run fully offline from the bundled card and enemy databases.
+The game is designed to run fully offline from the bundled card and enemy databases. The readiness gate checks playable card count, archetype coverage, enemy pools, map/reward/event data, sprite coverage, save/onboarding/package files, and CI gates.

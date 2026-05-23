@@ -29,8 +29,14 @@ jobs:
       - name: Balance validation
         run: npm run test:balance
 
+      - name: Product readiness validation
+        run: npm run test:readiness
+
       - name: Logic and simulation tests
         run: npm run test:logic
+
+      - name: Security audit
+        run: npm audit --audit-level=moderate
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps chromium

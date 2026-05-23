@@ -7,10 +7,11 @@
     "dev": "vite",
     "build": "vite build",
     "preview": "vite preview",
-    "test": "npm run test:logic && npm run test:e2e",
+    "test": "npm run test:readiness && npm run test:logic && npm run test:e2e",
     "test:logic": "tsx scripts/testCore.ts && tsx scripts/simulateRuns.ts",
     "test:e2e": "playwright test",
-    "test:balance": "tsx scripts/validateBalance.ts"
+    "test:balance": "tsx scripts/validateBalance.ts",
+    "test:readiness": "tsx scripts/validateProductReadiness.ts"
   },
   "dependencies": {
     "@fontsource/press-start-2p": "^5.2.7",

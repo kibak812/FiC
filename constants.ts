@@ -81,6 +81,8 @@ export const CARD_DATABASE: CardData[] = [
   { id: 245, name: '예열 부싯돌', type: CardType.DECO, cost: 0, value: 3, rarity: CardRarity.COMMON, description: '피해량 +3.' },
   { id: 246, name: '훈련용 철퇴', type: CardType.HEAD, cost: 1, value: 7, rarity: CardRarity.COMMON, description: '피해 7.' },
   { id: 247, name: '압축 숫돌', type: CardType.DECO, cost: 1, value: 6, rarity: CardRarity.COMMON, description: '피해량 +6.' },
+  { id: 248, name: '균형추 손잡이', type: CardType.HANDLE, cost: 1, value: 1.25, rarity: CardRarity.COMMON, description: '피해량 125%. 이번 턴 첫 무기라면 카드 1장 드로우.' },
+  { id: 249, name: '쌍갈고리 송곳', type: CardType.HEAD, cost: 1, value: 3, rarity: CardRarity.COMMON, description: '피해 3, 2회 공격.' },
 
   // Rare
   { id: 301, name: '쌍둥이 손잡이', type: CardType.HANDLE, cost: 2, value: 2, rarity: CardRarity.RARE, description: '머리 효과 2회 발동 (피해량 2배 아님)' },
@@ -229,11 +231,11 @@ export const CARD_ARCHETYPES: CardArchetypeDefinition[] = [
     id: 'DRAW_LOOP',
     name: '드로우 순환',
     description: '카드 드로우와 손패 귀환으로 조합 탐색 빈도를 높입니다.',
-    entryCardIds: [204, 223, 231],
+    entryCardIds: [204, 223, 231, 248],
     midCardIds: [305, 326, 342],
     lateCardIds: [405, 416, 425],
     slotCardIds: {
-      [CardType.HANDLE]: [212, 223, 326, 405, 416],
+      [CardType.HANDLE]: [212, 223, 248, 326, 405, 416],
       [CardType.HEAD]: [215, 231, 334, 406],
       [CardType.DECO]: [106, 204, 241, 305, 342, 425]
     }
@@ -255,12 +257,12 @@ export const CARD_ARCHETYPES: CardArchetypeDefinition[] = [
     id: 'MULTI_HIT',
     name: '다단히트',
     description: '낮은 피해를 여러 번 넣어 적중 효과와 상태 부여를 증폭합니다.',
-    entryCardIds: [225, 233, 243],
+    entryCardIds: [225, 233, 243, 249],
     midCardIds: [301, 335, 344],
     lateCardIds: [417, 421, 425],
     slotCardIds: {
       [CardType.HANDLE]: [225, 301, 328, 417],
-      [CardType.HEAD]: [306, 233, 335, 421],
+      [CardType.HEAD]: [306, 233, 249, 335, 421],
       [CardType.DECO]: [243, 344, 425]
     }
   }

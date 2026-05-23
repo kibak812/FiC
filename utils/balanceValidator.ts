@@ -145,6 +145,8 @@ Object.assign(CARD_EFFECT_MAPPING, {
   245: { effects: ['DAMAGE_ADD'], values: { bonus: 3 } },
   246: { effects: ['DIRECT_DAMAGE'], values: { damage: 7 } },
   247: { effects: ['DAMAGE_ADD'], values: { bonus: 6 } },
+  248: { effects: ['DAMAGE_MULT', 'DRAW_CARD'], values: { multiplier: 1.25, draw: 1 } },
+  249: { effects: ['DIRECT_DAMAGE', 'MULTI_HIT'], values: { damage: 3, hits: 2 } },
   321: { effects: ['DAMAGE_MULT', 'SELF_DAMAGE'], values: { multiplier: 1.4, selfDamage: 4 } },
   322: { effects: ['DAMAGE_MULT', 'BLOCK'], values: { multiplier: 1.5, block: 12 } },
   323: { effects: ['DAMAGE_MULT', 'STATUS_APPLY'], values: { multiplier: 1, poison: 4 } },

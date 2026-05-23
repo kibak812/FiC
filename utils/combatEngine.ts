@@ -13,6 +13,7 @@ const DEFENSIVE_HANDLE_IDS = new Set([102, 217, 322, 415]);
 const DEFENSIVE_HEAD_IDS = new Set([104, 227, 330, 419]);
 
 const HEAD_HIT_COUNTS: Record<number, number> = {
+  249: 2,
   233: 3,
   306: 2,
   335: 3,

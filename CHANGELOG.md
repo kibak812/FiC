@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.11.1] - 2026-05-23
+
+### Added
+- New common cards: 균형추 손잡이 and 쌍갈고리 송곳, bringing the real playable card pool to 120 cards without counting special or junk cards.
+- Product readiness validation for card/archetype coverage, enemy pools, map/reward/event tables, pixel sprite coverage, save/onboarding/package files, and CI gates.
+
+### Changed
+- CI now runs the product readiness gate and a moderate-or-higher security audit.
+
+### Design Notes
+- The new cards deliberately reinforce early draw-loop and multi-hit decisions, and their dedicated pixel motifs are checked so new card art cannot silently fall back to generic sprites.
+
+---
+
 ## [1.11.0] - 2026-05-23
 
 ### Added
