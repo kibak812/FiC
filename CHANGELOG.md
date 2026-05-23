@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.11.9] - 2026-05-23
+
+### Added
+- UI-free player weapon attack resolver with inspectable hit events for damage cap, block chip, piercing, thorns, damage dealt, and on-hit actions.
+- Core combat regression coverage for shared player hit resolution across damage caps, block, thorns, and Midas on-hit gold.
+
+### Changed
+- Runtime combat and seeded simulation now share player weapon hit resolution instead of duplicating damage-loop rules.
+- Product readiness now checks that player weapon hit calculation is routed through the shared combat engine.
+- Menu version updated to v1.11.9.
+
+### Design Notes
+- This closes another App.tsx combat-engine split: enemy reactions such as thorns and damage caps now resolve through one deterministic rule path for UI and simulation.
+
+---
+
 ## [1.11.8] - 2026-05-23
 
 ### Added

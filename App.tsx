@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { HelpCircle } from 'lucide-react';
 import { 
   CardInstance, CardType, CombatState, PlayerStats, EnemyData, 
-  EnemyTrait, EnemyTier, BossRewardId, ShopItemId,
+  EnemyTier, BossRewardId, ShopItemId,
   GameEvent, EventOption, CardRarity, MapNode, NodeType, GameState, RemovalContext, GameSettings
 } from './types';
 import { INITIAL_DECK_IDS, ENEMIES, GAME_EVENTS } from './constants';
@@ -38,7 +38,8 @@ import {
 import type { SavedRunData, SavedRunSummary } from './utils/saveUtils';
 import {
   calculateWeaponStats,
-  resolveEnemyTurn
+  resolveEnemyTurn,
+  resolvePlayerWeaponAttack
 } from './utils/combatEngine';
 
 // --- Hooks ---
@@ -1092,12 +1093,13 @@ const startCombat = (enemyData: EnemyData) => {
     try {
     const effectMultiplier = isTwinHandle(slots.handle?.id || 0) ? 2 : 1;
     const remainingEnergyAfterCost = player.energy - stats.totalCost;
+    let attackPlayer: PlayerStats = {
+      ...player,
+      energy: remainingEnergyAfterCost,
+      weaponsUsedThisTurn: player.weaponsUsedThisTurn + 1
+    };
 
-    setPlayer(prev => ({ 
-      ...prev, 
-      energy: prev.energy - stats.totalCost, 
-      weaponsUsedThisTurn: prev.weaponsUsedThisTurn + 1 
-    }));
+    setPlayer(attackPlayer);
 
     // Build effect context
     const effectContext: CardEffectContext = {
@@ -1121,11 +1123,12 @@ const startCombat = (enemyData: EnemyData) => {
     const selfDamageActions = executeEffectsForPhase(effectContext, modifiers, 'SELF_DAMAGE');
     for (const action of selfDamageActions) {
       if (action.type === 'PLAYER_SELF_DAMAGE') {
-        setPlayer(prev => ({ 
-          ...prev, 
-          hp: Math.max(0, prev.hp - action.amount),
-          selfDamageThisTurn: prev.selfDamageThisTurn + action.amount 
-        }));
+        attackPlayer = {
+          ...attackPlayer,
+          hp: Math.max(0, attackPlayer.hp - action.amount),
+          selfDamageThisTurn: attackPlayer.selfDamageThisTurn + action.amount
+        };
+        setPlayer(attackPlayer);
         modifiers.selfDamage += action.amount;
       }
     }
@@ -1137,7 +1140,7 @@ const startCombat = (enemyData: EnemyData) => {
     // Apply modifier changes (damage, block, ignoreBlock)
     modifiers = applyModifierActions(modifiers, preDamageActions);
 
-    const { finalDamage, finalBlock, ignoreBlock } = modifiers;
+    const { finalDamage, finalBlock } = modifiers;
 
     // Trigger animations
     if (finalDamage > 0) {
@@ -1146,60 +1149,64 @@ const startCombat = (enemyData: EnemyData) => {
       triggerShieldEffect();
     }
 
-    // === DAMAGE LOOP ===
     if (finalDamage > 0) {
-      let loops = stats.hitCount;
-      if (isTwinHandle(slots.handle?.id || 0)) loops *= 2;
+      const attackResult = resolvePlayerWeaponAttack({
+        player: attackPlayer,
+        enemy,
+        slots,
+        stats,
+        modifiers,
+        growingCrystalBonus,
+        effectMultiplier,
+        remainingEnergyAfterCost
+      });
 
-      for (let i = 0; i < loops; i++) {
-        let actualDmg = finalDamage;
+      attackPlayer = attackResult.player;
+      modifiers = attackResult.modifiers;
+      setPlayer(attackResult.player);
+      setEnemy(attackResult.enemy);
+      setGrowingCrystalBonus(attackResult.growingCrystalBonus);
 
-        // Vulnerable calculation
-        if (enemy.statuses.vulnerable > 0) {
-          actualDmg = Math.floor(actualDmg * 1.5);
+      for (const sideEffect of attackResult.sideEffects) {
+        switch (sideEffect.type) {
+          case 'DRAW_CARDS':
+            drawCards(sideEffect.count);
+            showFeedback(`카드 ${sideEffect.count}장 드로우!`, 'good');
+            break;
+          case 'CREATE_REPLICA': {
+            const replica = createCardInstance(801);
+            replica.value = sideEffect.baseDamage;
+            replica.description = `복제된 무기. 피해량 ${sideEffect.baseDamage}. 비용 0.`;
+            setDeck(prev => [...prev, replica]);
+            showFeedback('덱에 복제!', 'good');
+            break;
+          }
         }
+      }
 
-        // Enemy traits
-        if (enemy.traits.includes(EnemyTrait.DAMAGE_CAP_15) && actualDmg > 15) {
-          actualDmg = 15;
+      for (const event of attackResult.events) {
+        if (event.cappedByDamageLimit) {
           showFeedback('방어막: 피해 15로 제한!');
         }
-
-        if (enemy.traits.includes(EnemyTrait.THORNS_5)) {
-          setPlayer(prev => ({ ...prev, hp: Math.max(0, prev.hp - 5) }));
-          showFeedback('가시 반사! -5 HP', 'bad');
+        if (event.thornsDamage > 0) {
+          showFeedback(`가시 반사! -${event.thornsDamage} HP`, 'bad');
         }
-
-        // Apply damage to block first (unless ignoreBlock)
-        let damageDealt = actualDmg;
-        if (damageDealt > 0 && enemy.block > 0 && !ignoreBlock) {
-          const blockDamage = Math.min(enemy.block, damageDealt);
-          damageDealt -= blockDamage;
-          setEnemy(prev => ({ ...prev, block: prev.block - blockDamage }));
-          if (blockDamage > 0) showFeedback('방어도에 막힘!');
-        } else if (ignoreBlock && enemy.block > 0) {
+        if (event.blockDamage > 0) {
+          showFeedback('방어도에 막힘!');
+        } else if (event.ignoredBlock) {
           showFeedback('관통! 방어도 무시!');
         }
-
-        // Apply remaining damage to HP
-        if (damageDealt > 0) {
-          setEnemy(prev => ({
-            ...prev,
-            currentHp: Math.max(0, prev.currentHp - damageDealt),
-            damageTakenThisTurn: prev.damageTakenThisTurn + damageDealt
-          }));
-          showFeedback(`${i > 0 ? '연타!' : ''} -${damageDealt} 피해!`);
+        if (event.damageDealt > 0) {
+          showFeedback(`${event.hitIndex > 0 ? '연타!' : ''} -${event.damageDealt} 피해!`);
           playSound('hit');
         }
 
-        // ON-HIT effects (Midas Touch, Vampiric)
-        if (damageDealt > 0) {
-          const onHitActions = executeEffectsForPhase(effectContext, modifiers, 'ON_HIT');
-          processEffectActions(onHitActions, modifiers);
+        for (const action of event.onHitActions) {
+          if (action.type === 'PLAYER_GAIN_GOLD') showFeedback(`+${action.amount} 골드`, 'good');
+          if (action.type === 'PLAYER_HEAL') showFeedback(`+${action.amount} HP`, 'good');
         }
 
-        // Delay between hits
-        if (loops > 1) await new Promise(r => setTimeout(r, 200));
+        if (attackResult.events.length > 1) await new Promise(r => setTimeout(r, 200));
       }
     }
 

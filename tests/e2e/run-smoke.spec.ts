@@ -30,7 +30,7 @@ test('menu to first forge attack flow works without console errors', async ({ pa
 
   await expect(page).toHaveTitle('Forged in Chaos');
   await expect(page.getByRole('heading', { name: 'FORGED IN CHAOS' })).toBeVisible();
-  await expect(page.getByText('v1.11.8')).toBeVisible();
+  await expect(page.getByText('v1.11.9')).toBeVisible();
 
   await page.getByRole('button', { name: '설정' }).click();
   await expect(page.getByRole('heading', { name: '설정' })).toBeVisible();

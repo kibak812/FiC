@@ -12,7 +12,7 @@ import {
   isTwinHandle,
   WeaponSlots
 } from '../utils/cardEffects';
-import { applyCombatEffectActions, calculateEnemyIntentPlan, calculateWeaponStats, resolveEnemyTurn } from '../utils/combatEngine';
+import { applyCombatEffectActions, calculateEnemyIntentPlan, calculateWeaponStats, resolveEnemyTurn, resolvePlayerWeaponAttack } from '../utils/combatEngine';
 import { createActMap, getAvailableMapNodeIds } from '../utils/mapUtils';
 import { createInitialPlayerStats } from '../utils/playerUtils';
 import { createCombatCardRewards, createRandomCardReward, getCombatRewardRule, rollGoldReward } from '../utils/rewardUtils';
@@ -421,38 +421,36 @@ const forgeBestWeapon = (state: SimState, enemy: EnemyData, rng: () => number): 
   ctx = createEffectContext(state, enemy, slots, stats, modifiers, rng, playerBeforeForge, remainingEnergyAfterCost);
   modifiers = applyModifierActions(modifiers, executeEffectsForPhase(ctx, modifiers, 'PRE_DAMAGE'));
 
-  const hitLoops = stats.hitCount * (isTwinHandle(slots.handle?.id || 0) ? 2 : 1);
-  for (let i = 0; i < hitLoops; i++) {
-    let actualDamage = modifiers.finalDamage;
+  const attackResult = resolvePlayerWeaponAttack({
+    player: state.player,
+    enemy,
+    slots,
+    stats,
+    modifiers,
+    growingCrystalBonus: state.growingCrystalBonus,
+    effectMultiplier: isTwinHandle(slots.handle?.id || 0) ? 2 : 1,
+    remainingEnergyAfterCost,
+    rng
+  });
 
-    if (enemy.statuses.vulnerable > 0) {
-      actualDamage = Math.floor(actualDamage * 1.5);
+  state.player = attackResult.player;
+  Object.assign(enemy, attackResult.enemy, { statuses: { ...attackResult.enemy.statuses } });
+  modifiers = attackResult.modifiers;
+  state.growingCrystalBonus = attackResult.growingCrystalBonus;
+
+  for (const sideEffect of attackResult.sideEffects) {
+    switch (sideEffect.type) {
+      case 'DRAW_CARDS':
+        drawCards(state, sideEffect.count, rng);
+        break;
+      case 'CREATE_REPLICA': {
+        const replica = createCardInstance(801, rng);
+        replica.value = sideEffect.baseDamage;
+        replica.description = `Simulated replica. Damage ${sideEffect.baseDamage}. Cost 0.`;
+        state.deck.push(replica);
+        break;
+      }
     }
-
-    if (enemy.traits.includes(EnemyTrait.DAMAGE_CAP_15) && actualDamage > 15) {
-      actualDamage = 15;
-    }
-
-    if (enemy.traits.includes(EnemyTrait.THORNS_5) && actualDamage > 0) {
-      state.player.hp = Math.max(0, state.player.hp - 5);
-      if (state.player.hp <= 0) break;
-    }
-
-    let damageDealt = actualDamage;
-    if (damageDealt > 0 && enemy.block > 0 && !modifiers.ignoreBlock) {
-      const blockDamage = Math.min(enemy.block, damageDealt);
-      enemy.block -= blockDamage;
-      damageDealt -= blockDamage;
-    }
-
-    if (damageDealt > 0) {
-      enemy.currentHp = Math.max(0, enemy.currentHp - damageDealt);
-      enemy.damageTakenThisTurn += damageDealt;
-      ctx = createEffectContext(state, enemy, slots, stats, modifiers, rng, playerBeforeForge, remainingEnergyAfterCost);
-      processActions(executeEffectsForPhase(ctx, modifiers, 'ON_HIT'), modifiers, state, enemy, rng);
-    }
-
-    if (enemy.currentHp <= 0) break;
   }
 
   if (modifiers.finalBlock > 0) {

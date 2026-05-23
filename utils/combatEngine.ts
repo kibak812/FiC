@@ -8,7 +8,16 @@ import {
   IntentType,
   PlayerStats
 } from '@/types';
-import type { EffectAction, EffectModifiers, WeaponSlots } from './cardEffects';
+import {
+  executeEffectsForPhase,
+  isTwinHandle
+} from './cardEffects';
+import type {
+  CardEffectContext,
+  EffectAction,
+  EffectModifiers,
+  WeaponSlots
+} from './cardEffects';
 
 const DEFENSIVE_HANDLE_IDS = new Set([102, 217, 322, 415]);
 const DEFENSIVE_HEAD_IDS = new Set([104, 227, 330, 419]);
@@ -138,6 +147,38 @@ export interface CombatEffectState {
 }
 
 export interface CombatEffectApplyResult extends CombatEffectState {
+  sideEffects: CombatEffectSideEffect[];
+}
+
+export interface PlayerWeaponAttackInput {
+  player: PlayerStats;
+  enemy: EnemyData;
+  slots: WeaponSlots;
+  stats: CraftedWeapon;
+  modifiers: EffectModifiers;
+  growingCrystalBonus: number;
+  effectMultiplier: number;
+  remainingEnergyAfterCost: number;
+  rng?: () => number;
+}
+
+export interface PlayerWeaponHitEvent {
+  hitIndex: number;
+  actualDamage: number;
+  blockDamage: number;
+  damageDealt: number;
+  cappedByDamageLimit: boolean;
+  ignoredBlock: boolean;
+  thornsDamage: number;
+  onHitActions: EffectAction[];
+}
+
+export interface PlayerWeaponAttackResult {
+  player: PlayerStats;
+  enemy: EnemyData;
+  modifiers: EffectModifiers;
+  growingCrystalBonus: number;
+  events: PlayerWeaponHitEvent[];
   sideEffects: CombatEffectSideEffect[];
 }
 
@@ -368,6 +409,111 @@ export const applyCombatEffectActions = (
   }
 
   return current;
+};
+
+export const resolvePlayerWeaponAttack = ({
+  player: playerInput,
+  enemy: enemyInput,
+  slots,
+  stats,
+  modifiers: modifiersInput,
+  growingCrystalBonus: initialGrowingCrystalBonus,
+  effectMultiplier,
+  remainingEnergyAfterCost,
+  rng
+}: PlayerWeaponAttackInput): PlayerWeaponAttackResult => {
+  let player: PlayerStats = { ...playerInput };
+  let enemy: EnemyData = {
+    ...enemyInput,
+    statuses: { ...enemyInput.statuses }
+  };
+  let modifiers: EffectModifiers = { ...modifiersInput };
+  let growingCrystalBonus = initialGrowingCrystalBonus;
+  const events: PlayerWeaponHitEvent[] = [];
+  const sideEffects: CombatEffectSideEffect[] = [];
+  const hitLoops = stats.hitCount * (isTwinHandle(slots.handle?.id || 0) ? 2 : 1);
+
+  for (let i = 0; i < hitLoops; i++) {
+    let actualDamage = modifiers.finalDamage;
+    let cappedByDamageLimit = false;
+
+    if (enemy.statuses.vulnerable > 0) {
+      actualDamage = Math.floor(actualDamage * 1.5);
+    }
+
+    if (enemy.traits.includes(EnemyTrait.DAMAGE_CAP_15) && actualDamage > 15) {
+      actualDamage = 15;
+      cappedByDamageLimit = true;
+    }
+
+    const thornsDamage = enemy.traits.includes(EnemyTrait.THORNS_5) && actualDamage > 0 ? 5 : 0;
+    if (thornsDamage > 0) {
+      player.hp = Math.max(0, player.hp - thornsDamage);
+    }
+
+    let damageDealt = actualDamage;
+    let blockDamage = 0;
+    const ignoredBlock = modifiers.ignoreBlock && enemy.block > 0 && damageDealt > 0;
+
+    if (damageDealt > 0 && enemy.block > 0 && !modifiers.ignoreBlock) {
+      blockDamage = Math.min(enemy.block, damageDealt);
+      enemy.block -= blockDamage;
+      damageDealt -= blockDamage;
+    }
+
+    let onHitActions: EffectAction[] = [];
+    if (damageDealt > 0) {
+      enemy.currentHp = Math.max(0, enemy.currentHp - damageDealt);
+      enemy.damageTakenThisTurn += damageDealt;
+
+      const effectContext: CardEffectContext = {
+        slots,
+        stats,
+        player,
+        enemy,
+        effectMultiplier,
+        remainingEnergyAfterCost,
+        growingCrystalBonus,
+        rng,
+        showFeedback: () => undefined
+      };
+      onHitActions = executeEffectsForPhase(effectContext, modifiers, 'ON_HIT');
+      const onHitResult = applyCombatEffectActions({
+        player,
+        enemy,
+        modifiers,
+        growingCrystalBonus
+      }, onHitActions);
+
+      player = onHitResult.player;
+      enemy = onHitResult.enemy;
+      modifiers = onHitResult.modifiers;
+      growingCrystalBonus = onHitResult.growingCrystalBonus;
+      sideEffects.push(...onHitResult.sideEffects);
+    }
+
+    events.push({
+      hitIndex: i,
+      actualDamage,
+      blockDamage,
+      damageDealt,
+      cappedByDamageLimit,
+      ignoredBlock,
+      thornsDamage,
+      onHitActions
+    });
+
+    if (player.hp <= 0 || enemy.currentHp <= 0) break;
+  }
+
+  return {
+    player,
+    enemy,
+    modifiers,
+    growingCrystalBonus,
+    events,
+    sideEffects
+  };
 };
 
 export const calculateStatusCleanseStrengthGain = (enemy: EnemyData, intent: EnemyIntent): number => {

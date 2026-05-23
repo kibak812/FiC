@@ -24,6 +24,7 @@ import {
   calculateEnemyStrengthGain,
   calculateWeaponStats,
   resolveEnemyTurn,
+  resolvePlayerWeaponAttack,
   resolveEnemyTurnStartStatuses
 } from '../utils/combatEngine';
 import {
@@ -413,6 +414,71 @@ runSuite('Core combat tests', [
     assertEqual(cleaned.find(card => card.id === 801)?.cost, 0, 'Generated replicas should reset temporary cost changes');
     assertEqual(cleaned.find(card => card.id === 801)?.value, 17, 'Cleanup should preserve non-cost generated card payloads');
     assertEqual(cleaned.find(card => card.id === 101)?.instanceId, originalHandleInstanceId, 'Cleanup should preserve card instance identity');
+  }),
+
+  test('player weapon attack resolver shares cap, block, thorns, and on-hit rules', () => {
+    const cappedEnemy = getEnemyById('rock_crusher');
+    cappedEnemy.block = 5;
+    cappedEnemy.statuses.vulnerable = 1;
+    const heavySlots = {
+      handle: createCardInstance(101),
+      head: createCardInstance(304),
+      deco: null
+    };
+    const heavyStats = calculateWeaponStats({
+      slots: heavySlots,
+      playerBlock: 0,
+      weaponsUsedThisTurn: 0,
+      enemyStatuses: cappedEnemy.statuses,
+      growingCrystalBonus: 0
+    });
+    const cappedResult = resolvePlayerWeaponAttack({
+      player: createPlayer(),
+      enemy: cappedEnemy,
+      slots: heavySlots,
+      stats: heavyStats,
+      modifiers: { finalDamage: heavyStats.damage, finalBlock: heavyStats.block, ignoreBlock: false, selfDamage: 0 },
+      growingCrystalBonus: 0,
+      effectMultiplier: 1,
+      remainingEnergyAfterCost: 0
+    });
+
+    assertEqual(cappedResult.events[0].actualDamage, 15, 'Damage cap should apply after vulnerable scaling');
+    assertEqual(cappedResult.events[0].blockDamage, 5, 'Shared attack resolver should chip block before HP');
+    assertEqual(cappedResult.events[0].damageDealt, 10, 'Only unblocked capped damage should hit HP');
+    assert(cappedResult.events[0].cappedByDamageLimit, 'Damage cap event should be inspectable');
+
+    const thornsEnemy = getEnemyById('barbed_mine');
+    const midasSlots = {
+      handle: createCardInstance(307),
+      head: createCardInstance(103),
+      deco: null
+    };
+    const midasStats = calculateWeaponStats({
+      slots: midasSlots,
+      playerBlock: 0,
+      weaponsUsedThisTurn: 0,
+      enemyStatuses: thornsEnemy.statuses,
+      growingCrystalBonus: 0
+    });
+    const thornsResult = resolvePlayerWeaponAttack({
+      player: createPlayer({ hp: 30, gold: 2 }),
+      enemy: thornsEnemy,
+      slots: midasSlots,
+      stats: midasStats,
+      modifiers: { finalDamage: midasStats.damage, finalBlock: midasStats.block, ignoreBlock: false, selfDamage: 0 },
+      growingCrystalBonus: 0,
+      effectMultiplier: 1,
+      remainingEnergyAfterCost: 0
+    });
+
+    assertEqual(thornsResult.player.hp, 25, 'Thorns should damage the player through the shared resolver');
+    assertEqual(thornsResult.player.gold, 7, 'On-hit Midas gold should be applied by the shared resolver');
+    assertEqual(thornsResult.events[0].thornsDamage, 5, 'Thorns feedback should be inspectable');
+    assert(
+      thornsResult.events[0].onHitActions.some(action => action.type === 'PLAYER_GAIN_GOLD' && action.amount === 5),
+      'On-hit actions should be exposed for UI feedback'
+    );
   })
 ]);
 
