@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.11.16] - 2026-05-23
+
+### Added
+- Hand-reviewed pixel sprites for 14 common and starter decoration cards, covering cords, thorn marks, batteries, charms, shards, pouches, springs, ribbons, weights, needles, dust, flint, and pressed stones.
+
+### Changed
+- Decoration cards now render as distinct small artifacts instead of generic generated symbols, completing the first-pass silhouette cleanup across handles, heads, and decorations.
+- Product readiness now treats those decoration sprites as hand-reviewed art with detail and color-separation checks.
+- Menu version updated to v1.11.16.
+
+### Design Notes
+- Decorations carry build identity, so their silhouettes now read as wearable or attachable forge pieces rather than abstract colored blocks.
+
+---
+
 ## [1.11.15] - 2026-05-23
 
 ### Added

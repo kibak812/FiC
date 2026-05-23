@@ -1470,9 +1470,10 @@ const generatedCardSprite = ({ kind, theme, rarity, variant = 0, motif }: Genera
 };
 
 export const HAND_DRAWN_CARD_SPRITE_IDS = new Set<number>([
-  101, 102, 103, 104, 105,
+  101, 102, 103, 104, 105, 106,
   212, 216, 217, 218, 220, 221, 222, 223, 224, 225,
   209, 213, 214, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 246, 248, 249,
+  210, 211, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 247,
   405, 407,
   414, 415, 416, 417, 418, 419, 420, 421, 422, 423, 424, 425
 ]);
@@ -2559,6 +2560,287 @@ const reviewedCommonHeadSprites: Record<number, React.FC<{ className?: string }>
 };
 
 Object.assign(CardSprites, reviewedCommonHeadSprites);
+
+type ReviewedDecoMotif =
+  | 'cord'
+  | 'thorn'
+  | 'battery'
+  | 'bloodCharm'
+  | 'shieldShard'
+  | 'poisonPouch'
+  | 'emberCharm'
+  | 'spring'
+  | 'ribbon'
+  | 'weight'
+  | 'twinNeedle'
+  | 'slowDust'
+  | 'flint'
+  | 'pressedStone';
+
+interface ReviewedDecoSpriteConfig {
+  base: string;
+  light: string;
+  dark: string;
+  accent: string;
+  spark: string;
+  motif: ReviewedDecoMotif;
+}
+
+const renderReviewedDecoFrame = (accent: string) => (
+  <>
+    <rect x="4" y="4" width="2" height="2" fill="#09070D"/>
+    <rect x="18" y="4" width="2" height="2" fill="#09070D"/>
+    <rect x="5" y="5" width="14" height="1" fill="#21171A"/>
+    <rect x="5" y="18" width="14" height="1" fill="#21171A"/>
+    <rect x="6" y="6" width="1" height="12" fill="#130D10"/>
+    <rect x="17" y="6" width="1" height="12" fill="#130D10"/>
+    <rect x="7" y="20" width="10" height="1" fill="#09070D" opacity="0.45"/>
+    <rect x="5" y="7" width="1" height="2" fill={accent}/>
+    <rect x="18" y="15" width="1" height="2" fill={accent}/>
+  </>
+);
+
+const renderReviewedDecoLoop = ({ dark, accent, spark }: ReviewedDecoSpriteConfig) => (
+  <>
+    <rect x="11" y="4" width="2" height="3" fill={dark}/>
+    <rect x="10" y="5" width="4" height="1" fill={accent}/>
+    <rect x="11" y="6" width="2" height="1" fill={spark}/>
+  </>
+);
+
+const renderReviewedDecoMotif = (config: ReviewedDecoSpriteConfig) => {
+  const { base, light, dark, accent, spark } = config;
+
+  switch (config.motif) {
+    case 'cord':
+      return (
+        <>
+          <rect x="7" y="8" width="10" height="2" fill={base}/>
+          <rect x="8" y="10" width="8" height="1" fill={light}/>
+          <rect x="7" y="12" width="10" height="2" fill={dark}/>
+          <rect x="9" y="14" width="2" height="5" fill={base}/>
+          <rect x="13" y="14" width="2" height="4" fill={light}/>
+          <rect x="6" y="17" width="3" height="2" fill={accent}/>
+          <rect x="15" y="16" width="3" height="2" fill={spark}/>
+          <rect x="10" y="8" width="1" height="6" fill="#2B1A12"/>
+          <rect x="14" y="8" width="1" height="6" fill="#2B1A12"/>
+        </>
+      );
+    case 'thorn':
+      return (
+        <>
+          <rect x="11" y="6" width="2" height="12" fill={dark}/>
+          <rect x="8" y="10" width="8" height="2" fill={base}/>
+          <rect x="9" y="8" width="2" height="2" fill={light}/>
+          <rect x="13" y="8" width="2" height="2" fill={light}/>
+          <rect x="7" y="12" width="2" height="2" fill={accent}/>
+          <rect x="15" y="12" width="2" height="2" fill={accent}/>
+          <rect x="10" y="15" width="4" height="2" fill={light}/>
+          <rect x="11" y="7" width="2" height="1" fill={spark}/>
+          <rect x="6" y="11" width="2" height="1" fill={spark}/>
+          <rect x="16" y="11" width="2" height="1" fill={spark}/>
+        </>
+      );
+    case 'battery':
+      return (
+        <>
+          <rect x="8" y="7" width="8" height="11" fill={dark}/>
+          <rect x="10" y="5" width="4" height="2" fill={accent}/>
+          <rect x="9" y="8" width="6" height="3" fill={base}/>
+          <rect x="9" y="12" width="6" height="2" fill={light}/>
+          <rect x="9" y="15" width="6" height="2" fill={base}/>
+          <rect x="11" y="8" width="2" height="9" fill={spark}/>
+          <rect x="7" y="10" width="2" height="2" fill={accent}/>
+          <rect x="15" y="14" width="2" height="2" fill={accent}/>
+          <rect x="12" y="9" width="1" height="7" fill="#FFFFFF"/>
+        </>
+      );
+    case 'bloodCharm':
+      return (
+        <>
+          <rect x="8" y="8" width="8" height="8" fill={dark}/>
+          <rect x="9" y="9" width="6" height="6" fill={base}/>
+          <rect x="10" y="7" width="4" height="2" fill={accent}/>
+          <rect x="10" y="10" width="4" height="4" fill={light}/>
+          <rect x="11" y="11" width="2" height="2" fill="#2A0508"/>
+          <rect x="8" y="16" width="3" height="3" fill={accent}/>
+          <rect x="14" y="16" width="2" height="2" fill={spark}/>
+          <rect x="7" y="11" width="2" height="2" fill={accent}/>
+          <rect x="15" y="11" width="2" height="2" fill={accent}/>
+        </>
+      );
+    case 'shieldShard':
+      return (
+        <>
+          <rect x="7" y="8" width="10" height="8" fill={dark}/>
+          <rect x="8" y="9" width="8" height="5" fill={base}/>
+          <rect x="9" y="10" width="6" height="3" fill={light}/>
+          <rect x="11" y="7" width="2" height="11" fill={accent}/>
+          <rect x="6" y="11" width="12" height="2" fill={accent}/>
+          <rect x="8" y="16" width="3" height="2" fill={dark}/>
+          <rect x="14" y="14" width="2" height="4" fill={dark}/>
+          <rect x="10" y="11" width="1" height="2" fill={spark}/>
+        </>
+      );
+    case 'poisonPouch':
+      return (
+        <>
+          <rect x="8" y="9" width="8" height="8" fill={dark}/>
+          <rect x="9" y="10" width="6" height="6" fill={base}/>
+          <rect x="10" y="7" width="4" height="2" fill="#D8C49C"/>
+          <rect x="9" y="9" width="6" height="1" fill={accent}/>
+          <rect x="10" y="12" width="4" height="2" fill={light}/>
+          <rect x="11" y="13" width="2" height="2" fill="#14331F"/>
+          <rect x="6" y="16" width="2" height="2" fill={accent}/>
+          <rect x="16" y="7" width="2" height="2" fill={spark}/>
+          <rect x="15" y="15" width="2" height="2" fill={light}/>
+        </>
+      );
+    case 'emberCharm':
+      return (
+        <>
+          <rect x="8" y="8" width="8" height="9" fill={dark}/>
+          <rect x="9" y="9" width="6" height="7" fill={base}/>
+          <rect x="10" y="6" width="4" height="2" fill={accent}/>
+          <rect x="10" y="11" width="4" height="4" fill={accent}/>
+          <rect x="11" y="12" width="2" height="3" fill={spark}/>
+          <rect x="10" y="8" width="2" height="4" fill="#FFE08A"/>
+          <rect x="14" y="9" width="2" height="5" fill="#FF7A1A"/>
+          <rect x="7" y="15" width="2" height="2" fill={accent}/>
+          <rect x="16" y="15" width="1" height="2" fill={spark}/>
+        </>
+      );
+    case 'spring':
+      return (
+        <>
+          <rect x="7" y="8" width="10" height="2" fill={dark}/>
+          <rect x="8" y="11" width="8" height="2" fill={base}/>
+          <rect x="7" y="14" width="10" height="2" fill={dark}/>
+          <rect x="9" y="17" width="6" height="2" fill={base}/>
+          <rect x="11" y="7" width="2" height="12" fill={spark}/>
+          <rect x="8" y="9" width="2" height="2" fill={light}/>
+          <rect x="14" y="12" width="2" height="2" fill={light}/>
+          <rect x="8" y="15" width="2" height="2" fill={light}/>
+          <rect x="15" y="8" width="2" height="2" fill={accent}/>
+        </>
+      );
+    case 'ribbon':
+      return (
+        <>
+          <rect x="6" y="8" width="12" height="2" fill={base}/>
+          <rect x="7" y="11" width="10" height="2" fill={light}/>
+          <rect x="8" y="14" width="8" height="2" fill={base}/>
+          <rect x="16" y="9" width="2" height="8" fill={accent}/>
+          <rect x="8" y="9" width="6" height="1" fill={dark}/>
+          <rect x="9" y="12" width="5" height="1" fill={dark}/>
+          <rect x="9" y="15" width="4" height="1" fill={dark}/>
+          <rect x="6" y="16" width="3" height="2" fill={light}/>
+          <rect x="15" y="17" width="2" height="2" fill={spark}/>
+        </>
+      );
+    case 'weight':
+      return (
+        <>
+          <rect x="8" y="10" width="8" height="7" fill={dark}/>
+          <rect x="9" y="11" width="6" height="5" fill={base}/>
+          <rect x="10" y="7" width="4" height="3" fill={dark}/>
+          <rect x="11" y="6" width="2" height="2" fill={accent}/>
+          <rect x="10" y="12" width="4" height="3" fill={light}/>
+          <rect x="7" y="17" width="10" height="2" fill={dark}/>
+          <rect x="9" y="19" width="6" height="1" fill="#09070D"/>
+          <rect x="12" y="11" width="1" height="5" fill={spark}/>
+          <rect x="6" y="13" width="2" height="2" fill={accent}/>
+          <rect x="16" y="13" width="2" height="2" fill={accent}/>
+        </>
+      );
+    case 'twinNeedle':
+      return (
+        <>
+          <rect x="8" y="6" width="2" height="12" fill={dark}/>
+          <rect x="14" y="6" width="2" height="12" fill={dark}/>
+          <rect x="9" y="7" width="1" height="9" fill={light}/>
+          <rect x="15" y="7" width="1" height="9" fill={light}/>
+          <rect x="7" y="16" width="10" height="2" fill={accent}/>
+          <rect x="9" y="5" width="1" height="2" fill={spark}/>
+          <rect x="15" y="5" width="1" height="2" fill={spark}/>
+          <rect x="10" y="10" width="4" height="2" fill={base}/>
+          <rect x="10" y="14" width="4" height="1" fill={base}/>
+        </>
+      );
+    case 'slowDust':
+      return (
+        <>
+          <rect x="8" y="8" width="8" height="8" fill={base}/>
+          <rect x="9" y="9" width="6" height="6" fill={light}/>
+          <rect x="10" y="10" width="2" height="2" fill={dark}/>
+          <rect x="13" y="11" width="2" height="2" fill={dark}/>
+          <rect x="10" y="15" width="5" height="1" fill={dark}/>
+          <rect x="6" y="17" width="2" height="2" fill={base}/>
+          <rect x="16" y="6" width="2" height="2" fill={spark}/>
+          <rect x="7" y="6" width="2" height="2" fill={accent}/>
+          <rect x="16" y="16" width="2" height="1" fill={accent}/>
+        </>
+      );
+    case 'flint':
+      return (
+        <>
+          <rect x="8" y="9" width="9" height="6" fill={dark}/>
+          <rect x="9" y="10" width="6" height="4" fill={base}/>
+          <rect x="10" y="11" width="4" height="2" fill={light}/>
+          <rect x="13" y="5" width="2" height="5" fill={accent}/>
+          <rect x="15" y="6" width="2" height="4" fill="#FF7A1A"/>
+          <rect x="11" y="15" width="4" height="2" fill={dark}/>
+          <rect x="8" y="16" width="2" height="2" fill={spark}/>
+          <rect x="17" y="9" width="1" height="3" fill={spark}/>
+          <rect x="6" y="12" width="2" height="1" fill={accent}/>
+        </>
+      );
+    case 'pressedStone':
+      return (
+        <>
+          <rect x="5" y="10" width="14" height="6" fill={dark}/>
+          <rect x="7" y="8" width="10" height="2" fill={light}/>
+          <rect x="7" y="16" width="10" height="2" fill={dark}/>
+          <rect x="8" y="11" width="8" height="3" fill={base}/>
+          <rect x="9" y="12" width="6" height="1" fill={spark}/>
+          <rect x="13" y="14" width="2" height="2" fill={accent}/>
+          <rect x="6" y="9" width="2" height="1" fill={accent}/>
+          <rect x="16" y="17" width="2" height="1" fill={accent}/>
+          <rect x="10" y="7" width="4" height="1" fill="#F6E1A6"/>
+        </>
+      );
+  }
+};
+
+const reviewedDecoSprite = (config: ReviewedDecoSpriteConfig): React.FC<{ className?: string }> => {
+  return ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      {renderReviewedDecoFrame(config.accent)}
+      {renderReviewedDecoLoop(config)}
+      {renderReviewedDecoMotif(config)}
+      <rect x="18" y="18" width="1" height="1" fill={config.spark}/>
+    </svg>
+  );
+};
+
+const reviewedCommonDecoSprites: Record<number, React.FC<{ className?: string }>> = {
+  106: reviewedDecoSprite({ base: '#CBAE74', light: '#FFF4CC', dark: '#5C4426', accent: '#AEEBFF', spark: '#FFFFFF', motif: 'cord' }),
+  210: reviewedDecoSprite({ base: '#5F7884', light: '#D7F4FF', dark: '#25343B', accent: '#78D6FF', spark: '#FFFFFF', motif: 'thorn' }),
+  211: reviewedDecoSprite({ base: '#2D6D9B', light: '#56C8FF', dark: '#10283F', accent: '#FFE66D', spark: '#FFFFFF', motif: 'battery' }),
+  236: reviewedDecoSprite({ base: '#8B1E2D', light: '#F08A8A', dark: '#3A1014', accent: '#D94A4A', spark: '#FFD0D0', motif: 'bloodCharm' }),
+  237: reviewedDecoSprite({ base: '#557080', light: '#D7F4FF', dark: '#25343B', accent: '#78D6FF', spark: '#FFFFFF', motif: 'shieldShard' }),
+  238: reviewedDecoSprite({ base: '#3D8B4D', light: '#83F27D', dark: '#14331F', accent: '#B8FF7A', spark: '#D9FFD2', motif: 'poisonPouch' }),
+  239: reviewedDecoSprite({ base: '#A8441C', light: '#FF9F1A', dark: '#3A130E', accent: '#FFD166', spark: '#FFE08A', motif: 'emberCharm' }),
+  240: reviewedDecoSprite({ base: '#2D6D9B', light: '#56C8FF', dark: '#10283F', accent: '#FFE66D', spark: '#FFFFFF', motif: 'spring' }),
+  241: reviewedDecoSprite({ base: '#D8C49C', light: '#F4ECFF', dark: '#2D2540', accent: '#BFA3FF', spark: '#FFFFFF', motif: 'ribbon' }),
+  242: reviewedDecoSprite({ base: '#7A5636', light: '#F6E1A6', dark: '#2E2118', accent: '#D6B26A', spark: '#FFF1B0', motif: 'weight' }),
+  243: reviewedDecoSprite({ base: '#4E6D82', light: '#8FE8FF', dark: '#1B2F3B', accent: '#D49CFF', spark: '#FFFFFF', motif: 'twinNeedle' }),
+  244: reviewedDecoSprite({ base: '#6B6278', light: '#D9D0FF', dark: '#1B1428', accent: '#BFA3FF', spark: '#F4ECFF', motif: 'slowDust' }),
+  245: reviewedDecoSprite({ base: '#7A5636', light: '#D8E0E6', dark: '#2E2118', accent: '#FF9F1A', spark: '#FFE08A', motif: 'flint' }),
+  247: reviewedDecoSprite({ base: '#6B6F75', light: '#D8E0E6', dark: '#30343A', accent: '#D6B26A', spark: '#FFF1B0', motif: 'pressedStone' })
+};
+
+Object.assign(CardSprites, reviewedCommonDecoSprites);
 
 const renderLegendPayoffFrame = (accent: string) => (
   <>
