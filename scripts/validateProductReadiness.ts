@@ -367,12 +367,15 @@ section('Validation and CI gates', () => {
   const scripts = isRecord(packageJson.scripts) ? packageJson.scripts : {};
   const ciSource = readText('.github/workflows/ci.yml');
   const combatEngineSource = readText('utils/combatEngine.ts');
+  const appSource = readText('App.tsx');
 
   requireReady(exists('scripts/validateBalance.ts'), 'Balance validator script should exist.');
   requireReady(exists('scripts/testCore.ts'), 'Core combat and static data tests should exist.');
   requireReady(exists('scripts/simulateRuns.ts'), 'Seeded run simulation should exist.');
   requireReady(exists('tests/e2e/run-smoke.spec.ts'), 'Main UI e2e smoke test should exist.');
   requireReady(combatEngineSource.includes('applyCombatEffectActions') && combatEngineSource.includes('CombatEffectSideEffect'), 'Combat engine should expose a UI-free effect action reducer and explicit deck side effects.');
+  requireReady(combatEngineSource.includes('resolveEnemyTurn') && combatEngineSource.includes('EnemyTurnSideEffect'), 'Combat engine should expose UI-free enemy turn resolution with explicit deck side effects.');
+  requireReady(appSource.includes('resolveEnemyTurn(enemy, player)'), 'Runtime combat should use shared enemy turn resolution instead of duplicating enemy turn calculations in App.');
   requireReady(typeof scripts['test:balance'] === 'string', 'package.json should expose test:balance.');
   requireReady(typeof scripts['test:logic'] === 'string' && String(scripts['test:logic']).includes('simulateRuns.ts'), 'package.json should expose logic tests with seeded simulation.');
   requireReady(typeof scripts['test:e2e'] === 'string', 'package.json should expose e2e tests.');

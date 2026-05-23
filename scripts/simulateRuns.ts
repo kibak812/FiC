@@ -12,7 +12,7 @@ import {
   isTwinHandle,
   WeaponSlots
 } from '../utils/cardEffects';
-import { applyCombatEffectActions, calculateBlockedDamage, calculateEnemyIntentPlan, calculateEnemyStrengthGain, calculateWeaponStats, resolveEnemyTurnStartStatuses } from '../utils/combatEngine';
+import { applyCombatEffectActions, calculateEnemyIntentPlan, calculateWeaponStats, resolveEnemyTurn } from '../utils/combatEngine';
 import { createActMap, getAvailableMapNodeIds } from '../utils/mapUtils';
 import { createInitialPlayerStats } from '../utils/playerUtils';
 import { createCombatCardRewards, createRandomCardReward, getCombatRewardRule, rollGoldReward } from '../utils/rewardUtils';
@@ -459,88 +459,26 @@ const forgeBestWeapon = (state: SimState, enemy: EnemyData, rng: () => number): 
 };
 
 const runEnemyTurn = (state: SimState, enemy: EnemyData, rng: () => number): void => {
-  enemy.block = 0;
-  const turnStart = resolveEnemyTurnStartStatuses(enemy.statuses);
-  enemy.statuses = turnStart.statuses;
+  const result = resolveEnemyTurn(enemy, state.player, rng);
+  state.player = result.player;
+  Object.assign(enemy, result.enemy, { statuses: { ...result.enemy.statuses } });
 
-  if (turnStart.isStunned) return;
-
-  enemy.currentHp = Math.max(0, enemy.currentHp - turnStart.poisonDamage - turnStart.burnDamage);
-  if (enemy.currentHp <= 0) return;
-
-  const plan = calculateEnemyIntentPlan(enemy, state.player);
-  const intent = plan.intent;
-
-  if (plan.handleCostIncrease > 0) {
-    const handles = [...state.deck, ...state.discard].filter(card => card.type === CardType.HANDLE);
-    if (handles.length > 0) {
-      pick(handles, rng).cost += plan.handleCostIncrease;
-    }
-  }
-
-  if (plan.costLimit !== null) {
-    state.player.costLimit = plan.costLimit;
-  }
-
-  if (plan.disarmsHead) {
-    state.player.disarmed = true;
-  }
-
-  if (plan.isAttack) {
-    for (let i = 0; i < plan.attackCount; i++) {
-      if (enemy.statuses.bleed > 0) {
-        const bleedDamage = enemy.statuses.bleed;
-        enemy.currentHp = Math.max(0, enemy.currentHp - bleedDamage);
-        enemy.statuses.bleed = Math.max(0, enemy.statuses.bleed - 1);
+  for (const sideEffect of result.sideEffects) {
+    switch (sideEffect.type) {
+      case 'INCREASE_RANDOM_HANDLE_COST': {
+        const handles = [...state.deck, ...state.discard].filter(card => card.type === CardType.HANDLE);
+        if (handles.length > 0) {
+          pick(handles, rng).cost += sideEffect.amount;
+        }
+        break;
       }
-
-      if (enemy.currentHp <= 0) break;
-
-      if (state.player.dodgeNextAttack) {
-        state.player.dodgeNextAttack = false;
-        continue;
-      }
-
-      const { unblockedDamage, nextBlock } = calculateBlockedDamage(plan.attackDamage, state.player.block);
-      state.player.hp = Math.max(0, state.player.hp - unblockedDamage);
-      state.player.block = nextBlock;
-      if (state.player.hp <= 0) break;
-    }
-
-    if (enemy.statuses.strength > 0) {
-      enemy.statuses.strength = 0;
+      case 'ADD_JUNK':
+        for (let i = 0; i < sideEffect.count; i++) {
+          state.discard.push(createCardInstance(901, rng));
+        }
+        break;
     }
   }
-
-  if (enemy.currentHp <= 0 || state.player.hp <= 0) return;
-
-  if (plan.defendBlock > 0) {
-    enemy.block += plan.defendBlock;
-  } else if (intent.effect?.type === 'GAIN_STRENGTH') {
-    enemy.statuses.strength += calculateEnemyStrengthGain(enemy, intent, rng);
-  } else if (plan.healAmount > 0) {
-    enemy.currentHp = Math.min(enemy.maxHp, enemy.currentHp + plan.healAmount);
-  } else if (intent.effect?.type === 'CLEANSE_STATUSES_GAIN_STRENGTH') {
-    if (plan.statusCleanseStrengthGain > 0) {
-      enemy.statuses.poison = 0;
-      enemy.statuses.bleed = 0;
-      enemy.statuses.burn = 0;
-      enemy.statuses.vulnerable = 0;
-      enemy.statuses.weak = 0;
-      enemy.statuses.stunned = 0;
-      enemy.statuses.strength += plan.statusCleanseStrengthGain;
-    }
-  } else if (plan.junkCount > 0) {
-    for (let i = 0; i < plan.junkCount; i++) {
-      state.discard.push(createCardInstance(901, rng));
-    }
-  } else if (intent.type === 'BUFF' && intent.description.includes('공격력')) {
-    enemy.statuses.strength += calculateEnemyStrengthGain(enemy, intent, rng);
-  } else if (intent.type === 'BUFF') {
-    enemy.currentHp = Math.min(enemy.maxHp, enemy.currentHp + intent.value);
-  }
-
-  enemy.currentIntentIndex = (enemy.currentIntentIndex + 1) % enemy.intents.length;
 };
 
 const simulateCombat = (state: SimState, enemyData: EnemyData, rng: () => number): { won: boolean; turns: number; lossReason: LossReason; enemyHp: number } => {

@@ -4,6 +4,7 @@ import {
   EnemyData,
   EnemyIntent,
   EnemyStatus,
+  EnemyTrait,
   IntentType,
   PlayerStats
 } from '@/types';
@@ -87,6 +88,37 @@ export interface EnemyIntentPlan {
   healAmount: number;
   junkCount: number;
   statusCleanseStrengthGain: number;
+}
+
+export type EnemyTurnEvent =
+  | { type: 'STUNNED' }
+  | { type: 'POISON_DAMAGE'; amount: number }
+  | { type: 'BURN_DAMAGE'; amount: number }
+  | { type: 'COST_LIMIT'; limit: number }
+  | { type: 'DISARM_HEAD' }
+  | { type: 'BLOCK_COUNTER'; amount: number }
+  | { type: 'WEAPON_COUNTER'; amount: number }
+  | { type: 'BLEED_DAMAGE'; amount: number }
+  | { type: 'DODGE_ATTACK' }
+  | { type: 'ATTACK_HIT'; damage: number; blocked: boolean; stolenGold: number }
+  | { type: 'STRENGTH_RESET' }
+  | { type: 'ENEMY_DEFEND'; amount: number }
+  | { type: 'ENEMY_GAIN_STRENGTH'; amount: number }
+  | { type: 'ENEMY_HEAL'; amount: number }
+  | { type: 'ENEMY_CLEANSE_STRENGTH'; amount: number }
+  | { type: 'ENEMY_CLEANSE_FAILED' };
+
+export type EnemyTurnSideEffect =
+  | { type: 'INCREASE_RANDOM_HANDLE_COST'; amount: number }
+  | { type: 'ADD_JUNK'; count: number };
+
+export interface EnemyTurnResult {
+  player: PlayerStats;
+  enemy: EnemyData;
+  turnStart: EnemyTurnStartStatusResult;
+  plan: EnemyIntentPlan | null;
+  events: EnemyTurnEvent[];
+  sideEffects: EnemyTurnSideEffect[];
 }
 
 export interface BlockedDamageResult {
@@ -450,4 +482,152 @@ export const calculateEnemyIntentPlan = (enemy: EnemyData, player: PlayerStats):
         : 0,
     statusCleanseStrengthGain: calculateStatusCleanseStrengthGain(enemy, intent)
   };
+};
+
+export const resolveEnemyTurn = (
+  enemyInput: EnemyData,
+  playerInput: PlayerStats,
+  rng: () => number = Math.random
+): EnemyTurnResult => {
+  const player: PlayerStats = { ...playerInput };
+  const enemy: EnemyData = {
+    ...enemyInput,
+    block: 0,
+    statuses: { ...enemyInput.statuses }
+  };
+  const events: EnemyTurnEvent[] = [];
+  const sideEffects: EnemyTurnSideEffect[] = [];
+
+  const turnStart = resolveEnemyTurnStartStatuses(enemy.statuses);
+  enemy.statuses = turnStart.statuses;
+
+  if (turnStart.poisonDamage > 0) {
+    events.push({ type: 'POISON_DAMAGE', amount: turnStart.poisonDamage });
+  }
+
+  if (turnStart.burnDamage > 0) {
+    events.push({ type: 'BURN_DAMAGE', amount: turnStart.burnDamage });
+  }
+
+  if (turnStart.isStunned) {
+    events.push({ type: 'STUNNED' });
+    return { player, enemy, turnStart, plan: null, events, sideEffects };
+  }
+
+  enemy.currentHp = Math.max(0, enemy.currentHp - turnStart.poisonDamage - turnStart.burnDamage);
+  if (enemy.currentHp <= 0) {
+    return { player, enemy, turnStart, plan: null, events, sideEffects };
+  }
+
+  const plan = calculateEnemyIntentPlan(enemy, player);
+  const intent = plan.intent;
+
+  if (plan.handleCostIncrease > 0) {
+    sideEffects.push({ type: 'INCREASE_RANDOM_HANDLE_COST', amount: plan.handleCostIncrease });
+  }
+
+  if (plan.costLimit !== null) {
+    player.costLimit = plan.costLimit;
+    events.push({ type: 'COST_LIMIT', limit: plan.costLimit });
+  }
+
+  if (plan.disarmsHead) {
+    player.disarmed = true;
+    events.push({ type: 'DISARM_HEAD' });
+  }
+
+  if (plan.blockCounterBonus > 0) {
+    events.push({ type: 'BLOCK_COUNTER', amount: plan.blockCounterBonus });
+  }
+
+  if (plan.weaponCounterBonus > 0) {
+    events.push({ type: 'WEAPON_COUNTER', amount: plan.weaponCounterBonus });
+  }
+
+  if (plan.isAttack) {
+    for (let i = 0; i < plan.attackCount; i++) {
+      if (enemy.statuses.bleed > 0) {
+        const bleedDamage = enemy.statuses.bleed;
+        enemy.currentHp = Math.max(0, enemy.currentHp - bleedDamage);
+        enemy.statuses.bleed = Math.max(0, enemy.statuses.bleed - 1);
+        events.push({ type: 'BLEED_DAMAGE', amount: bleedDamage });
+      }
+
+      if (enemy.currentHp <= 0) break;
+
+      if (player.dodgeNextAttack) {
+        player.dodgeNextAttack = false;
+        events.push({ type: 'DODGE_ATTACK' });
+        continue;
+      }
+
+      const { unblockedDamage, nextBlock } = calculateBlockedDamage(plan.attackDamage, player.block);
+      player.hp = Math.max(0, player.hp - unblockedDamage);
+      player.block = nextBlock;
+
+      let stolenGold = 0;
+      if (enemy.traits.includes(EnemyTrait.THIEVERY) && unblockedDamage > 0) {
+        stolenGold = Math.min(player.gold, 5);
+        player.gold -= stolenGold;
+      }
+
+      events.push({
+        type: 'ATTACK_HIT',
+        damage: unblockedDamage,
+        blocked: unblockedDamage === 0,
+        stolenGold
+      });
+
+      if (player.hp <= 0) break;
+    }
+
+    if (enemy.statuses.strength > 0) {
+      enemy.statuses.strength = 0;
+      events.push({ type: 'STRENGTH_RESET' });
+    }
+  }
+
+  if (enemy.currentHp <= 0 || player.hp <= 0) {
+    return { player, enemy, turnStart, plan, events, sideEffects };
+  }
+
+  if (plan.defendBlock > 0) {
+    enemy.block += plan.defendBlock;
+    events.push({ type: 'ENEMY_DEFEND', amount: plan.defendBlock });
+  } else if (intent.effect?.type === 'GAIN_STRENGTH') {
+    const gain = calculateEnemyStrengthGain(enemy, intent, rng);
+    enemy.statuses.strength += gain;
+    events.push({ type: 'ENEMY_GAIN_STRENGTH', amount: gain });
+  } else if (plan.healAmount > 0) {
+    const previousHp = enemy.currentHp;
+    enemy.currentHp = Math.min(enemy.maxHp, enemy.currentHp + plan.healAmount);
+    events.push({ type: 'ENEMY_HEAL', amount: enemy.currentHp - previousHp });
+  } else if (intent.effect?.type === 'CLEANSE_STATUSES_GAIN_STRENGTH') {
+    if (plan.statusCleanseStrengthGain > 0) {
+      enemy.statuses.poison = 0;
+      enemy.statuses.bleed = 0;
+      enemy.statuses.burn = 0;
+      enemy.statuses.vulnerable = 0;
+      enemy.statuses.weak = 0;
+      enemy.statuses.stunned = 0;
+      enemy.statuses.strength += plan.statusCleanseStrengthGain;
+      events.push({ type: 'ENEMY_CLEANSE_STRENGTH', amount: plan.statusCleanseStrengthGain });
+    } else {
+      events.push({ type: 'ENEMY_CLEANSE_FAILED' });
+    }
+  } else if (plan.junkCount > 0) {
+    sideEffects.push({ type: 'ADD_JUNK', count: plan.junkCount });
+  } else if (intent.type === IntentType.BUFF && intent.description.includes('공격력')) {
+    const gain = calculateEnemyStrengthGain(enemy, intent, rng);
+    enemy.statuses.strength += gain;
+    events.push({ type: 'ENEMY_GAIN_STRENGTH', amount: gain });
+  } else if (intent.type === IntentType.BUFF) {
+    const previousHp = enemy.currentHp;
+    enemy.currentHp = Math.min(enemy.maxHp, enemy.currentHp + intent.value);
+    events.push({ type: 'ENEMY_HEAL', amount: enemy.currentHp - previousHp });
+  }
+
+  enemy.currentIntentIndex = (enemy.currentIntentIndex + 1) % enemy.intents.length;
+
+  return { player, enemy, turnStart, plan, events, sideEffects };
 };

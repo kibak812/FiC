@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.11.6] - 2026-05-23
+
+### Added
+- UI-free enemy turn resolver that applies status ticks, bleed, dodge, block damage, thievery, healing, defending, cleansing, cost pressure, disarm, and deck pollution as inspectable state transitions.
+- Core combat tests for enemy turn attack resolution, thievery, cost-pressure side effects, junk side effects, and status cleanse conversion.
+
+### Changed
+- Runtime combat and seeded simulation now both use the shared enemy turn resolver instead of duplicating enemy turn calculations.
+- Product readiness now checks that App.tsx routes enemy turns through the shared resolver.
+- Menu version updated to v1.11.6.
+
+### Design Notes
+- This moves another high-risk section out of App.tsx while preserving enemy identity: counter, pollution, cost, and status-response patterns are now testable without rendering the UI.
+
+---
+
 ## [1.11.5] - 2026-05-23
 
 ### Added

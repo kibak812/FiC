@@ -23,6 +23,7 @@ import {
   calculateEnemyIntentPlan,
   calculateEnemyStrengthGain,
   calculateWeaponStats,
+  resolveEnemyTurn,
   resolveEnemyTurnStartStatuses
 } from '../utils/combatEngine';
 import {
@@ -342,6 +343,53 @@ runSuite('Core combat tests', [
       { type: 'DRAW_CARDS', count: 2 },
       { type: 'CREATE_REPLICA', baseDamage: 11 }
     ], 'Deck-changing effects should be exposed as explicit side effects');
+  }),
+
+  test('enemy turn resolver applies attacks, block, thievery, and intent advance without UI', () => {
+    const enemy = getEnemyById('loot_goblin');
+    const result = resolveEnemyTurn(enemy, createPlayer({ hp: 30, block: 4, gold: 12 }));
+
+    assertEqual(result.player.hp, 24, 'Enemy attack should deal only unblocked damage');
+    assertEqual(result.player.block, 0, 'Enemy attack should consume block');
+    assertEqual(result.player.gold, 7, 'Thievery should steal gold on unblocked damage');
+    assertEqual(result.enemy.currentIntentIndex, 1, 'Enemy turn should advance intent after acting');
+    assert(
+      result.events.some(event => event.type === 'ATTACK_HIT' && event.damage === 6 && event.stolenGold === 5),
+      'Enemy turn events should expose attack damage and stolen gold'
+    );
+  }),
+
+  test('enemy turn resolver exposes cost, junk, and cleanse side effects', () => {
+    const player = createPlayer();
+    const hammerhead = getEnemyById('hammerhead');
+    hammerhead.currentIntentIndex = findIntentIndex('hammerhead', index => hammerhead.intents[index].type === IntentType.DEBUFF);
+    const hammerResult = resolveEnemyTurn(hammerhead, player);
+
+    assertDeepEqual(hammerResult.sideEffects, [
+      { type: 'INCREASE_RANDOM_HANDLE_COST', amount: 1 }
+    ], 'Handle cost pressure should be a deck side effect');
+
+    const caveHeart = getEnemyById('cave_heart');
+    caveHeart.currentIntentIndex = findIntentIndex('cave_heart', index => caveHeart.intents[index].effect?.type === 'ADD_JUNK');
+    const junkResult = resolveEnemyTurn(caveHeart, player);
+
+    assertDeepEqual(junkResult.sideEffects, [
+      { type: 'ADD_JUNK', count: 1 }
+    ], 'Deck pollution should be an explicit side effect');
+
+    const sporeTotem = getEnemyById('spore_totem');
+    sporeTotem.statuses.poison = 2;
+    sporeTotem.statuses.burn = 1;
+    sporeTotem.currentIntentIndex = findIntentIndex('spore_totem', index => sporeTotem.intents[index].effect?.type === 'CLEANSE_STATUSES_GAIN_STRENGTH');
+    const cleanseResult = resolveEnemyTurn(sporeTotem, player);
+
+    assertEqual(cleanseResult.enemy.statuses.poison, 0, 'Cleanse should clear poison');
+    assertEqual(cleanseResult.enemy.statuses.burn, 0, 'Cleanse should clear burn');
+    assertEqual(cleanseResult.enemy.statuses.strength, 2, 'Cleanse should convert remaining turn-start status stacks into strength');
+    assert(
+      cleanseResult.events.some(event => event.type === 'ENEMY_CLEANSE_STRENGTH' && event.amount === 2),
+      'Cleanse strength gain should be visible as an enemy turn event'
+    );
   })
 ]);
 
