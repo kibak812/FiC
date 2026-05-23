@@ -113,6 +113,7 @@ const rewardRarities = new Set<CardRarity>([
 ]);
 const handReviewedCardSpriteIds = [
   248, 249,
+  212, 216, 217, 218, 220, 221, 222, 223, 224, 225,
   405, 407,
   414, 415, 416, 417, 418, 419, 420, 421, 422, 423, 424, 425
 ];

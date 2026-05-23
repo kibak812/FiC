@@ -1471,6 +1471,7 @@ const generatedCardSprite = ({ kind, theme, rarity, variant = 0, motif }: Genera
 
 export const HAND_DRAWN_CARD_SPRITE_IDS = new Set<number>([
   101, 102, 103, 104, 105,
+  212, 216, 217, 218, 220, 221, 222, 223, 224, 225,
   248, 249,
   405, 407,
   414, 415, 416, 417, 418, 419, 420, 421, 422, 423, 424, 425
@@ -2076,6 +2077,209 @@ const generatedCardConfigs: Record<number, GeneratedCardSpriteConfig> = {
 Object.entries(generatedCardConfigs).forEach(([cardId, config]) => {
   CardSprites[Number(cardId)] = generatedCardSprite(config);
 });
+
+type ReviewedHandleMotif =
+  | 'light'
+  | 'blood'
+  | 'shield'
+  | 'feather'
+  | 'poison'
+  | 'ember'
+  | 'spark'
+  | 'scribe'
+  | 'heavy'
+  | 'split'
+  | 'counterweight';
+
+interface ReviewedHandleSpriteConfig {
+  accent: string;
+  mid: string;
+  dark: string;
+  shine: string;
+  motif: ReviewedHandleMotif;
+}
+
+const renderReviewedHandleFrame = (accent: string) => (
+  <>
+    <rect x="4" y="4" width="2" height="2" fill="#0B090D"/>
+    <rect x="18" y="4" width="2" height="2" fill="#0B090D"/>
+    <rect x="5" y="5" width="14" height="1" fill="#2B1E18"/>
+    <rect x="5" y="18" width="14" height="1" fill="#2B1E18"/>
+    <rect x="6" y="6" width="1" height="12" fill="#1A1110"/>
+    <rect x="17" y="6" width="1" height="12" fill="#1A1110"/>
+    <rect x="7" y="19" width="10" height="1" fill="#0B090D" opacity="0.55"/>
+    <rect x="5" y="8" width="1" height="2" fill={accent}/>
+    <rect x="18" y="14" width="1" height="2" fill={accent}/>
+  </>
+);
+
+const renderReviewedHandleGrip = ({ accent, mid, dark, shine }: ReviewedHandleSpriteConfig) => (
+  <>
+    <rect x="10" y="5" width="4" height="14" fill={dark}/>
+    <rect x="9" y="7" width="6" height="10" fill={mid}/>
+    <rect x="11" y="6" width="2" height="12" fill={accent}/>
+    <rect x="8" y="9" width="8" height="2" fill="#D6B26A"/>
+    <rect x="8" y="14" width="8" height="2" fill="#7A4A28"/>
+    <rect x="9" y="18" width="6" height="2" fill="#3A2618"/>
+    <rect x="10" y="20" width="4" height="1" fill="#0B090D"/>
+    <rect x="12" y="5" width="1" height="11" fill={shine}/>
+    <rect x="9" y="11" width="1" height="4" fill="#1A1110"/>
+    <rect x="14" y="8" width="1" height="5" fill="#1A1110"/>
+  </>
+);
+
+const renderReviewedHandleMotif = ({ accent, mid, dark, shine, motif }: ReviewedHandleSpriteConfig) => {
+  switch (motif) {
+    case 'light':
+      return (
+        <>
+          <rect x="7" y="6" width="3" height="2" fill="#E8F4FF"/>
+          <rect x="14" y="6" width="3" height="2" fill="#D7ECFF"/>
+          <rect x="8" y="8" width="1" height="4" fill="#FFFFFF"/>
+          <rect x="15" y="8" width="1" height="4" fill="#FFFFFF"/>
+          <rect x="6" y="12" width="2" height="1" fill={accent}/>
+          <rect x="16" y="12" width="2" height="1" fill={accent}/>
+        </>
+      );
+    case 'blood':
+      return (
+        <>
+          <rect x="7" y="6" width="2" height="5" fill="#60121C"/>
+          <rect x="15" y="7" width="2" height="6" fill="#7F1D2A"/>
+          <rect x="8" y="11" width="2" height="2" fill="#D94A4A"/>
+          <rect x="16" y="13" width="2" height="2" fill="#B52232"/>
+          <rect x="6" y="15" width="2" height="1" fill="#F08A8A"/>
+          <rect x="17" y="6" width="1" height="2" fill="#F08A8A"/>
+        </>
+      );
+    case 'shield':
+      return (
+        <>
+          <rect x="6" y="7" width="4" height="8" fill="#566A73"/>
+          <rect x="14" y="7" width="4" height="8" fill="#566A73"/>
+          <rect x="7" y="8" width="2" height="5" fill="#A9BEC7"/>
+          <rect x="15" y="8" width="2" height="5" fill="#A9BEC7"/>
+          <rect x="8" y="15" width="2" height="2" fill={accent}/>
+          <rect x="14" y="15" width="2" height="2" fill={accent}/>
+        </>
+      );
+    case 'feather':
+      return (
+        <>
+          <rect x="6" y="6" width="2" height="8" fill="#F3E6C8"/>
+          <rect x="8" y="7" width="2" height="5" fill="#FFFFFF"/>
+          <rect x="16" y="6" width="2" height="8" fill="#EAD7AF"/>
+          <rect x="14" y="7" width="2" height="5" fill="#FFFFFF"/>
+          <rect x="7" y="14" width="2" height="1" fill={accent}/>
+          <rect x="15" y="14" width="2" height="1" fill={accent}/>
+        </>
+      );
+    case 'poison':
+      return (
+        <>
+          <rect x="6" y="8" width="3" height="6" fill="#143B26"/>
+          <rect x="15" y="8" width="3" height="6" fill="#143B26"/>
+          <rect x="7" y="7" width="2" height="2" fill="#8DF58A"/>
+          <rect x="16" y="7" width="2" height="2" fill="#B8FF7A"/>
+          <rect x="7" y="14" width="1" height="2" fill="#5EDB62"/>
+          <rect x="17" y="14" width="1" height="2" fill="#5EDB62"/>
+        </>
+      );
+    case 'ember':
+      return (
+        <>
+          <rect x="7" y="7" width="3" height="6" fill="#7A1F12"/>
+          <rect x="15" y="7" width="2" height="6" fill="#A83218"/>
+          <rect x="8" y="6" width="1" height="3" fill="#FFD166"/>
+          <rect x="16" y="6" width="1" height="3" fill="#FF9F1A"/>
+          <rect x="6" y="13" width="2" height="2" fill="#FF6B2A"/>
+          <rect x="17" y="13" width="1" height="2" fill="#FFD166"/>
+        </>
+      );
+    case 'spark':
+      return (
+        <>
+          <rect x="7" y="8" width="3" height="2" fill="#56C8FF"/>
+          <rect x="14" y="8" width="3" height="2" fill="#56C8FF"/>
+          <rect x="8" y="11" width="1" height="4" fill="#FFFFFF"/>
+          <rect x="16" y="11" width="1" height="4" fill="#FFFFFF"/>
+          <rect x="6" y="14" width="3" height="1" fill="#FFE66D"/>
+          <rect x="15" y="15" width="3" height="1" fill="#FFE66D"/>
+        </>
+      );
+    case 'scribe':
+      return (
+        <>
+          <rect x="6" y="7" width="4" height="8" fill="#E6D7B7"/>
+          <rect x="14" y="7" width="4" height="8" fill="#D8C49C"/>
+          <rect x="7" y="8" width="3" height="1" fill="#3B2C20"/>
+          <rect x="15" y="10" width="3" height="1" fill="#3B2C20"/>
+          <rect x="7" y="13" width="3" height="1" fill={accent}/>
+          <rect x="15" y="14" width="2" height="1" fill={accent}/>
+        </>
+      );
+    case 'heavy':
+      return (
+        <>
+          <rect x="5" y="10" width="5" height="5" fill="#4B4F55"/>
+          <rect x="14" y="10" width="5" height="5" fill="#4B4F55"/>
+          <rect x="6" y="11" width="3" height="3" fill="#8A939B"/>
+          <rect x="15" y="11" width="3" height="3" fill="#8A939B"/>
+          <rect x="7" y="8" width="2" height="2" fill="#D6B26A"/>
+          <rect x="15" y="8" width="2" height="2" fill="#D6B26A"/>
+        </>
+      );
+    case 'split':
+      return (
+        <>
+          <rect x="6" y="6" width="3" height="11" fill={dark}/>
+          <rect x="15" y="6" width="3" height="11" fill={dark}/>
+          <rect x="7" y="7" width="1" height="8" fill={shine}/>
+          <rect x="16" y="7" width="1" height="8" fill={shine}/>
+          <rect x="9" y="10" width="6" height="2" fill={accent}/>
+          <rect x="9" y="14" width="6" height="2" fill="#D6B26A"/>
+        </>
+      );
+    case 'counterweight':
+      return (
+        <>
+          <rect x="5" y="11" width="4" height="4" fill="#5C6670"/>
+          <rect x="15" y="11" width="4" height="4" fill="#5C6670"/>
+          <rect x="6" y="12" width="2" height="2" fill="#B7C4CC"/>
+          <rect x="16" y="12" width="2" height="2" fill="#B7C4CC"/>
+          <rect x="8" y="7" width="2" height="2" fill={accent}/>
+          <rect x="14" y="7" width="2" height="2" fill={accent}/>
+        </>
+      );
+  }
+};
+
+const reviewedHandleSprite = (config: ReviewedHandleSpriteConfig): React.FC<{ className?: string }> => {
+  return ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      {renderReviewedHandleFrame(config.accent)}
+      {renderReviewedHandleMotif(config)}
+      {renderReviewedHandleGrip(config)}
+      <rect x="18" y="18" width="1" height="1" fill={config.shine}/>
+    </svg>
+  );
+};
+
+const reviewedCommonHandleSprites: Record<number, React.FC<{ className?: string }>> = {
+  212: reviewedHandleSprite({ accent: '#AEEBFF', mid: '#D8C49C', dark: '#6B5438', shine: '#FFFFFF', motif: 'light' }),
+  216: reviewedHandleSprite({ accent: '#D94A4A', mid: '#8B1E2D', dark: '#3A1014', shine: '#F8A8A8', motif: 'blood' }),
+  217: reviewedHandleSprite({ accent: '#78D6FF', mid: '#557080', dark: '#25343B', shine: '#D7F4FF', motif: 'shield' }),
+  218: reviewedHandleSprite({ accent: '#F1D58A', mid: '#CBAE74', dark: '#5C4426', shine: '#FFF4CC', motif: 'feather' }),
+  220: reviewedHandleSprite({ accent: '#83F27D', mid: '#3D8B4D', dark: '#14331F', shine: '#D9FFD2', motif: 'poison' }),
+  221: reviewedHandleSprite({ accent: '#FF9F1A', mid: '#A8441C', dark: '#3A130E', shine: '#FFE08A', motif: 'ember' }),
+  222: reviewedHandleSprite({ accent: '#56C8FF', mid: '#2D6D9B', dark: '#10283F', shine: '#FFFFFF', motif: 'spark' }),
+  223: reviewedHandleSprite({ accent: '#BFA3FF', mid: '#7E6AA8', dark: '#2D2540', shine: '#F4ECFF', motif: 'scribe' }),
+  224: reviewedHandleSprite({ accent: '#D6B26A', mid: '#7A5636', dark: '#2E2118', shine: '#F6E1A6', motif: 'heavy' }),
+  225: reviewedHandleSprite({ accent: '#8FE8FF', mid: '#4E6D82', dark: '#1B2F3B', shine: '#FFFFFF', motif: 'split' }),
+  248: reviewedHandleSprite({ accent: '#FFD166', mid: '#8A6A3D', dark: '#322619', shine: '#FFF1B0', motif: 'counterweight' })
+};
+
+Object.assign(CardSprites, reviewedCommonHandleSprites);
 
 const renderLegendPayoffFrame = (accent: string) => (
   <>

@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.11.13] - 2026-05-23
+
+### Added
+- Hand-reviewed pixel sprites for 11 common handle cards, covering draw, self-damage, defense, poison, burn, energy, heavy, multi-hit, lightweight, and counterweight entry tools.
+
+### Changed
+- Common handle cards now render as clear grip silhouettes with pommels, guards, wraps, and archetype-specific side motifs instead of relying on generic generated shapes.
+- Product readiness now treats those common handle sprites as hand-reviewed art with minimum detail and color-separation checks.
+- Menu version updated to v1.11.13.
+
+### Design Notes
+- Handles must read as handles at a glance. This pass prioritizes card-type silhouette clarity before expanding the pool further.
+
+---
+
 ## [1.11.12] - 2026-05-23
 
 ### Added
