@@ -343,6 +343,8 @@ section('Save, onboarding, and packaging', () => {
   const viteSource = readText('vite.config.ts');
   const simSource = readText('scripts/simulateRuns.ts');
   const playerSource = readText('utils/playerUtils.ts');
+  const indexSource = readText('index.html');
+  const stylesSource = readText('styles.css');
   const packageJson = readJsonRecord('package.json');
   const dependencies = isRecord(packageJson.dependencies) ? packageJson.dependencies : {};
   const devDependencies = isRecord(packageJson.devDependencies) ? packageJson.devDependencies : {};
@@ -385,6 +387,7 @@ section('Save, onboarding, and packaging', () => {
   requireReady(exists('hooks/useAudioEngine.ts'), 'Procedural sound/music engine should exist.');
   requireReady(Boolean(dependencies['@fontsource/press-start-2p']) && Boolean(dependencies.galmuri), 'Offline pixel font dependencies should be bundled.');
   requireReady(Boolean(devDependencies.tailwindcss) && Boolean(devDependencies.postcss) && Boolean(devDependencies.autoprefixer), 'Local Tailwind/PostCSS build dependencies should exist.');
+  requireReady(!indexSource.includes('<style>') && stylesSource.includes('FiC pixel theme, animations, and accessibility utilities'), 'Runtime CSS should be bundled through styles.css instead of inline HTML styles.');
   requireReady(exists('docs/release.md'), 'Store release checklist should exist.');
   requireReady(viteSource.includes('manualChunks') && viteSource.includes('fic-sprites') && viteSource.includes('vendor-react'), 'Production build should split sprite and vendor chunks for store-ready packaging.');
 

@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.11.19] - 2026-05-23
+
+### Changed
+- Moved the pixel theme, animation, utility, and accessibility CSS from inline HTML into the Vite-managed `styles.css` bundle.
+- Product readiness now verifies that runtime CSS is bundled through `styles.css` instead of staying in `index.html`.
+- Menu version updated to v1.11.19.
+
+### Fixed
+- Removed the last inline runtime style block from `index.html`, reducing packaging risk for offline storefront builds.
+- Normalized the legacy pixel text helper to avoid negative letter spacing.
+
+### Design Notes
+- Store builds should load game code, fonts, and styling from bundled assets only; this keeps offline launch behavior closer to the shipped product.
+
+---
+
 ## [1.11.18] - 2026-05-23
 
 ### Added
