@@ -1,6 +1,6 @@
 import { BOSS_REWARDS, CARD_DATABASE, ENEMIES, GAME_EVENTS, INITIAL_DECK_IDS, SHOP_ITEMS } from '../constants';
 import { CardInstance, CardRarity, CardType, EnemyData, EnemyTier, EnemyTrait, EventOption, MapNode, NodeType, PlayerStats, ShopItemDefinition } from '../types';
-import { createCardInstance, shuffle } from '../utils/cardUtils';
+import { cleanJunkFromDeck, createCardInstance, resetTemporaryDeckModifiers, shuffle } from '../utils/cardUtils';
 import {
   applyModifierActions,
   CardEffectContext,
@@ -81,6 +81,28 @@ const drawCards = (state: SimState, count: number, rng: () => number): void => {
     const card = state.deck.pop();
     if (card) state.hand.push(card);
   }
+};
+
+const resetPlayerCombatDebuffs = (player: PlayerStats): void => {
+  player.energy = player.maxEnergy;
+  player.block = 0;
+  player.costLimit = null;
+  player.disarmed = false;
+  player.nextTurnDraw = 0;
+  player.overheat = 0;
+  player.weaponsUsedThisTurn = 0;
+  player.dodgeNextAttack = false;
+  player.selfDamageThisTurn = 0;
+};
+
+const cleanupCombatCards = (state: SimState): void => {
+  state.deck = resetTemporaryDeckModifiers(cleanJunkFromDeck([
+    ...state.deck,
+    ...state.hand,
+    ...state.discard
+  ]));
+  state.hand = [];
+  state.discard = [];
 };
 
 const removeUsedCardsFromHand = (state: SimState, cards: Array<CardInstance | null>): void => {
@@ -483,6 +505,15 @@ const runEnemyTurn = (state: SimState, enemy: EnemyData, rng: () => number): voi
 
 const simulateCombat = (state: SimState, enemyData: EnemyData, rng: () => number): { won: boolean; turns: number; lossReason: LossReason; enemyHp: number } => {
   const enemy = cloneEnemy(enemyData);
+  const finishWin = (turns: number) => {
+    cleanupCombatCards(state);
+    resetPlayerCombatDebuffs(state.player);
+    return { won: true, turns, lossReason: null, enemyHp: enemy.currentHp };
+  };
+
+  cleanupCombatCards(state);
+  resetPlayerCombatDebuffs(state.player);
+  state.deck = shuffle(state.deck, rng);
 
   for (let turn = 1; turn <= MAX_COMBAT_TURNS; turn++) {
     state.player.energy = Math.max(0, state.player.maxEnergy - state.player.overheat);
@@ -507,11 +538,11 @@ const simulateCombat = (state: SimState, enemyData: EnemyData, rng: () => number
     state.player.costLimit = null;
     state.player.disarmed = false;
 
-    if (enemy.currentHp <= 0) return { won: true, turns: turn, lossReason: null, enemyHp: enemy.currentHp };
+    if (enemy.currentHp <= 0) return finishWin(turn);
     if (state.player.hp <= 0) return { won: false, turns: turn, lossReason: 'DEATH', enemyHp: enemy.currentHp };
 
     runEnemyTurn(state, enemy, rng);
-    if (enemy.currentHp <= 0) return { won: true, turns: turn, lossReason: null, enemyHp: enemy.currentHp };
+    if (enemy.currentHp <= 0) return finishWin(turn);
     if (state.player.hp <= 0) return { won: false, turns: turn, lossReason: 'DEATH', enemyHp: enemy.currentHp };
   }
 

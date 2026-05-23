@@ -330,6 +330,7 @@ section('Map, rewards, shops, and events', () => {
 
 section('Save, onboarding, and packaging', () => {
   const saveSource = readText('utils/saveUtils.ts');
+  const cardUtilsSource = readText('utils/cardUtils.ts');
   const appSource = readText('App.tsx');
   const menuSource = readText('screens/MenuScreen.tsx');
   const simSource = readText('scripts/simulateRuns.ts');
@@ -359,6 +360,8 @@ section('Save, onboarding, and packaging', () => {
   requireReady(DEFAULT_GAME_SETTINGS.musicVolume >= 0 && DEFAULT_GAME_SETTINGS.musicVolume <= 1, 'Music volume should default inside 0-1.');
   requireReady(saveSource.includes('CURRENT_RUN_SAVE_VERSION') && saveSource.includes('CURRENT_SETTINGS_VERSION'), 'Save and settings data should be versioned.');
   requireReady(saveSource.includes('migrateRunSave') && saveSource.includes('migrateSettings'), 'Save and settings migration helpers should exist.');
+  requireReady(cardUtilsSource.includes('resetTemporaryDeckModifiers') && appSource.includes('resetTemporaryDeckModifiers(cleanJunkFromDeck(allCards))'), 'Combat cleanup should restore temporary card debuffs before the next fight.');
+  requireReady(saveSource.includes('resetTemporaryDeckModifiers') && simSource.includes('cleanupCombatCards'), 'Save migration and seeded simulation should also clear combat-only card debuffs.');
   requireReady(playerSource.includes('INITIAL_PLAYER_MAX_HP = 80') && playerSource.includes('INITIAL_PLAYER_MAX_ENERGY = 4'), 'Initial player stats should match the tuned commercial baseline.');
   requireReady(appSource.includes('createInitialPlayerStats') && simSource.includes('createInitialPlayerStats'), 'Runtime and seeded simulation should share initial player stats.');
   requireReady(appSource.includes('saveRun({') && appSource.includes('loadSavedRun()') && appSource.includes('clearSavedRun()'), 'App should autosave, continue, and clear runs.');

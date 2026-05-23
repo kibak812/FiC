@@ -9,7 +9,7 @@ import {
   SHOP_ITEMS
 } from '../constants';
 import { CardRarity, CardType, EnemyTier, EventOptionType, IntentType, NodeType, PlayerStats } from '../types';
-import { createCardInstance } from '../utils/cardUtils';
+import { cleanJunkFromDeck, createCardInstance, resetTemporaryDeckModifiers } from '../utils/cardUtils';
 import {
   applyModifierActions,
   CardEffectContext,
@@ -390,6 +390,29 @@ runSuite('Core combat tests', [
       cleanseResult.events.some(event => event.type === 'ENEMY_CLEANSE_STRENGTH' && event.amount === 2),
       'Cleanse strength gain should be visible as an enemy turn event'
     );
+  }),
+
+  test('combat cleanup restores temporary cost debuffs without erasing card identity', () => {
+    const handle = createCardInstance(101);
+    const head = createCardInstance(103);
+    const replica = createCardInstance(801);
+    const junk = createCardInstance(901);
+    const originalHandleInstanceId = handle.instanceId;
+
+    handle.cost += 3;
+    head.cost += 2;
+    replica.value = 17;
+    replica.description = 'Copied weapon payload should survive cleanup.';
+    replica.cost = 2;
+
+    const cleaned = resetTemporaryDeckModifiers(cleanJunkFromDeck([handle, head, replica, junk]));
+
+    assertEqual(cleaned.length, 3, 'Combat cleanup should remove temporary junk cards');
+    assertEqual(cleaned.find(card => card.id === 101)?.cost, 1, 'Temporary handle cost increases should reset after combat');
+    assertEqual(cleaned.find(card => card.id === 103)?.cost, 1, 'Temporary head cost increases should reset after combat');
+    assertEqual(cleaned.find(card => card.id === 801)?.cost, 0, 'Generated replicas should reset temporary cost changes');
+    assertEqual(cleaned.find(card => card.id === 801)?.value, 17, 'Cleanup should preserve non-cost generated card payloads');
+    assertEqual(cleaned.find(card => card.id === 101)?.instanceId, originalHandleInstanceId, 'Cleanup should preserve card instance identity');
   })
 ]);
 

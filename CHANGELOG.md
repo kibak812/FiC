@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.11.8] - 2026-05-23
+
+### Added
+- Regression coverage for combat cleanup restoring temporary card cost debuffs while preserving card instance identity and generated-card payloads.
+
+### Changed
+- Combat victory cleanup, combat start, seeded simulation, and run-save migration now reset combat-only card cost modifiers and remove temporary junk before the next fight.
+- Product readiness now checks that runtime, saves, and simulation clear combat-only card debuffs.
+- Menu version updated to v1.11.8.
+
+### Fixed
+- Enemy cost-increase debuffs could permanently raise card costs after combat, carrying the debuff into later fights.
+
+---
+
 ## [1.11.7] - 2026-05-23
 
 ### Added

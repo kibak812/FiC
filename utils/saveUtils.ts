@@ -10,10 +10,11 @@ import {
   PlayerStats,
   RemovalContext
 } from '@/types';
+import { cleanJunkFromDeck, resetTemporaryDeckModifiers } from './cardUtils';
 
 const RUN_SAVE_KEY = 'fic.runSave';
 const SETTINGS_SAVE_KEY = 'fic.settings';
-const CURRENT_RUN_SAVE_VERSION = 2;
+const CURRENT_RUN_SAVE_VERSION = 3;
 const CURRENT_SETTINGS_VERSION = 3;
 
 export const DEFAULT_GAME_SETTINGS: GameSettings = {
@@ -147,6 +148,34 @@ const migrateRunSave = (value: unknown): SavedRunData | null => {
 
   if (migrated.gameState === 'PLAYING' && migrated.combatState.phase !== 'PLAYER_ACTION') {
     migrated.combatState = { ...migrated.combatState, phase: 'PLAYER_ACTION' };
+  }
+
+  if (migrated.gameState !== 'PLAYING') {
+    const consolidatedCards = [
+      ...migrated.deck,
+      ...migrated.hand,
+      ...migrated.discardPile,
+      migrated.slots.handle,
+      migrated.slots.head,
+      migrated.slots.deco
+    ].filter(Boolean) as CardInstance[];
+
+    migrated.deck = resetTemporaryDeckModifiers(cleanJunkFromDeck(consolidatedCards));
+    migrated.hand = [];
+    migrated.discardPile = [];
+    migrated.slots = { handle: null, head: null, deco: null };
+    migrated.player = {
+      ...migrated.player,
+      energy: migrated.player.maxEnergy,
+      block: 0,
+      costLimit: null,
+      disarmed: false,
+      nextTurnDraw: 0,
+      overheat: 0,
+      weaponsUsedThisTurn: 0,
+      dodgeNextAttack: false,
+      selfDamageThisTurn: 0
+    };
   }
 
   return migrated;

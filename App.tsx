@@ -10,7 +10,7 @@ import CardComponent from './components/CardComponent';
 import Anvil from './components/Anvil';
 
 // --- Utilities ---
-import { createCardInstance, shuffle } from './utils/cardUtils';
+import { cleanJunkFromDeck, createCardInstance, resetTemporaryDeckModifiers, shuffle } from './utils/cardUtils';
 import { createInitialPlayerStats } from './utils/playerUtils';
 import {
   createCombatCardRewards,
@@ -180,8 +180,7 @@ export default function App() {
         slots.deco
     ].filter(Boolean) as CardInstance[];
 
-    // Remove JUNK immediately
-    const cleanCards = allCards.filter(c => c.type !== CardType.JUNK);
+    const cleanCards = resetTemporaryDeckModifiers(cleanJunkFromDeck(allCards));
     
     setDeck(cleanCards);
     setHand([]);
@@ -227,7 +226,7 @@ export default function App() {
 const startCombat = (enemyData: EnemyData) => {
     // Reset Enemy Block to 0
     setEnemy({ ...enemyData, block: 0 });
-    setDeck(prev => shuffle(prev));
+    setDeck(prev => shuffle(resetTemporaryDeckModifiers(cleanJunkFromDeck(prev))));
     setHand([]);
     setDiscardPile([]);
     setSlots({ handle: null, head: null, deco: null });
@@ -489,7 +488,19 @@ const startCombat = (enemyData: EnemyData) => {
 
       const rewardRule = getCombatRewardRule(enemy.tier);
       const goldReward = rollGoldReward(rewardRule);
-      setPlayer(prev => ({...prev, gold: prev.gold + goldReward}));
+      setPlayer(prev => ({
+          ...prev,
+          gold: prev.gold + goldReward,
+          energy: prev.maxEnergy,
+          block: 0,
+          costLimit: null,
+          disarmed: false,
+          nextTurnDraw: 0,
+          overheat: 0,
+          weaponsUsedThisTurn: 0,
+          dodgeNextAttack: false,
+          selfDamageThisTurn: 0
+      }));
 
       const options = createCombatCardRewards(rewardRule);
       showFeedback(`승리! ${goldReward} 골드 획득`);

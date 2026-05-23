@@ -17,6 +17,18 @@ export const createCardInstance = (id: number, rng: RandomSource = Math.random):
   return { ...data, instanceId: generateId(rng) };
 };
 
+const baseCardCostById = new Map(CARD_DATABASE.map(card => [card.id, card.cost]));
+
+export const resetTemporaryCardModifiers = (card: CardInstance): CardInstance => {
+  const baseCost = baseCardCostById.get(card.id);
+  if (baseCost === undefined || card.cost === baseCost) return card;
+  return { ...card, cost: baseCost };
+};
+
+export const resetTemporaryDeckModifiers = (cards: CardInstance[]): CardInstance[] => {
+  return cards.map(resetTemporaryCardModifiers);
+};
+
 /**
  * Shuffle an array using Fisher-Yates algorithm
  */
