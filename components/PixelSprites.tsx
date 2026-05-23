@@ -367,6 +367,225 @@ export const MonsterSprites: Record<string, React.FC<{ className?: string }>> = 
   ),
 };
 
+type GeneratedCardKind = 'handle' | 'head' | 'deco';
+type GeneratedCardTheme =
+  | 'blood'
+  | 'guard'
+  | 'poison'
+  | 'fire'
+  | 'energy'
+  | 'draw'
+  | 'heavy'
+  | 'multi'
+  | 'pierce'
+  | 'gold'
+  | 'frost'
+  | 'time'
+  | 'growth'
+  | 'void'
+  | 'rage';
+type GeneratedCardRarity = 'common' | 'rare' | 'legend' | 'starter' | 'special';
+
+interface GeneratedCardSpriteConfig {
+  kind: GeneratedCardKind;
+  theme: GeneratedCardTheme;
+  rarity: GeneratedCardRarity;
+  variant?: number;
+}
+
+const THEME_PALETTES: Record<GeneratedCardTheme, { dark: string; base: string; light: string; spark: string }> = {
+  blood: { dark: '#4A0000', base: '#8B0000', light: '#D22A2A', spark: '#FF6B6B' },
+  guard: { dark: '#23415C', base: '#4682B4', light: '#87CEEB', spark: '#D7F4FF' },
+  poison: { dark: '#0E4A26', base: '#2E8B57', light: '#7CFC7C', spark: '#D8FFD8' },
+  fire: { dark: '#7A1E00', base: '#FF4500', light: '#FFB000', spark: '#FFFF66' },
+  energy: { dark: '#172A7A', base: '#4169E1', light: '#00FFFF', spark: '#FFFFFF' },
+  draw: { dark: '#35505E', base: '#7DAFC2', light: '#E8F7FF', spark: '#FFFFFF' },
+  heavy: { dark: '#353535', base: '#696969', light: '#C0C0C0', spark: '#FFD700' },
+  multi: { dark: '#3A225C', base: '#7D4ACF', light: '#D49CFF', spark: '#FFFFFF' },
+  pierce: { dark: '#3F4650', base: '#708090', light: '#DCE6F0', spark: '#FFFFFF' },
+  gold: { dark: '#7A4D00', base: '#D4A017', light: '#FFD700', spark: '#FFFFAA' },
+  frost: { dark: '#1D5C78', base: '#5AA9C9', light: '#D9FFFF', spark: '#FFFFFF' },
+  time: { dark: '#3E3366', base: '#7C6BC4', light: '#D9D0FF', spark: '#FFF4A8' },
+  growth: { dark: '#244D24', base: '#3B8C3B', light: '#8FE58F', spark: '#E8FFE8' },
+  void: { dark: '#130B2A', base: '#4B0082', light: '#9A45FF', spark: '#F2D6FF' },
+  rage: { dark: '#6B1300', base: '#B22222', light: '#FF6600', spark: '#FFFF00' }
+};
+
+const RARITY_FRAME: Record<GeneratedCardRarity, string> = {
+  starter: '#8B7355',
+  common: '#5588CC',
+  rare: '#AA55CC',
+  legend: '#D4AF37',
+  special: '#E94560'
+};
+
+const generatedCardSprite = ({ kind, theme, rarity, variant = 0 }: GeneratedCardSpriteConfig): React.FC<{ className?: string }> => {
+  const palette = THEME_PALETTES[theme];
+  const frame = RARITY_FRAME[rarity];
+  const leftSparkY = 4 + (variant % 4);
+  const rightSparkY = 17 - (variant % 5);
+  const centerShift = variant % 3;
+
+  return ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      <rect x="3" y="3" width="18" height="18" fill="#17131A"/>
+      <rect x="4" y="4" width="16" height="16" fill={palette.dark}/>
+      <rect x="5" y="5" width="14" height="1" fill={frame}/>
+      <rect x="5" y="18" width="14" height="1" fill={frame}/>
+      <rect x="5" y="5" width="1" height="14" fill={frame}/>
+      <rect x="18" y="5" width="1" height="14" fill={frame}/>
+
+      {kind === 'handle' && (
+        <>
+          <rect x="10" y="5" width="4" height="13" fill={palette.base}/>
+          <rect x="9" y="7" width="1" height="8" fill={palette.light}/>
+          <rect x="14" y="7" width="1" height="8" fill={palette.dark}/>
+          <rect x="7" y="8" width="3" height="2" fill={palette.base}/>
+          <rect x="14" y="8" width="3" height="2" fill={palette.base}/>
+          <rect x="9" y="17" width="6" height="3" fill={palette.dark}/>
+          <rect x="11" y="6" width="2" height="2" fill={palette.spark}/>
+        </>
+      )}
+
+      {kind === 'head' && (
+        <>
+          <rect x="11" y="3" width="2" height="13" fill={palette.light}/>
+          <rect x="10" y="5" width="1" height="9" fill={palette.spark}/>
+          <rect x="13" y="5" width="1" height="9" fill={palette.base}/>
+          <rect x="8" y="15" width="8" height="2" fill={frame}/>
+          <rect x="10" y="17" width="4" height="4" fill={palette.dark}/>
+          <rect x={7 + centerShift} y="7" width="2" height="2" fill={palette.base}/>
+          <rect x={15 - centerShift} y="10" width="2" height="2" fill={palette.base}/>
+        </>
+      )}
+
+      {kind === 'deco' && (
+        <>
+          <rect x="8" y="8" width="8" height="8" fill={palette.base}/>
+          <rect x="10" y="6" width="4" height="2" fill={palette.light}/>
+          <rect x="10" y="16" width="4" height="2" fill={palette.dark}/>
+          <rect x="6" y="10" width="2" height="4" fill={palette.dark}/>
+          <rect x="16" y="10" width="2" height="4" fill={palette.light}/>
+          <rect x="10" y="10" width="4" height="4" fill={palette.spark}/>
+          <rect x="11" y="11" width="2" height="2" fill={palette.dark}/>
+        </>
+      )}
+
+      {theme === 'blood' && (
+        <>
+          <rect x="6" y={leftSparkY + 8} width="2" height="3" fill="#FF0000"/>
+          <rect x="17" y={rightSparkY} width="1" height="3" fill="#B00000"/>
+          <rect x="8" y="18" width="2" height="1" fill="#FF6B6B"/>
+        </>
+      )}
+      {theme === 'guard' && (
+        <>
+          <rect x="7" y="9" width="10" height="7" fill="#2F5F8F" opacity="0.85"/>
+          <rect x="9" y="11" width="6" height="3" fill={palette.light}/>
+          <rect x="11" y="10" width="2" height="5" fill={palette.spark}/>
+        </>
+      )}
+      {theme === 'poison' && (
+        <>
+          <rect x="6" y="15" width="2" height="2" fill={palette.light}/>
+          <rect x="16" y="6" width="2" height="2" fill={palette.light}/>
+          <rect x="14" y="16" width="1" height="1" fill={palette.spark}/>
+        </>
+      )}
+      {theme === 'fire' && (
+        <>
+          <rect x="7" y="13" width="2" height="4" fill={palette.light}/>
+          <rect x="15" y="7" width="2" height="5" fill={palette.base}/>
+          <rect x="11" y="5" width="2" height="3" fill={palette.spark}/>
+        </>
+      )}
+      {theme === 'energy' && (
+        <>
+          <rect x="13" y="5" width="2" height="4" fill={palette.spark}/>
+          <rect x="11" y="9" width="2" height="4" fill={palette.light}/>
+          <rect x="9" y="13" width="2" height="4" fill={palette.spark}/>
+        </>
+      )}
+      {theme === 'draw' && (
+        <>
+          <rect x="7" y="7" width="5" height="2" fill={palette.light}/>
+          <rect x="6" y="10" width="7" height="2" fill={palette.spark}/>
+          <rect x="13" y="13" width="5" height="2" fill={palette.light}/>
+        </>
+      )}
+      {theme === 'heavy' && (
+        <>
+          <rect x="5" y="8" width="14" height="4" fill={palette.base}/>
+          <rect x="7" y="10" width="10" height="5" fill={palette.dark}/>
+          <rect x="9" y="9" width="6" height="2" fill={palette.light}/>
+        </>
+      )}
+      {theme === 'multi' && (
+        <>
+          <rect x="6" y="6" width="3" height="9" fill={palette.light}/>
+          <rect x="11" y="5" width="3" height="10" fill={palette.spark}/>
+          <rect x="16" y="7" width="2" height="8" fill={palette.light}/>
+        </>
+      )}
+      {theme === 'pierce' && (
+        <>
+          <rect x="5" y="11" width="14" height="2" fill={palette.light}/>
+          <rect x="18" y="10" width="2" height="4" fill={palette.spark}/>
+        </>
+      )}
+      {theme === 'gold' && (
+        <>
+          <rect x="7" y="14" width="4" height="4" fill={palette.light}/>
+          <rect x="13" y="8" width="4" height="4" fill={palette.light}/>
+          <rect x="8" y="15" width="2" height="2" fill={palette.spark}/>
+          <rect x="14" y="9" width="2" height="2" fill={palette.spark}/>
+        </>
+      )}
+      {theme === 'frost' && (
+        <>
+          <rect x="6" y="6" width="2" height="2" fill={palette.spark}/>
+          <rect x="16" y="8" width="2" height="2" fill={palette.spark}/>
+          <rect x="8" y="16" width="8" height="1" fill={palette.light}/>
+        </>
+      )}
+      {theme === 'time' && (
+        <>
+          <rect x="8" y="8" width="8" height="8" fill={palette.base}/>
+          <rect x="10" y="10" width="4" height="4" fill="#17131A"/>
+          <rect x="12" y="9" width="1" height="4" fill={palette.spark}/>
+          <rect x="12" y="12" width="3" height="1" fill={palette.spark}/>
+        </>
+      )}
+      {theme === 'growth' && (
+        <>
+          <rect x="9" y="15" width="2" height="4" fill="#244D24"/>
+          <rect x="11" y="11" width="2" height="6" fill={palette.base}/>
+          <rect x="8" y="10" width="4" height="2" fill={palette.light}/>
+          <rect x="13" y="8" width="4" height="2" fill={palette.light}/>
+        </>
+      )}
+      {theme === 'void' && (
+        <>
+          <rect x="8" y="8" width="8" height="8" fill={palette.light}/>
+          <rect x="10" y="10" width="4" height="4" fill="#000000"/>
+          <rect x="6" y="6" width="2" height="2" fill={palette.spark}/>
+          <rect x="16" y="16" width="2" height="2" fill={palette.spark}/>
+        </>
+      )}
+      {theme === 'rage' && (
+        <>
+          <rect x="9" y="7" width="2" height="2" fill={palette.spark}/>
+          <rect x="13" y="7" width="2" height="2" fill={palette.spark}/>
+          <rect x="10" y="14" width="4" height="2" fill={palette.light}/>
+        </>
+      )}
+
+      <rect x="5" y="5" width="2" height="1" fill="#FFFFFF" opacity="0.55"/>
+      <rect x="17" y="18" width="1" height="1" fill={frame}/>
+    </svg>
+  );
+};
+
 // Card Sprites - Each card has unique pixel art icon
 export const CardSprites: Record<number, React.FC<{ className?: string }>> = {
   // Starter cards
@@ -832,6 +1051,94 @@ export const CardSprites: Record<number, React.FC<{ className?: string }>> = {
     </svg>
   ),
 };
+
+const generatedCardConfigs: Record<number, GeneratedCardSpriteConfig> = {
+  106: { kind: 'deco', theme: 'draw', rarity: 'starter', variant: 6 },
+  209: { kind: 'head', theme: 'blood', rarity: 'common', variant: 9 },
+  210: { kind: 'deco', theme: 'guard', rarity: 'common', variant: 10 },
+  211: { kind: 'deco', theme: 'energy', rarity: 'common', variant: 11 },
+  212: { kind: 'handle', theme: 'draw', rarity: 'common', variant: 12 },
+  213: { kind: 'head', theme: 'poison', rarity: 'common', variant: 13 },
+  214: { kind: 'head', theme: 'guard', rarity: 'common', variant: 14 },
+  216: { kind: 'handle', theme: 'blood', rarity: 'common', variant: 16 },
+  217: { kind: 'handle', theme: 'guard', rarity: 'common', variant: 17 },
+  220: { kind: 'handle', theme: 'poison', rarity: 'common', variant: 20 },
+  221: { kind: 'handle', theme: 'fire', rarity: 'common', variant: 21 },
+  222: { kind: 'handle', theme: 'energy', rarity: 'common', variant: 22 },
+  223: { kind: 'handle', theme: 'draw', rarity: 'common', variant: 23 },
+  224: { kind: 'handle', theme: 'heavy', rarity: 'common', variant: 24 },
+  225: { kind: 'handle', theme: 'multi', rarity: 'common', variant: 25 },
+  226: { kind: 'head', theme: 'blood', rarity: 'common', variant: 26 },
+  227: { kind: 'head', theme: 'guard', rarity: 'common', variant: 27 },
+  228: { kind: 'head', theme: 'poison', rarity: 'common', variant: 28 },
+  229: { kind: 'head', theme: 'fire', rarity: 'common', variant: 29 },
+  230: { kind: 'head', theme: 'energy', rarity: 'common', variant: 30 },
+  231: { kind: 'head', theme: 'draw', rarity: 'common', variant: 31 },
+  232: { kind: 'head', theme: 'heavy', rarity: 'common', variant: 32 },
+  233: { kind: 'head', theme: 'multi', rarity: 'common', variant: 33 },
+  234: { kind: 'head', theme: 'multi', rarity: 'common', variant: 34 },
+  235: { kind: 'head', theme: 'poison', rarity: 'common', variant: 35 },
+  236: { kind: 'deco', theme: 'blood', rarity: 'common', variant: 36 },
+  237: { kind: 'deco', theme: 'guard', rarity: 'common', variant: 37 },
+  238: { kind: 'deco', theme: 'poison', rarity: 'common', variant: 38 },
+  239: { kind: 'deco', theme: 'fire', rarity: 'common', variant: 39 },
+  240: { kind: 'deco', theme: 'energy', rarity: 'common', variant: 40 },
+  241: { kind: 'deco', theme: 'draw', rarity: 'common', variant: 41 },
+  242: { kind: 'deco', theme: 'heavy', rarity: 'common', variant: 42 },
+  243: { kind: 'deco', theme: 'multi', rarity: 'common', variant: 43 },
+  244: { kind: 'deco', theme: 'void', rarity: 'common', variant: 44 },
+  245: { kind: 'deco', theme: 'fire', rarity: 'common', variant: 45 },
+  246: { kind: 'head', theme: 'heavy', rarity: 'common', variant: 46 },
+  247: { kind: 'deco', theme: 'heavy', rarity: 'common', variant: 47 },
+  308: { kind: 'head', theme: 'energy', rarity: 'rare', variant: 8 },
+  309: { kind: 'handle', theme: 'gold', rarity: 'rare', variant: 9 },
+  310: { kind: 'head', theme: 'multi', rarity: 'rare', variant: 10 },
+  311: { kind: 'deco', theme: 'guard', rarity: 'rare', variant: 11 },
+  312: { kind: 'head', theme: 'fire', rarity: 'rare', variant: 12 },
+  321: { kind: 'handle', theme: 'blood', rarity: 'rare', variant: 21 },
+  322: { kind: 'handle', theme: 'guard', rarity: 'rare', variant: 22 },
+  323: { kind: 'handle', theme: 'poison', rarity: 'rare', variant: 23 },
+  324: { kind: 'handle', theme: 'fire', rarity: 'rare', variant: 24 },
+  325: { kind: 'handle', theme: 'energy', rarity: 'rare', variant: 25 },
+  326: { kind: 'handle', theme: 'draw', rarity: 'rare', variant: 26 },
+  327: { kind: 'handle', theme: 'heavy', rarity: 'rare', variant: 27 },
+  328: { kind: 'handle', theme: 'multi', rarity: 'rare', variant: 28 },
+  329: { kind: 'head', theme: 'blood', rarity: 'rare', variant: 29 },
+  330: { kind: 'head', theme: 'guard', rarity: 'rare', variant: 30 },
+  331: { kind: 'head', theme: 'poison', rarity: 'rare', variant: 31 },
+  332: { kind: 'head', theme: 'fire', rarity: 'rare', variant: 32 },
+  333: { kind: 'head', theme: 'energy', rarity: 'rare', variant: 33 },
+  334: { kind: 'head', theme: 'draw', rarity: 'rare', variant: 34 },
+  335: { kind: 'head', theme: 'multi', rarity: 'rare', variant: 35 },
+  336: { kind: 'head', theme: 'heavy', rarity: 'rare', variant: 36 },
+  337: { kind: 'deco', theme: 'blood', rarity: 'rare', variant: 37 },
+  338: { kind: 'deco', theme: 'guard', rarity: 'rare', variant: 38 },
+  339: { kind: 'deco', theme: 'poison', rarity: 'rare', variant: 39 },
+  340: { kind: 'deco', theme: 'fire', rarity: 'rare', variant: 40 },
+  341: { kind: 'deco', theme: 'energy', rarity: 'rare', variant: 41 },
+  342: { kind: 'deco', theme: 'draw', rarity: 'rare', variant: 42 },
+  343: { kind: 'deco', theme: 'heavy', rarity: 'rare', variant: 43 },
+  344: { kind: 'deco', theme: 'multi', rarity: 'rare', variant: 44 },
+  405: { kind: 'handle', theme: 'time', rarity: 'legend', variant: 5 },
+  406: { kind: 'head', theme: 'time', rarity: 'legend', variant: 6 },
+  407: { kind: 'deco', theme: 'growth', rarity: 'legend', variant: 7 },
+  414: { kind: 'handle', theme: 'blood', rarity: 'legend', variant: 14 },
+  415: { kind: 'handle', theme: 'guard', rarity: 'legend', variant: 15 },
+  416: { kind: 'handle', theme: 'draw', rarity: 'legend', variant: 16 },
+  417: { kind: 'handle', theme: 'multi', rarity: 'legend', variant: 17 },
+  418: { kind: 'head', theme: 'blood', rarity: 'legend', variant: 18 },
+  419: { kind: 'head', theme: 'guard', rarity: 'legend', variant: 19 },
+  420: { kind: 'head', theme: 'poison', rarity: 'legend', variant: 20 },
+  421: { kind: 'head', theme: 'multi', rarity: 'legend', variant: 21 },
+  422: { kind: 'deco', theme: 'rage', rarity: 'legend', variant: 22 },
+  423: { kind: 'deco', theme: 'guard', rarity: 'legend', variant: 23 },
+  424: { kind: 'deco', theme: 'energy', rarity: 'legend', variant: 24 },
+  425: { kind: 'deco', theme: 'draw', rarity: 'legend', variant: 25 }
+};
+
+Object.entries(generatedCardConfigs).forEach(([cardId, config]) => {
+  CardSprites[Number(cardId)] = generatedCardSprite(config);
+});
 
 // Default sprite for cards without specific art
 export const DefaultCardSprite: React.FC<{ type: string; className?: string }> = ({ type, className }) => {

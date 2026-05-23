@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.5.0] - 2026-05-23
+
+### Added
+- Expanded the card database from 54 to 120 cards.
+- Added static archetype definitions for self-damage, defense conversion, status damage, energy loop, draw loop, heavy strike, and multi-hit builds.
+- Added common, rare, and legendary cards across Handle, Head, and Deco slots for the major build axes.
+- Added generated pixel-art card sprites for every card that lacked bespoke art, including all newly added cards.
+
+### Changed
+- Weapon preview and combat effect processing now recognize the expanded defensive, status, energy, draw, heavy, and multi-hit card families.
+
+### Design Notes
+- New card art uses slot silhouettes, archetype palettes, rarity frames, and pixel symbols so expanded rewards are visually readable instead of falling back to generic icons.
+
+---
+
 ## [1.4.0] - 2026-05-23
 
 ### Added

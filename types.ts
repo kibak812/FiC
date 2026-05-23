@@ -29,6 +29,25 @@ export interface CardInstance extends CardData {
   instanceId: string; // Unique ID for runtime tracking
 }
 
+export type CardArchetypeId =
+  | 'SELF_DAMAGE'
+  | 'DEFENSE_CONVERSION'
+  | 'STATUS_DAMAGE'
+  | 'ENERGY_LOOP'
+  | 'DRAW_LOOP'
+  | 'HEAVY_STRIKE'
+  | 'MULTI_HIT';
+
+export interface CardArchetypeDefinition {
+  id: CardArchetypeId;
+  name: string;
+  description: string;
+  entryCardIds: number[];
+  midCardIds: number[];
+  lateCardIds: number[];
+  slotCardIds: Record<CardType.HANDLE | CardType.HEAD | CardType.DECO, number[]>;
+}
+
 export enum IntentType {
   ATTACK = 'ATTACK',
   DEFEND = 'DEFEND',

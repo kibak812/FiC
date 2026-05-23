@@ -432,6 +432,128 @@ registerEffect({
   execute: () => [{ type: 'GROW_CRYSTAL', amount: 2, max: 16 }]
 });
 
+const selfDamageEffects: Array<{ cardId: number; slot: SlotType; amount: number }> = [
+  { cardId: 216, slot: 'handle', amount: 2 },
+  { cardId: 226, slot: 'head', amount: 2 },
+  { cardId: 236, slot: 'deco', amount: 2 },
+  { cardId: 321, slot: 'handle', amount: 4 },
+  { cardId: 329, slot: 'head', amount: 4 },
+  { cardId: 337, slot: 'deco', amount: 3 },
+  { cardId: 414, slot: 'handle', amount: 8 },
+  { cardId: 418, slot: 'head', amount: 8 },
+  { cardId: 422, slot: 'deco', amount: 4 }
+];
+
+selfDamageEffects.forEach(({ cardId, slot, amount }) => {
+  registerEffect({
+    cardId,
+    slot,
+    phase: 'SELF_DAMAGE',
+    execute: (ctx) => {
+      ctx.showFeedback(`-${amount}`, 'bad');
+      return [{ type: 'PLAYER_SELF_DAMAGE', amount }];
+    }
+  });
+});
+
+const selfDamageBonusEffects: Array<{ cardId: number; multiplier: number }> = [
+  { cardId: 337, multiplier: 1 },
+  { cardId: 422, multiplier: 2 }
+];
+
+selfDamageBonusEffects.forEach(({ cardId, multiplier }) => {
+  registerEffect({
+    cardId,
+    slot: 'deco',
+    phase: 'PRE_DAMAGE',
+    condition: (_, mods) => mods.selfDamage > 0,
+    execute: (ctx, mods) => {
+      const bonus = mods.selfDamage * multiplier;
+      ctx.showFeedback(`+${bonus}`, 'good');
+      return [{ type: 'MODIFY_DAMAGE', amount: bonus, mode: 'add' }];
+    }
+  });
+});
+
+const statusEffects: Array<{ cardId: number; slot: SlotType; status: keyof EnemyStatus; amount: number }> = [
+  { cardId: 220, slot: 'handle', status: 'poison', amount: 2 },
+  { cardId: 221, slot: 'handle', status: 'burn', amount: 2 },
+  { cardId: 228, slot: 'head', status: 'poison', amount: 3 },
+  { cardId: 229, slot: 'head', status: 'burn', amount: 2 },
+  { cardId: 238, slot: 'deco', status: 'poison', amount: 2 },
+  { cardId: 239, slot: 'deco', status: 'burn', amount: 2 },
+  { cardId: 244, slot: 'deco', status: 'weak', amount: 1 },
+  { cardId: 323, slot: 'handle', status: 'poison', amount: 4 },
+  { cardId: 324, slot: 'handle', status: 'burn', amount: 3 },
+  { cardId: 331, slot: 'head', status: 'poison', amount: 5 },
+  { cardId: 332, slot: 'head', status: 'burn', amount: 5 },
+  { cardId: 339, slot: 'deco', status: 'poison', amount: 5 },
+  { cardId: 340, slot: 'deco', status: 'burn', amount: 4 },
+  { cardId: 420, slot: 'head', status: 'poison', amount: 8 },
+  { cardId: 420, slot: 'head', status: 'burn', amount: 6 }
+];
+
+statusEffects.forEach(({ cardId, slot, status, amount }) => {
+  registerEffect({
+    cardId,
+    slot,
+    phase: 'POST_DAMAGE',
+    execute: (ctx) => [{ type: 'ENEMY_APPLY_STATUS', status, amount: amount * ctx.effectMultiplier }]
+  });
+});
+
+const energyGainEffects: Array<{ cardId: number; slot: SlotType; amount: number }> = [
+  { cardId: 222, slot: 'handle', amount: 1 },
+  { cardId: 230, slot: 'head', amount: 1 },
+  { cardId: 240, slot: 'deco', amount: 1 },
+  { cardId: 325, slot: 'handle', amount: 1 },
+  { cardId: 333, slot: 'head', amount: 1 },
+  { cardId: 341, slot: 'deco', amount: 1 },
+  { cardId: 424, slot: 'deco', amount: 2 }
+];
+
+energyGainEffects.forEach(({ cardId, slot, amount }) => {
+  registerEffect({
+    cardId,
+    slot,
+    phase: 'POST_DAMAGE',
+    execute: () => [{ type: 'PLAYER_GAIN_ENERGY', amount }]
+  });
+});
+
+const drawEffects: Array<{ cardId: number; slot: SlotType; count: number }> = [
+  { cardId: 223, slot: 'handle', count: 1 },
+  { cardId: 231, slot: 'head', count: 1 },
+  { cardId: 326, slot: 'handle', count: 1 },
+  { cardId: 334, slot: 'head', count: 1 },
+  { cardId: 342, slot: 'deco', count: 1 },
+  { cardId: 416, slot: 'handle', count: 1 },
+  { cardId: 425, slot: 'deco', count: 2 }
+];
+
+drawEffects.forEach(({ cardId, slot, count }) => {
+  registerEffect({
+    cardId,
+    slot,
+    phase: 'POST_DAMAGE',
+    execute: () => [{ type: 'DRAW_CARDS', count }]
+  });
+});
+
+const nextTurnDrawEffects: Array<{ cardId: number; slot: SlotType; amount: number }> = [
+  { cardId: 241, slot: 'deco', amount: 1 },
+  { cardId: 425, slot: 'deco', amount: 1 }
+];
+
+nextTurnDrawEffects.forEach(({ cardId, slot, amount }) => {
+  registerEffect({
+    cardId,
+    slot,
+    phase: 'POST_DAMAGE',
+    execute: () => [{ type: 'PLAYER_NEXT_TURN_DRAW', amount }]
+  });
+});
+
 // ============================================================
 // Query Functions
 // ============================================================
@@ -516,15 +638,15 @@ export function applyModifierActions(
 // ============================================================
 
 export function isExhaustCard(cardId: number): boolean {
-  return cardId === 402; // Void Crystal
+  return [402, 421].includes(cardId);
 }
 
 export function isInfiniteLoopCard(cardId: number): boolean {
-  return cardId === 405; // Infinite Loop
+  return [405, 416].includes(cardId);
 }
 
 export function isTwinHandle(cardId: number): boolean {
-  return cardId === 301; // Twin Handle
+  return [225, 301, 328, 417].includes(cardId);
 }
 
 // ============================================================

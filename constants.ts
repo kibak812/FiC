@@ -1,6 +1,7 @@
 
 import {
   BossRewardDefinition,
+  CardArchetypeDefinition,
   CardData,
   CardRarity,
   CardType,
@@ -50,6 +51,36 @@ export const CARD_DATABASE: CardData[] = [
   { id: 215, name: '민첩한 칼날', type: CardType.HEAD, cost: 1, value: 6, rarity: CardRarity.COMMON, description: '피해 6. 다음 턴 드로우 +1.' },
   { id: 218, name: '가벼운 자루', type: CardType.HANDLE, cost: 0, value: 0.8, rarity: CardRarity.COMMON, description: '피해량 80%. 비용 0.' },
   { id: 219, name: '쇠약의 문양', type: CardType.DECO, cost: 0, value: 0, rarity: CardRarity.COMMON, description: '적에게 약화 1 부여.' },
+  { id: 216, name: '핏빛 자루', type: CardType.HANDLE, cost: 0, value: 1, rarity: CardRarity.COMMON, description: '비용 0. 자해 2.' },
+  { id: 217, name: '방패 손잡이', type: CardType.HANDLE, cost: 1, value: 1, rarity: CardRarity.COMMON, description: '[방어] 머리의 공격력을 방어도로 전환.' },
+  { id: 220, name: '독성 코일 자루', type: CardType.HANDLE, cost: 1, value: 1, rarity: CardRarity.COMMON, description: '독 2 부여.' },
+  { id: 221, name: '불씨 감은 자루', type: CardType.HANDLE, cost: 1, value: 1, rarity: CardRarity.COMMON, description: '화상 2 부여.' },
+  { id: 222, name: '전도성 자루', type: CardType.HANDLE, cost: 1, value: 1, rarity: CardRarity.COMMON, description: '에너지 1 회복.' },
+  { id: 223, name: '속기 자루', type: CardType.HANDLE, cost: 1, value: 1, rarity: CardRarity.COMMON, description: '카드 1장 드로우.' },
+  { id: 224, name: '대형 자루', type: CardType.HANDLE, cost: 2, value: 1.5, rarity: CardRarity.COMMON, description: '피해량 150%.' },
+  { id: 225, name: '분할 자루', type: CardType.HANDLE, cost: 1, value: 0.6, rarity: CardRarity.COMMON, description: '피해량 60%. 머리 효과 2회 발동.' },
+  { id: 226, name: '상처 갈퀴', type: CardType.HEAD, cost: 1, value: 7, rarity: CardRarity.COMMON, description: '피해 7. 자해 2.' },
+  { id: 227, name: '경비병 도끼', type: CardType.HEAD, cost: 1, value: 6, rarity: CardRarity.COMMON, description: '방어도 6 (방어형 머리).' },
+  { id: 228, name: '맹독 바늘검', type: CardType.HEAD, cost: 1, value: 4, rarity: CardRarity.COMMON, description: '피해 4. 독 3 부여.' },
+  { id: 229, name: '화덕 검날', type: CardType.HEAD, cost: 1, value: 5, rarity: CardRarity.COMMON, description: '피해 5. 화상 2 부여.' },
+  { id: 230, name: '전류 단검', type: CardType.HEAD, cost: 1, value: 4, rarity: CardRarity.COMMON, description: '피해 4. 에너지 1 회복.' },
+  { id: 231, name: '서기 칼날', type: CardType.HEAD, cost: 1, value: 5, rarity: CardRarity.COMMON, description: '피해 5. 카드 1장 드로우.' },
+  { id: 232, name: '도살 대검', type: CardType.HEAD, cost: 2, value: 14, rarity: CardRarity.COMMON, description: '피해 14.' },
+  { id: 233, name: '세 갈래 송곳', type: CardType.HEAD, cost: 1, value: 2, rarity: CardRarity.COMMON, description: '피해 2, 3회 공격.' },
+  { id: 234, name: '연계 톱날', type: CardType.HEAD, cost: 1, value: 4, rarity: CardRarity.COMMON, description: '피해 4. 이번 턴 사용한 무기 수만큼 추가 피해.' },
+  { id: 235, name: '부식 톱니', type: CardType.HEAD, cost: 1, value: 3, rarity: CardRarity.COMMON, description: '피해 3. 적 독 스택만큼 추가 피해.' },
+  { id: 236, name: '핏방울 부적', type: CardType.DECO, cost: 0, value: 2, rarity: CardRarity.COMMON, description: '피해량 +2. 자해 2.' },
+  { id: 237, name: '방패 파편', type: CardType.DECO, cost: 0, value: 0, rarity: CardRarity.COMMON, description: '현재 방어도의 40%를 추가 피해로 전환.' },
+  { id: 238, name: '독가루 주머니', type: CardType.DECO, cost: 0, value: 0, rarity: CardRarity.COMMON, description: '독 2 부여.' },
+  { id: 239, name: '잿불 장식', type: CardType.DECO, cost: 0, value: 0, rarity: CardRarity.COMMON, description: '화상 2 부여.' },
+  { id: 240, name: '동력 스프링', type: CardType.DECO, cost: 0, value: 0, rarity: CardRarity.COMMON, description: '에너지 1 회복.' },
+  { id: 241, name: '기록 리본', type: CardType.DECO, cost: 0, value: 0, rarity: CardRarity.COMMON, description: '다음 턴 카드 1장 추가 드로우.' },
+  { id: 242, name: '무거운 추', type: CardType.DECO, cost: 1, value: 5, rarity: CardRarity.COMMON, description: '피해량 +5.' },
+  { id: 243, name: '쌍침 장식', type: CardType.DECO, cost: 0, value: 1, rarity: CardRarity.COMMON, description: '피해량 +1. 다단히트 무기면 추가 피해 +4.' },
+  { id: 244, name: '둔화 가루', type: CardType.DECO, cost: 0, value: 0, rarity: CardRarity.COMMON, description: '약화 1 부여.' },
+  { id: 245, name: '예열 부싯돌', type: CardType.DECO, cost: 0, value: 3, rarity: CardRarity.COMMON, description: '피해량 +3.' },
+  { id: 246, name: '훈련용 철퇴', type: CardType.HEAD, cost: 1, value: 7, rarity: CardRarity.COMMON, description: '피해 7.' },
+  { id: 247, name: '압축 숫돌', type: CardType.DECO, cost: 1, value: 6, rarity: CardRarity.COMMON, description: '피해량 +6.' },
 
   // Rare
   { id: 301, name: '쌍둥이 손잡이', type: CardType.HANDLE, cost: 2, value: 2, rarity: CardRarity.RARE, description: '머리 효과 2회 발동 (피해량 2배 아님)' },
@@ -76,6 +107,30 @@ export const CARD_DATABASE: CardData[] = [
   { id: 318, name: '피의 자루', type: CardType.HANDLE, cost: 0, value: 1, rarity: CardRarity.RARE, description: '비용 0. 자해 4.' },
   { id: 319, name: '피의 숫돌', type: CardType.DECO, cost: 0, value: 2, rarity: CardRarity.RARE, description: '피해량 +2. 출혈 2 부여.' },
   { id: 320, name: '광전사의 룬', type: CardType.DECO, cost: 0, value: 0, rarity: CardRarity.RARE, description: '이번 턴 자해량만큼 추가 피해.' },
+  { id: 321, name: '혈서 손잡이', type: CardType.HANDLE, cost: 1, value: 1.4, rarity: CardRarity.RARE, description: '피해량 140%. 자해 4.' },
+  { id: 322, name: '성벽 손잡이', type: CardType.HANDLE, cost: 2, value: 1.5, rarity: CardRarity.RARE, description: '[방어] 피해량 150%. 머리의 공격력을 방어도로 전환.' },
+  { id: 323, name: '역병 손잡이', type: CardType.HANDLE, cost: 1, value: 1, rarity: CardRarity.RARE, description: '독 4 부여.' },
+  { id: 324, name: '발화 손잡이', type: CardType.HANDLE, cost: 1, value: 1, rarity: CardRarity.RARE, description: '화상 3 부여.' },
+  { id: 325, name: '발전 손잡이', type: CardType.HANDLE, cost: 1, value: 1, rarity: CardRarity.RARE, description: '에너지 1 회복.' },
+  { id: 326, name: '순환 손잡이', type: CardType.HANDLE, cost: 1, value: 1, rarity: CardRarity.RARE, description: '카드 1장 드로우.' },
+  { id: 327, name: '거인 자루', type: CardType.HANDLE, cost: 2, value: 2.2, rarity: CardRarity.RARE, description: '피해량 220%.' },
+  { id: 328, name: '분신 손잡이', type: CardType.HANDLE, cost: 2, value: 1.2, rarity: CardRarity.RARE, description: '피해량 120%. 머리 효과 2회 발동.' },
+  { id: 329, name: '피의 톱날', type: CardType.HEAD, cost: 1, value: 10, rarity: CardRarity.RARE, description: '피해 10. 자해 4.' },
+  { id: 330, name: '성채 머리', type: CardType.HEAD, cost: 2, value: 12, rarity: CardRarity.RARE, description: '방어도 12 (방어형 머리).' },
+  { id: 331, name: '역병 낫', type: CardType.HEAD, cost: 2, value: 8, rarity: CardRarity.RARE, description: '피해 8. 독 5 부여.' },
+  { id: 332, name: '불꽃 톱', type: CardType.HEAD, cost: 2, value: 9, rarity: CardRarity.RARE, description: '피해 9. 화상 5 부여.' },
+  { id: 333, name: '마력 톱날', type: CardType.HEAD, cost: 1, value: 6, rarity: CardRarity.RARE, description: '피해 6. 에너지 1 회복.' },
+  { id: 334, name: '비술 서슬', type: CardType.HEAD, cost: 1, value: 5, rarity: CardRarity.RARE, description: '피해 5. 카드 1장 드로우.' },
+  { id: 335, name: '폭풍 삼지창', type: CardType.HEAD, cost: 2, value: 5, rarity: CardRarity.RARE, description: '피해 5, 3회 공격.' },
+  { id: 336, name: '공성추 머리', type: CardType.HEAD, cost: 3, value: 24, rarity: CardRarity.RARE, description: '피해 24.' },
+  { id: 337, name: '혈석 룬', type: CardType.DECO, cost: 0, value: 0, rarity: CardRarity.RARE, description: '자해 3. 이번 턴 자해량만큼 추가 피해.' },
+  { id: 338, name: '방벽 렌즈', type: CardType.DECO, cost: 1, value: 0, rarity: CardRarity.RARE, description: '이 무기의 방어도 2배. 현재 방어도만큼 추가 피해.' },
+  { id: 339, name: '맹독 렌즈', type: CardType.DECO, cost: 1, value: 0, rarity: CardRarity.RARE, description: '독 5 부여.' },
+  { id: 340, name: '화염 렌즈', type: CardType.DECO, cost: 1, value: 0, rarity: CardRarity.RARE, description: '화상 4 부여.' },
+  { id: 341, name: '과충전 코일', type: CardType.DECO, cost: 0, value: 0, rarity: CardRarity.RARE, description: '에너지 1 회복.' },
+  { id: 342, name: '흐름의 깃', type: CardType.DECO, cost: 0, value: 0, rarity: CardRarity.RARE, description: '카드 1장 드로우.' },
+  { id: 343, name: '거대화 문장', type: CardType.DECO, cost: 2, value: 0, rarity: CardRarity.RARE, description: '피해량 1.5배.' },
+  { id: 344, name: '연타 공명석', type: CardType.DECO, cost: 1, value: 0, rarity: CardRarity.RARE, description: '다단히트 무기면 추가 피해 +6.' },
 
   // Legend
   { id: 401, name: '거인의 악력', type: CardType.HANDLE, cost: 3, value: 3, rarity: CardRarity.LEGEND, description: '피해량 3배. 적 기절.' },
@@ -95,6 +150,18 @@ export const CARD_DATABASE: CardData[] = [
   { id: 409, name: '처형자의 칼날', type: CardType.HEAD, cost: 2, value: 5, rarity: CardRarity.LEGEND, description: '피해 5. 빈사 상태(HP 20% 이하) 적 처형.' },
   { id: 412, name: '회피의 자루', type: CardType.HANDLE, cost: 2, value: 1, rarity: CardRarity.LEGEND, description: '적의 다음 공격 회피.' },
   { id: 413, name: '용의 문장', type: CardType.DECO, cost: 1, value: 0, rarity: CardRarity.LEGEND, description: '피해량 2배.' },
+  { id: 414, name: '피의 계약', type: CardType.HANDLE, cost: 1, value: 1.8, rarity: CardRarity.LEGEND, description: '피해량 180%. 자해 8.' },
+  { id: 415, name: '영원 방패 손잡이', type: CardType.HANDLE, cost: 2, value: 2, rarity: CardRarity.LEGEND, description: '[방어] 피해량 200%. 머리의 공격력을 방어도로 전환.' },
+  { id: 416, name: '무한 필사 자루', type: CardType.HANDLE, cost: 2, value: 1, rarity: CardRarity.LEGEND, description: '사용 후 손으로 귀환. 카드 1장 드로우. 턴당 1회.' },
+  { id: 417, name: '백수 손잡이', type: CardType.HANDLE, cost: 3, value: 1.5, rarity: CardRarity.LEGEND, description: '피해량 150%. 머리 효과 2회 발동.' },
+  { id: 418, name: '혈월 대검', type: CardType.HEAD, cost: 2, value: 24, rarity: CardRarity.LEGEND, description: '피해 24. 자해 8.' },
+  { id: 419, name: '천공 방벽', type: CardType.HEAD, cost: 3, value: 25, rarity: CardRarity.LEGEND, description: '방어도 25 (방어형 머리).' },
+  { id: 420, name: '종말 역병', type: CardType.HEAD, cost: 3, value: 12, rarity: CardRarity.LEGEND, description: '피해 12. 독 8, 화상 6 부여.' },
+  { id: 421, name: '유성 군집', type: CardType.HEAD, cost: 3, value: 8, rarity: CardRarity.LEGEND, description: '피해 8, 4회 공격. 소멸.' },
+  { id: 422, name: '심장 파편', type: CardType.DECO, cost: 1, value: 0, rarity: CardRarity.LEGEND, description: '자해 4. 이번 턴 자해량의 2배만큼 추가 피해.' },
+  { id: 423, name: '영원한 성벽', type: CardType.DECO, cost: 2, value: 0, rarity: CardRarity.LEGEND, description: '이 무기의 방어도 2배. 현재 방어도의 150%를 추가 피해로 전환.' },
+  { id: 424, name: '무한 전지', type: CardType.DECO, cost: 1, value: 0, rarity: CardRarity.LEGEND, description: '에너지 2 회복.' },
+  { id: 425, name: '별자리 도면', type: CardType.DECO, cost: 1, value: 0, rarity: CardRarity.LEGEND, description: '카드 2장 드로우. 다음 턴 드로우 +1.' },
 
   // Special / Generated
   { id: 801, name: '그림자 무기', type: CardType.HEAD, cost: 0, value: 0, rarity: CardRarity.SPECIAL, description: '복제된 무기의 힘을 담은 그림자입니다.' },
@@ -104,6 +171,100 @@ export const CARD_DATABASE: CardData[] = [
 ];
 
 export const INITIAL_DECK_IDS = [101, 101, 102, 103, 103, 104, 105, 106];
+
+export const CARD_ARCHETYPES: CardArchetypeDefinition[] = [
+  {
+    id: 'SELF_DAMAGE',
+    name: '자해',
+    description: 'HP를 비용으로 빠른 피해와 자해량 보너스를 누적합니다.',
+    entryCardIds: [216, 226, 236],
+    midCardIds: [318, 329, 337],
+    lateCardIds: [414, 418, 422],
+    slotCardIds: {
+      [CardType.HANDLE]: [216, 318, 321, 414],
+      [CardType.HEAD]: [226, 314, 329, 418],
+      [CardType.DECO]: [236, 320, 337, 422]
+    }
+  },
+  {
+    id: 'DEFENSE_CONVERSION',
+    name: '방어 전환',
+    description: '방어도와 방어형 머리를 피해 또는 생존력으로 전환합니다.',
+    entryCardIds: [217, 227, 237],
+    midCardIds: [207, 311, 338],
+    lateCardIds: [415, 419, 423],
+    slotCardIds: {
+      [CardType.HANDLE]: [102, 217, 322, 415],
+      [CardType.HEAD]: [104, 227, 330, 419],
+      [CardType.DECO]: [210, 207, 311, 338, 423]
+    }
+  },
+  {
+    id: 'STATUS_DAMAGE',
+    name: '독/출혈/화상',
+    description: '지속 피해를 쌓고 상태 스택을 직접 피해로 다시 회수합니다.',
+    entryCardIds: [220, 228, 238],
+    midCardIds: [319, 331, 340],
+    lateCardIds: [401, 420, 407],
+    slotCardIds: {
+      [CardType.HANDLE]: [201, 206, 220, 221, 323, 324, 401],
+      [CardType.HEAD]: [203, 213, 228, 229, 235, 331, 332, 420],
+      [CardType.DECO]: [205, 219, 238, 239, 319, 339, 340, 407]
+    }
+  },
+  {
+    id: 'ENERGY_LOOP',
+    name: '에너지 순환',
+    description: '무기 비용을 지불한 뒤 에너지를 되돌려 한 턴 행동 수를 늘립니다.',
+    entryCardIds: [222, 230, 240],
+    midCardIds: [313, 325, 341],
+    lateCardIds: [403, 424],
+    slotCardIds: {
+      [CardType.HANDLE]: [222, 325],
+      [CardType.HEAD]: [230, 313, 333],
+      [CardType.DECO]: [208, 211, 240, 341, 403, 424]
+    }
+  },
+  {
+    id: 'DRAW_LOOP',
+    name: '드로우 순환',
+    description: '카드 드로우와 손패 귀환으로 조합 탐색 빈도를 높입니다.',
+    entryCardIds: [204, 223, 231],
+    midCardIds: [305, 326, 342],
+    lateCardIds: [405, 416, 425],
+    slotCardIds: {
+      [CardType.HANDLE]: [212, 223, 326, 405, 416],
+      [CardType.HEAD]: [215, 231, 334, 406],
+      [CardType.DECO]: [106, 204, 241, 305, 342, 425]
+    }
+  },
+  {
+    id: 'HEAVY_STRIKE',
+    name: '고비용 한방',
+    description: '높은 비용과 큰 계수를 감수하고 단발 피해를 크게 압축합니다.',
+    entryCardIds: [224, 232, 242, 246, 247],
+    midCardIds: [304, 327, 336],
+    lateCardIds: [402, 404, 413],
+    slotCardIds: {
+      [CardType.HANDLE]: [224, 327, 401],
+      [CardType.HEAD]: [232, 246, 304, 336, 402, 404],
+      [CardType.DECO]: [242, 247, 343, 413]
+    }
+  },
+  {
+    id: 'MULTI_HIT',
+    name: '다단히트',
+    description: '낮은 피해를 여러 번 넣어 적중 효과와 상태 부여를 증폭합니다.',
+    entryCardIds: [225, 233, 243],
+    midCardIds: [301, 335, 344],
+    lateCardIds: [417, 421, 425],
+    slotCardIds: {
+      [CardType.HANDLE]: [225, 301, 328, 417],
+      [CardType.HEAD]: [306, 233, 335, 421],
+      [CardType.DECO]: [243, 344, 425]
+    }
+  }
+];
 
 const DEFAULT_STATUS = { poison: 0, bleed: 0, stunned: 0, strength: 0, vulnerable: 0, weak: 0, burn: 0 };
 

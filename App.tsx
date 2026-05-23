@@ -51,6 +51,44 @@ type GameState = 'MENU' | 'MAP' | 'PLAYING' | 'REWARD' | 'BOSS_REWARD' | 'REST' 
 type RemovalContext = 'REST' | 'SHOP' | 'EVENT' | null;
 
 const ACT_LENGTH = 15;
+const DEFENSIVE_HANDLE_IDS = new Set([102, 217, 322, 415]);
+const DEFENSIVE_HEAD_IDS = new Set([104, 227, 330, 419]);
+const HEAD_HIT_COUNTS: Record<number, number> = {
+  233: 3,
+  306: 2,
+  335: 3,
+  421: 4
+};
+const HEAD_BLEED_SCALING: Record<number, number> = {
+  209: 1
+};
+const HEAD_POISON_SCALING: Record<number, number> = {
+  213: 1,
+  235: 1
+};
+const HEAD_WEAPON_SCALING: Record<number, number> = {
+  234: 1,
+  310: 2
+};
+const BLOCK_TO_DAMAGE_RATIO_BY_DECO_ID: Record<number, number> = {
+  207: 1,
+  210: 0.5,
+  237: 0.4,
+  338: 1,
+  423: 1.5
+};
+const BLOCK_MULTIPLIER_BY_DECO_ID: Record<number, number> = {
+  311: 2,
+  338: 2,
+  423: 2
+};
+const MULTI_HIT_DAMAGE_BONUS_BY_DECO_ID: Record<number, number> = {
+  243: 4,
+  344: 6
+};
+const DECO_DAMAGE_MULTIPLIER_BY_ID: Record<number, number> = {
+  343: 1.5
+};
 
 export default function App() {
   // Game State
@@ -624,8 +662,7 @@ const calculateWeaponStats = (): CraftedWeapon => {
     let block = 0;
     let hitCount = 1;
 
-    // Logic for Parrying Guard (102) OR Pot Lid (104) acting as Head
-    if (handle.id === 102 || head.id === 104) {
+    if (DEFENSIVE_HANDLE_IDS.has(handle.id) || DEFENSIVE_HEAD_IDS.has(head.id)) {
       block = finalValue;
       damage = 0;
     }
@@ -633,44 +670,32 @@ const calculateWeaponStats = (): CraftedWeapon => {
     // Logic for Swift Dagger Hilt (201) -> Now applies Weak instead of -2 damage
     // Effect is applied in handleForgeAndAttack
 
-    // Logic for Twin Fangs (306) -> Hit Count 2
-    if (head.id === 306) {
-        hitCount = 2;
-    }
+    hitCount = HEAD_HIT_COUNTS[head.id] || 1;
 
     // === Balance Patch v1.0 - New Card Effects ===
 
-    // 209: Cogwheel - +1 damage per bleed stack
-    if (head.id === 209) {
-        damage += (enemy.statuses.bleed || 0);
-    }
+    damage += (enemy.statuses.bleed || 0) * (HEAD_BLEED_SCALING[head.id] || 0);
 
-    // 207: Spiked Armor (Deco) - Add 100% of current block as damage
-    if (deco?.id === 207) {
-        damage += player.block;
-    }
-
-    // 210: Thorn Sigil (Deco) - Add 50% of current block as damage
-    if (deco?.id === 210) {
-        damage += Math.floor(player.block * 0.5);
+    if (deco && BLOCK_TO_DAMAGE_RATIO_BY_DECO_ID[deco.id]) {
+        damage += Math.floor(player.block * BLOCK_TO_DAMAGE_RATIO_BY_DECO_ID[deco.id]);
     }
 
     // 211: Capacitor (Deco) - +4 damage per remaining energy (calculated at forge time)
     // This is handled in handleForgeAndAttack since we need remaining energy after cost
 
-    // 213: Poison Needle - +damage equal to enemy poison stacks
-    if (head.id === 213) {
-        damage += (enemy.statuses.poison || 0);
+    damage += (enemy.statuses.poison || 0) * (HEAD_POISON_SCALING[head.id] || 0);
+    damage += player.weaponsUsedThisTurn * (HEAD_WEAPON_SCALING[head.id] || 0);
+
+    if (deco && MULTI_HIT_DAMAGE_BONUS_BY_DECO_ID[deco.id] && hitCount > 1) {
+        damage += MULTI_HIT_DAMAGE_BONUS_BY_DECO_ID[deco.id];
     }
 
-    // 310: Combo Strike - +2 damage per weapon used this turn
-    if (head.id === 310) {
-        damage += player.weaponsUsedThisTurn * 2;
+    if (deco && BLOCK_MULTIPLIER_BY_DECO_ID[deco.id] && block > 0) {
+        block *= BLOCK_MULTIPLIER_BY_DECO_ID[deco.id];
     }
 
-    // 311: Steel Plating (Deco) - Double block
-    if (deco?.id === 311 && block > 0) {
-        block *= 2;
+    if (deco && DECO_DAMAGE_MULTIPLIER_BY_ID[deco.id] && damage > 0) {
+        damage = Math.floor(damage * DECO_DAMAGE_MULTIPLIER_BY_ID[deco.id]);
     }
 
     // 406: Time Cog - No damage, just stun (handled in effects)
