@@ -12,7 +12,7 @@ module.exports = {
     extend: {
       fontFamily: {
         pixel: ['"Press Start 2P"', '"Courier New"', 'monospace'],
-        'pixel-kr': ['NeoDunggeunmo', 'DungGeunMo', 'Galmuri11', '"Apple SD Gothic Neo"', '"Malgun Gothic"', 'monospace']
+        'pixel-kr': ['Galmuri11', 'NeoDunggeunmo', 'DungGeunMo', '"Apple SD Gothic Neo"', '"Malgun Gothic"', 'monospace']
       },
       colors: {
         pixel: {

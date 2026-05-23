@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.10.1] - 2026-05-23
+
+### Added
+- Bundled offline pixel fonts via `@fontsource/press-start-2p` and `galmuri`.
+
+### Changed
+- Korean UI font stack now prefers the bundled Galmuri font before system fallbacks.
+- Release checklist now explicitly verifies bundled pixel fonts.
+- Menu version updated to v1.10.1.
+
+### Design Notes
+- Font packaging now matches the offline styling goal with real bundled font files instead of relying only on system fallbacks.
+
+---
+
 ## [1.10.0] - 2026-05-23
 
 ### Added

@@ -19,6 +19,7 @@ npm audit --audit-level=moderate
 
 - `index.html` must not load runtime code, fonts, or CSS from an external CDN.
 - Tailwind output is generated during `npm run build` from `styles.css`, `tailwind.config.cjs`, and `postcss.config.cjs`.
+- Pixel fonts are bundled through npm packages: `@fontsource/press-start-2p` for English display text and `galmuri` for Korean UI text.
 - Sound and music are procedural Web Audio cues, so no remote audio files are required.
 - The production artifact is `dist/`; test it with `npm run preview` before release.
 

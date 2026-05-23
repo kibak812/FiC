@@ -13,6 +13,8 @@
     "test:balance": "tsx scripts/validateBalance.ts"
   },
   "dependencies": {
+    "@fontsource/press-start-2p": "^5.2.7",
+    "galmuri": "^2.40.3",
     "lucide-react": "^0.562.0",
     "react": "^19.2.3",
     "react-dom": "^19.2.3"
