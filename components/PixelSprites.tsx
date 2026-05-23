@@ -1081,32 +1081,25 @@ const renderGeneratedFrame = (
   rarity: GeneratedCardRarity,
   variant: number
 ): React.ReactNode => {
-  const glintX = 5 + (variant % 4);
+  const glintX = 6 + (variant % 5);
 
   return (
     <>
-      <rect x="2" y="2" width="20" height="20" fill="#0B090D"/>
-      <rect x="3" y="3" width="18" height="18" fill={palette.dark}/>
-      <rect x="4" y="4" width="16" height="16" fill="#FFFFFF" opacity="0.04"/>
-      <rect x="4" y="4" width="16" height="1" fill={frame}/>
-      <rect x="4" y="19" width="16" height="1" fill={frame}/>
-      <rect x="4" y="4" width="1" height="16" fill={frame}/>
-      <rect x="19" y="4" width="1" height="16" fill={frame}/>
-      <rect x={glintX} y="5" width="3" height="1" fill="#FFFFFF" opacity="0.65"/>
+      <rect x="6" y="20" width="12" height="1" fill="#0B090D" opacity="0.55"/>
+      <rect x="8" y="21" width="8" height="1" fill="#0B090D" opacity="0.35"/>
+      <rect x={glintX} y="4" width="3" height="1" fill={frame} opacity="0.9"/>
       {rarity === 'rare' && (
         <>
-          <rect x="5" y="18" width="2" height="1" fill={palette.light}/>
+          <rect x="5" y="6" width="2" height="1" fill={palette.light}/>
           <rect x="17" y="5" width="1" height="2" fill={palette.spark}/>
         </>
       )}
       {rarity === 'legend' && (
         <>
-          <rect x="3" y="3" width="2" height="2" fill={frame}/>
-          <rect x="19" y="3" width="2" height="2" fill={frame}/>
-          <rect x="3" y="19" width="2" height="2" fill={frame}/>
-          <rect x="19" y="19" width="2" height="2" fill={frame}/>
-          <rect x="6" y="2" width="2" height="1" fill={palette.spark}/>
-          <rect x="16" y="21" width="2" height="1" fill={palette.spark}/>
+          <rect x="4" y="5" width="2" height="2" fill={frame}/>
+          <rect x="18" y="5" width="2" height="2" fill={frame}/>
+          <rect x="5" y="18" width="2" height="1" fill={palette.spark}/>
+          <rect x="17" y="18" width="2" height="1" fill={palette.spark}/>
         </>
       )}
     </>
@@ -1121,20 +1114,20 @@ const renderHandleSilhouette = (
   variant: number
 ): React.ReactNode => {
   const form = variant % 3;
-  const wideGrip = theme === 'heavy' || theme === 'guard' || rarity === 'legend';
+  const wideGrip = theme === 'heavy' || theme === 'guard';
   const gripX = wideGrip ? 9 : 10;
   const gripW = wideGrip ? 6 : 4;
   const wrapY = 7 + (variant % 4);
 
   return (
     <>
-      <rect x={gripX} y="5" width={gripW} height="13" fill={palette.base}/>
-      <rect x={gripX - 1} y="7" width="1" height="9" fill={palette.light}/>
-      <rect x={gripX + gripW} y="7" width="1" height="9" fill="#000000" opacity="0.35"/>
-      <rect x="7" y="8" width="3" height="2" fill={frame}/>
-      <rect x="14" y="8" width="3" height="2" fill={frame}/>
-      <rect x="8" y="17" width="8" height="3" fill={palette.dark}/>
-      <rect x="10" y="18" width="4" height="1" fill="#000000" opacity="0.35"/>
+      <rect x={gripX} y="5" width={gripW} height="14" fill={palette.base}/>
+      <rect x={gripX + 1} y="4" width={Math.max(2, gripW - 2)} height="2" fill={palette.light}/>
+      <rect x={gripX - 1} y="7" width="1" height="10" fill={palette.light}/>
+      <rect x={gripX + gripW} y="7" width="1" height="10" fill={palette.dark}/>
+      <rect x="7" y="12" width="10" height="2" fill={frame}/>
+      <rect x="8" y="18" width="8" height="2" fill={palette.dark}/>
+      <rect x="10" y="19" width="4" height="1" fill="#0B090D"/>
       {form === 0 && (
         <>
           <rect x="10" y={wrapY} width="4" height="1" fill={palette.spark}/>
@@ -1143,16 +1136,16 @@ const renderHandleSilhouette = (
       )}
       {form === 1 && (
         <>
-          <rect x="8" y="5" width="8" height="2" fill={palette.dark}/>
-          <rect x="9" y="6" width="6" height="1" fill={palette.light}/>
-          <rect x="11" y="10" width="2" height="5" fill={palette.spark}/>
+          <rect x="8" y="6" width="8" height="1" fill={palette.dark}/>
+          <rect x="9" y="8" width="6" height="1" fill={palette.light}/>
+          <rect x="11" y="10" width="2" height="6" fill={palette.spark}/>
         </>
       )}
       {form === 2 && (
         <>
-          <rect x="8" y="6" width="2" height="10" fill={palette.dark}/>
-          <rect x="14" y="6" width="2" height="10" fill={palette.light}/>
-          <rect x="11" y="5" width="2" height="2" fill={palette.spark}/>
+          <rect x="8" y="8" width="2" height="8" fill={palette.dark}/>
+          <rect x="14" y="8" width="2" height="8" fill={palette.light}/>
+          <rect x="11" y="6" width="2" height="2" fill={palette.spark}/>
         </>
       )}
     </>
@@ -1300,9 +1293,26 @@ const renderThemeMotif = (
         </>
       );
     case 'guard':
+      if (kind === 'handle') {
+        return (
+          <>
+            <rect x="6" y="10" width="2" height="6" fill="#2F5F8F" opacity="0.78"/>
+            <rect x="16" y="10" width="2" height="6" fill="#2F5F8F" opacity="0.78"/>
+            <rect x="6" y="12" width="12" height="1" fill={palette.light}/>
+          </>
+        );
+      }
+      if (kind === 'head') {
+        return (
+          <>
+            <rect x="6" y="15" width="12" height="2" fill="#2F5F8F" opacity="0.82"/>
+            <rect x="10" y="13" width="4" height="1" fill={palette.spark}/>
+          </>
+        );
+      }
       return (
         <>
-          <rect x="9" y="9" width="6" height="6" fill="#2F5F8F" opacity="0.82"/>
+          <rect x="8" y="7" width="8" height="9" fill="#2F5F8F" opacity="0.82"/>
           <rect x="11" y="8" width="2" height="8" fill={palette.spark}/>
           <rect x="8" y="11" width="8" height="2" fill={palette.light}/>
         </>
@@ -1344,12 +1354,29 @@ const renderThemeMotif = (
         </>
       );
     case 'heavy':
+      if (kind === 'handle') {
+        return (
+          <>
+            <rect x="8" y="16" width="8" height="3" fill={palette.dark}/>
+            <rect x="9" y="17" width="6" height="1" fill={palette.light}/>
+            <rect x="5" y="18" width="2" height="2" fill={palette.spark}/>
+          </>
+        );
+      }
+      if (kind === 'head') {
+        return (
+          <>
+            <rect x="5" y="7" width="14" height="4" fill={palette.base}/>
+            <rect x="7" y="9" width="10" height="3" fill={palette.dark}/>
+            <rect x="9" y="8" width="6" height="2" fill={palette.light}/>
+          </>
+        );
+      }
       return (
         <>
-          <rect x="5" y="8" width="14" height="4" fill={palette.base}/>
-          <rect x="7" y="10" width="10" height="5" fill={palette.dark}/>
-          <rect x="9" y="9" width="6" height="2" fill={palette.light}/>
-          <rect x="6" y="15" width="2" height="2" fill={palette.spark}/>
+          <rect x="8" y="12" width="8" height="5" fill={palette.dark}/>
+          <rect x="9" y="11" width="6" height="2" fill={palette.light}/>
+          <rect x="6" y="16" width="2" height="2" fill={palette.spark}/>
         </>
       );
     case 'multi':
@@ -1388,10 +1415,11 @@ const renderThemeMotif = (
     case 'time':
       return (
         <>
-          <rect x="8" y="8" width="8" height="8" fill={palette.base}/>
-          <rect x="10" y="10" width="4" height="4" fill="#17131A"/>
-          <rect x="12" y="9" width="1" height="4" fill={palette.spark}/>
-          <rect x="12" y="12" width="3" height="1" fill={palette.spark}/>
+          <rect x="8" y="7" width="8" height="2" fill={palette.base}/>
+          <rect x="8" y="15" width="8" height="2" fill={palette.base}/>
+          <rect x="10" y="9" width="4" height="6" fill="#17131A"/>
+          <rect x="11" y="10" width="2" height="2" fill={palette.spark}/>
+          <rect x="11" y="13" width="2" height="2" fill={palette.light}/>
         </>
       );
     case 'growth':
@@ -1406,8 +1434,8 @@ const renderThemeMotif = (
     case 'void':
       return (
         <>
-          <rect x="8" y="8" width="8" height="8" fill={palette.light}/>
-          <rect x="10" y="10" width="4" height="4" fill="#000000"/>
+          <rect x="9" y="8" width="6" height="6" fill={palette.light}/>
+          <rect x="10" y="9" width="4" height="4" fill="#000000"/>
           <rect x="6" y="6" width="2" height="2" fill={palette.spark}/>
           <rect x="16" y="16" width="2" height="2" fill={palette.spark}/>
         </>
@@ -1430,18 +1458,22 @@ const generatedCardSprite = ({ kind, theme, rarity, variant = 0, motif }: Genera
   return ({ className }) => (
     <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
       {renderGeneratedFrame(palette, frame, rarity, variant)}
+      {renderThemeMotif(kind, theme, palette, variant)}
+      {kind === 'handle' && renderGeneratedCardMotif(motif, palette, frame)}
       {kind === 'handle' && renderHandleSilhouette(palette, frame, theme, rarity, variant)}
       {kind === 'head' && renderHeadSilhouette(palette, frame, theme, rarity, variant)}
       {kind === 'deco' && renderDecoSilhouette(palette, frame, theme, rarity, variant)}
-      {renderThemeMotif(kind, theme, palette, variant)}
-      {renderGeneratedCardMotif(motif, palette, frame)}
+      {kind !== 'handle' && renderGeneratedCardMotif(motif, palette, frame)}
       <rect x="17" y="18" width="1" height="1" fill={frame}/>
     </svg>
   );
 };
 
 export const HAND_DRAWN_CARD_SPRITE_IDS = new Set<number>([
-  101, 102, 103, 104, 105, 248, 249
+  101, 102, 103, 104, 105,
+  248, 249,
+  405, 407,
+  414, 415, 416, 417, 418, 419, 420, 421, 422, 423, 424, 425
 ]);
 
 // Card Sprites - Each card has unique pixel art icon
@@ -2044,6 +2076,292 @@ const generatedCardConfigs: Record<number, GeneratedCardSpriteConfig> = {
 Object.entries(generatedCardConfigs).forEach(([cardId, config]) => {
   CardSprites[Number(cardId)] = generatedCardSprite(config);
 });
+
+const renderLegendPayoffFrame = (accent: string) => (
+  <>
+    <rect x="6" y="20" width="12" height="1" fill="#09070D" opacity="0.55"/>
+    <rect x="8" y="21" width="8" height="1" fill="#09070D" opacity="0.35"/>
+    <rect x="4" y="5" width="2" height="2" fill={accent}/>
+    <rect x="18" y="5" width="2" height="2" fill={accent}/>
+    <rect x="5" y="18" width="2" height="1" fill="#FFF2A8"/>
+    <rect x="17" y="18" width="2" height="1" fill="#7A5BC2"/>
+  </>
+);
+
+const legendaryPayoffCardSprites: Record<number, React.FC<{ className?: string }>> = {
+  405: ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      {renderLegendPayoffFrame("#D9A441")}
+      <rect x="10" y="6" width="4" height="12" fill="#5C3A1E"/>
+      <rect x="9" y="8" width="6" height="8" fill="#8A5C2A"/>
+      <rect x="11" y="5" width="2" height="14" fill="#E0B96A"/>
+      <rect x="7" y="8" width="4" height="2" fill="#6AD7FF"/>
+      <rect x="13" y="8" width="4" height="2" fill="#6AD7FF"/>
+      <rect x="6" y="10" width="2" height="3" fill="#8FF4FF"/>
+      <rect x="16" y="10" width="2" height="3" fill="#8FF4FF"/>
+      <rect x="8" y="13" width="3" height="2" fill="#6AD7FF"/>
+      <rect x="13" y="13" width="3" height="2" fill="#6AD7FF"/>
+      <rect x="11" y="11" width="2" height="2" fill="#FFFFFF"/>
+      <rect x="5" y="16" width="3" height="1" fill="#D9A441"/>
+      <rect x="16" y="6" width="3" height="1" fill="#D9A441"/>
+      <rect x="6" y="15" width="1" height="3" fill="#D9A441"/>
+      <rect x="18" y="5" width="1" height="3" fill="#D9A441"/>
+    </svg>
+  ),
+  407: ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      {renderLegendPayoffFrame("#7CFC7C")}
+      <rect x="11" y="6" width="3" height="12" fill="#69D7FF"/>
+      <rect x="9" y="9" width="7" height="8" fill="#4DA5E6"/>
+      <rect x="10" y="5" width="2" height="3" fill="#DFFFFF"/>
+      <rect x="14" y="7" width="2" height="4" fill="#B7F6FF"/>
+      <rect x="7" y="12" width="3" height="5" fill="#43C47A"/>
+      <rect x="15" y="14" width="3" height="4" fill="#2E9A5A"/>
+      <rect x="8" y="11" width="2" height="2" fill="#A8FF9A"/>
+      <rect x="16" y="13" width="2" height="2" fill="#A8FF9A"/>
+      <rect x="10" y="16" width="2" height="2" fill="#164C37"/>
+      <rect x="13" y="10" width="1" height="5" fill="#FFFFFF"/>
+      <rect x="6" y="18" width="12" height="1" fill="#5B7A46"/>
+      <rect x="5" y="16" width="2" height="2" fill="#7CFC7C"/>
+      <rect x="18" y="16" width="1" height="2" fill="#7CFC7C"/>
+      <rect x="12" y="4" width="2" height="1" fill="#FFFFFF"/>
+    </svg>
+  ),
+  414: ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      {renderLegendPayoffFrame("#D94A4A")}
+      <rect x="10" y="5" width="4" height="13" fill="#4A1212"/>
+      <rect x="9" y="8" width="6" height="8" fill="#8B1E2D"/>
+      <rect x="11" y="6" width="2" height="12" fill="#D94A4A"/>
+      <rect x="8" y="7" width="2" height="2" fill="#F2D48A"/>
+      <rect x="14" y="7" width="2" height="2" fill="#F2D48A"/>
+      <rect x="7" y="10" width="2" height="2" fill="#7B0F18"/>
+      <rect x="15" y="10" width="2" height="2" fill="#7B0F18"/>
+      <rect x="7" y="13" width="2" height="4" fill="#B21D2D"/>
+      <rect x="15" y="13" width="2" height="4" fill="#B21D2D"/>
+      <rect x="11" y="10" width="2" height="2" fill="#FFE0E0"/>
+      <rect x="10" y="18" width="4" height="2" fill="#2A0909"/>
+      <rect x="6" y="17" width="1" height="2" fill="#FF3A3A"/>
+      <rect x="17" y="18" width="1" height="2" fill="#FF3A3A"/>
+      <rect x="12" y="14" width="1" height="3" fill="#FF7777"/>
+    </svg>
+  ),
+  415: ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      {renderLegendPayoffFrame("#7DB7FF")}
+      <rect x="10" y="5" width="4" height="14" fill="#334B70"/>
+      <rect x="8" y="7" width="8" height="10" fill="#5F86B8"/>
+      <rect x="7" y="9" width="10" height="6" fill="#91C6F2"/>
+      <rect x="9" y="8" width="6" height="8" fill="#D9F1FF"/>
+      <rect x="11" y="6" width="2" height="11" fill="#F8FFFF"/>
+      <rect x="9" y="17" width="6" height="2" fill="#1D2E4A"/>
+      <rect x="6" y="10" width="2" height="4" fill="#D8B95E"/>
+      <rect x="16" y="10" width="2" height="4" fill="#D8B95E"/>
+      <rect x="8" y="5" width="2" height="2" fill="#FFFFFF"/>
+      <rect x="14" y="5" width="2" height="2" fill="#FFFFFF"/>
+      <rect x="10" y="10" width="4" height="1" fill="#57799C"/>
+      <rect x="10" y="13" width="4" height="1" fill="#57799C"/>
+      <rect x="12" y="9" width="1" height="6" fill="#57799C"/>
+      <rect x="5" y="16" width="3" height="1" fill="#7DB7FF"/>
+    </svg>
+  ),
+  416: ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      {renderLegendPayoffFrame("#CFA9FF")}
+      <rect x="10" y="6" width="4" height="12" fill="#4B356F"/>
+      <rect x="9" y="8" width="6" height="8" fill="#6F52A3"/>
+      <rect x="11" y="5" width="2" height="14" fill="#E9D8FF"/>
+      <rect x="6" y="7" width="5" height="2" fill="#F6E7C6"/>
+      <rect x="13" y="7" width="5" height="2" fill="#F6E7C6"/>
+      <rect x="5" y="9" width="2" height="5" fill="#D4B98A"/>
+      <rect x="17" y="9" width="2" height="5" fill="#D4B98A"/>
+      <rect x="7" y="10" width="3" height="1" fill="#3A2852"/>
+      <rect x="14" y="10" width="3" height="1" fill="#3A2852"/>
+      <rect x="8" y="12" width="2" height="1" fill="#3A2852"/>
+      <rect x="14" y="12" width="2" height="1" fill="#3A2852"/>
+      <rect x="12" y="13" width="1" height="2" fill="#FFFFFF"/>
+      <rect x="5" y="16" width="4" height="1" fill="#CFA9FF"/>
+      <rect x="15" y="16" width="4" height="1" fill="#CFA9FF"/>
+    </svg>
+  ),
+  417: ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      {renderLegendPayoffFrame("#FFCC66")}
+      <rect x="10" y="5" width="4" height="14" fill="#5B321A"/>
+      <rect x="9" y="8" width="6" height="8" fill="#A06032"/>
+      <rect x="11" y="6" width="2" height="12" fill="#F0B060"/>
+      <rect x="5" y="7" width="3" height="5" fill="#C98245"/>
+      <rect x="16" y="7" width="3" height="5" fill="#C98245"/>
+      <rect x="6" y="6" width="2" height="2" fill="#F4C78B"/>
+      <rect x="16" y="6" width="2" height="2" fill="#F4C78B"/>
+      <rect x="5" y="14" width="4" height="3" fill="#B66E3B"/>
+      <rect x="15" y="14" width="4" height="3" fill="#B66E3B"/>
+      <rect x="4" y="15" width="2" height="1" fill="#F4C78B"/>
+      <rect x="18" y="15" width="2" height="1" fill="#F4C78B"/>
+      <rect x="8" y="4" width="2" height="3" fill="#8A4D2A"/>
+      <rect x="14" y="4" width="2" height="3" fill="#8A4D2A"/>
+      <rect x="11" y="11" width="2" height="2" fill="#FFF2A8"/>
+    </svg>
+  ),
+  418: ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      {renderLegendPayoffFrame("#E04444")}
+      <rect x="8" y="5" width="8" height="3" fill="#8B0000"/>
+      <rect x="9" y="3" width="6" height="3" fill="#D02030"/>
+      <rect x="11" y="7" width="2" height="10" fill="#D8D8E8"/>
+      <rect x="9" y="8" width="2" height="8" fill="#A0A0B8"/>
+      <rect x="13" y="8" width="2" height="8" fill="#606070"/>
+      <rect x="8" y="12" width="2" height="4" fill="#F4F4FF"/>
+      <rect x="14" y="12" width="2" height="4" fill="#383848"/>
+      <rect x="7" y="16" width="10" height="2" fill="#4A1515"/>
+      <rect x="10" y="18" width="4" height="2" fill="#261010"/>
+      <rect x="8" y="7" width="2" height="1" fill="#FF6B6B"/>
+      <rect x="14" y="7" width="2" height="1" fill="#FF6B6B"/>
+      <rect x="10" y="10" width="1" height="4" fill="#FF3A3A"/>
+      <rect x="15" y="13" width="1" height="3" fill="#FF3A3A"/>
+      <rect x="5" y="5" width="2" height="2" fill="#E04444"/>
+    </svg>
+  ),
+  419: ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      {renderLegendPayoffFrame("#AEE6FF")}
+      <rect x="6" y="8" width="12" height="10" fill="#6EA4D8"/>
+      <rect x="7" y="7" width="3" height="2" fill="#DDF8FF"/>
+      <rect x="11" y="6" width="3" height="3" fill="#DDF8FF"/>
+      <rect x="15" y="7" width="3" height="2" fill="#DDF8FF"/>
+      <rect x="8" y="10" width="3" height="7" fill="#AEE6FF"/>
+      <rect x="12" y="10" width="3" height="7" fill="#88C9F0"/>
+      <rect x="16" y="10" width="2" height="7" fill="#4F7FB2"/>
+      <rect x="6" y="12" width="12" height="1" fill="#F7FFFF"/>
+      <rect x="10" y="8" width="1" height="10" fill="#F7FFFF"/>
+      <rect x="14" y="9" width="1" height="9" fill="#F7FFFF"/>
+      <rect x="5" y="18" width="14" height="1" fill="#D8B95E"/>
+      <rect x="7" y="5" width="2" height="1" fill="#FFFFFF"/>
+      <rect x="16" y="5" width="2" height="1" fill="#FFFFFF"/>
+      <rect x="5" y="15" width="1" height="3" fill="#AEE6FF"/>
+    </svg>
+  ),
+  420: ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      {renderLegendPayoffFrame("#7CFF6B")}
+      <rect x="12" y="5" width="2" height="13" fill="#4B2D5F"/>
+      <rect x="9" y="6" width="6" height="2" fill="#B9FF80"/>
+      <rect x="7" y="8" width="3" height="4" fill="#7CFF6B"/>
+      <rect x="14" y="8" width="3" height="4" fill="#56B74C"/>
+      <rect x="6" y="11" width="2" height="4" fill="#A44DFF"/>
+      <rect x="16" y="11" width="2" height="4" fill="#A44DFF"/>
+      <rect x="8" y="15" width="8" height="2" fill="#3C253F"/>
+      <rect x="10" y="17" width="4" height="2" fill="#25182A"/>
+      <rect x="9" y="9" width="2" height="2" fill="#F0FFD6"/>
+      <rect x="13" y="9" width="2" height="2" fill="#F0FFD6"/>
+      <rect x="10" y="11" width="4" height="1" fill="#263A19"/>
+      <rect x="5" y="6" width="2" height="2" fill="#7CFF6B"/>
+      <rect x="17" y="5" width="2" height="2" fill="#D7FF55"/>
+      <rect x="5" y="17" width="2" height="1" fill="#FF6B3A"/>
+      <rect x="17" y="17" width="2" height="1" fill="#FF6B3A"/>
+    </svg>
+  ),
+  421: ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      {renderLegendPayoffFrame("#FF9A3A")}
+      <rect x="6" y="5" width="4" height="4" fill="#FF5A1F"/>
+      <rect x="7" y="4" width="3" height="2" fill="#FFD166"/>
+      <rect x="13" y="6" width="5" height="5" fill="#C94824"/>
+      <rect x="14" y="5" width="4" height="2" fill="#FFB347"/>
+      <rect x="9" y="12" width="4" height="4" fill="#FF6B3A"/>
+      <rect x="10" y="11" width="3" height="2" fill="#FFE07A"/>
+      <rect x="15" y="14" width="3" height="3" fill="#A83A21"/>
+      <rect x="15" y="13" width="3" height="1" fill="#FFD166"/>
+      <rect x="5" y="10" width="3" height="1" fill="#FFE0A3"/>
+      <rect x="4" y="12" width="4" height="1" fill="#FF9A3A"/>
+      <rect x="12" y="3" width="3" height="1" fill="#FFE0A3"/>
+      <rect x="17" y="4" width="2" height="1" fill="#FF9A3A"/>
+      <rect x="7" y="17" width="3" height="1" fill="#FFE0A3"/>
+      <rect x="11" y="18" width="5" height="1" fill="#FF9A3A"/>
+      <rect x="8" y="6" width="1" height="1" fill="#FFFFFF"/>
+    </svg>
+  ),
+  422: ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      {renderLegendPayoffFrame("#F05A7A")}
+      <rect x="8" y="7" width="4" height="4" fill="#B21D3A"/>
+      <rect x="13" y="7" width="4" height="4" fill="#D42F52"/>
+      <rect x="7" y="10" width="10" height="5" fill="#E84A6A"/>
+      <rect x="9" y="15" width="6" height="3" fill="#8B1024"/>
+      <rect x="11" y="18" width="2" height="2" fill="#5A0A18"/>
+      <rect x="10" y="8" width="2" height="2" fill="#FF9DB0"/>
+      <rect x="14" y="8" width="2" height="2" fill="#FFB3C1"/>
+      <rect x="12" y="10" width="1" height="5" fill="#FFE0E8"/>
+      <rect x="9" y="12" width="2" height="1" fill="#FFE0E8"/>
+      <rect x="14" y="13" width="2" height="1" fill="#FFE0E8"/>
+      <rect x="6" y="15" width="2" height="2" fill="#FF3344"/>
+      <rect x="16" y="16" width="2" height="2" fill="#FF3344"/>
+      <rect x="5" y="11" width="2" height="1" fill="#F05A7A"/>
+      <rect x="18" y="11" width="1" height="2" fill="#F05A7A"/>
+    </svg>
+  ),
+  423: ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      {renderLegendPayoffFrame("#D8C27A")}
+      <rect x="5" y="8" width="14" height="10" fill="#6A5B46"/>
+      <rect x="6" y="6" width="3" height="3" fill="#9E8A62"/>
+      <rect x="11" y="6" width="3" height="3" fill="#B9A46F"/>
+      <rect x="16" y="6" width="3" height="3" fill="#9E8A62"/>
+      <rect x="7" y="10" width="3" height="7" fill="#CDBA7A"/>
+      <rect x="11" y="10" width="3" height="7" fill="#A99562"/>
+      <rect x="15" y="10" width="3" height="7" fill="#7C6848"/>
+      <rect x="5" y="12" width="14" height="1" fill="#EEE1A6"/>
+      <rect x="9" y="8" width="1" height="10" fill="#EEE1A6"/>
+      <rect x="14" y="8" width="1" height="10" fill="#EEE1A6"/>
+      <rect x="10" y="14" width="4" height="4" fill="#3A2E28"/>
+      <rect x="11" y="15" width="2" height="3" fill="#1F1714"/>
+      <rect x="6" y="18" width="12" height="1" fill="#D8C27A"/>
+      <rect x="18" y="9" width="1" height="3" fill="#F8E9A0"/>
+    </svg>
+  ),
+  424: ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      {renderLegendPayoffFrame("#6AD7FF")}
+      <rect x="8" y="6" width="8" height="12" fill="#233A66"/>
+      <rect x="9" y="5" width="6" height="2" fill="#9CEBFF"/>
+      <rect x="9" y="17" width="6" height="2" fill="#9CEBFF"/>
+      <rect x="10" y="8" width="4" height="8" fill="#2F65B0"/>
+      <rect x="11" y="9" width="2" height="6" fill="#E8FFFF"/>
+      <rect x="6" y="9" width="2" height="3" fill="#D8B95E"/>
+      <rect x="16" y="9" width="2" height="3" fill="#D8B95E"/>
+      <rect x="6" y="13" width="2" height="3" fill="#D8B95E"/>
+      <rect x="16" y="13" width="2" height="3" fill="#D8B95E"/>
+      <rect x="5" y="10" width="1" height="1" fill="#FFF2A8"/>
+      <rect x="18" y="14" width="1" height="1" fill="#FFF2A8"/>
+      <rect x="7" y="6" width="2" height="1" fill="#6AD7FF"/>
+      <rect x="15" y="6" width="2" height="1" fill="#6AD7FF"/>
+      <rect x="7" y="18" width="3" height="1" fill="#6AD7FF"/>
+      <rect x="14" y="18" width="3" height="1" fill="#6AD7FF"/>
+    </svg>
+  ),
+  425: ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      {renderLegendPayoffFrame("#9AB7FF")}
+      <rect x="6" y="7" width="12" height="10" fill="#223A66"/>
+      <rect x="7" y="6" width="10" height="2" fill="#D7E4FF"/>
+      <rect x="7" y="16" width="10" height="2" fill="#D7E4FF"/>
+      <rect x="8" y="9" width="8" height="6" fill="#314F8C"/>
+      <rect x="9" y="10" width="1" height="1" fill="#FFFFFF"/>
+      <rect x="13" y="9" width="1" height="1" fill="#FFFFFF"/>
+      <rect x="15" y="12" width="1" height="1" fill="#FFFFFF"/>
+      <rect x="11" y="14" width="1" height="1" fill="#FFFFFF"/>
+      <rect x="9" y="10" width="5" height="1" fill="#9AB7FF"/>
+      <rect x="13" y="10" width="1" height="3" fill="#9AB7FF"/>
+      <rect x="13" y="12" width="3" height="1" fill="#9AB7FF"/>
+      <rect x="10" y="14" width="5" height="1" fill="#9AB7FF"/>
+      <rect x="5" y="9" width="2" height="1" fill="#9AB7FF"/>
+      <rect x="17" y="14" width="2" height="1" fill="#9AB7FF"/>
+      <rect x="11" y="11" width="2" height="2" fill="#D8B95E"/>
+    </svg>
+  )
+};
+
+Object.assign(CardSprites, legendaryPayoffCardSprites);
 
 // Default sprite for cards without specific art
 export const DefaultCardSprite: React.FC<{ type: string; className?: string }> = ({ type, className }) => {

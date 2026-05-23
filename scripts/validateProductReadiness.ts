@@ -111,7 +111,11 @@ const rewardRarities = new Set<CardRarity>([
   CardRarity.RARE,
   CardRarity.LEGEND
 ]);
-const handReviewedCardSpriteIds = [248, 249];
+const handReviewedCardSpriteIds = [
+  248, 249,
+  405, 407,
+  414, 415, 416, 417, 418, 419, 420, 421, 422, 423, 424, 425
+];
 
 const getCards = (ids: number[]): CardData[] => {
   return ids.map(id => cardById.get(id)).filter((card): card is CardData => Boolean(card));
@@ -212,6 +216,17 @@ section('Card pool and archetypes', () => {
 });
 
 section('Card and enemy pixel art', () => {
+  const pixelSource = readText('components/PixelSprites.tsx');
+  const generatedFrameSource = pixelSource.slice(
+    pixelSource.indexOf('const renderGeneratedFrame'),
+    pixelSource.indexOf('const renderHandleSilhouette')
+  );
+  const generatedSpriteSource = pixelSource.slice(
+    pixelSource.indexOf('const generatedCardSprite'),
+    pixelSource.indexOf('export const HAND_DRAWN_CARD_SPRITE_IDS')
+  );
+  const handleMotifIndex = generatedSpriteSource.indexOf("kind === 'handle' && renderGeneratedCardMotif");
+  const handleSilhouetteIndex = generatedSpriteSource.indexOf("kind === 'handle' && renderHandleSilhouette");
   const playerCards = CARD_DATABASE.filter(card => playerCardRarities.has(card.rarity));
   const missingCardSpriteIds = playerCards
     .filter(card => !CardSprites[card.id])
@@ -229,6 +244,8 @@ section('Card and enemy pixel art', () => {
   requireReady(missingCardSpriteIds.length === 0, `Every playable card needs a dedicated pixel sprite. Missing: ${missingCardSpriteIds.join(', ') || 'none'}.`);
   requireReady(missingHandReviewedSprites.length === 0, `Recently added cards need hand-reviewed pixel sprites. Missing: ${missingHandReviewedSprites.join(', ') || 'none'}.`);
   requireReady(underDetailedHandReviewedSprites.length === 0, `Hand-reviewed card sprites need enough pixel detail and color separation. Under-detailed: ${underDetailedHandReviewedSprites.join(', ') || 'none'}.`);
+  requireReady(!/width="20" height="20"/.test(generatedFrameSource), 'Generated card sprites should avoid full square panel backgrounds that obscure item silhouettes.');
+  requireReady(handleMotifIndex >= 0 && handleMotifIndex < handleSilhouetteIndex, 'Generated handle motifs should render behind the grip silhouette so handles read as handles.');
   requireReady(missingEnemySpriteIds.length === 0, `Every enemy needs a dedicated pixel sprite. Missing: ${missingEnemySpriteIds.join(', ') || 'none'}.`);
 });
 

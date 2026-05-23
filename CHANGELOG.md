@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.11.7] - 2026-05-23
+
+### Added
+- Hand-drawn pixel sprites for 14 generated legendary payoff cards: infinite-return, growth, self-damage, defense-conversion, draw-loop, multi-hit, status, energy, and heavy-build finishers.
+
+### Changed
+- Generated card sprite composition now removes the inner square panel, renders large theme motifs behind item silhouettes, and keeps handle grips visually dominant.
+- Product readiness now treats the recent common additions and these legendary payoff cards as hand-reviewed sprites, with minimum pixel-detail and color-separation checks.
+- Menu version updated to v1.11.7.
+
+### Design Notes
+- The late-game reward cards carry archetype identity, so their icons now use bespoke silhouettes and motifs instead of relying on the shared generated-card template.
+
+---
+
 ## [1.11.6] - 2026-05-23
 
 ### Added
