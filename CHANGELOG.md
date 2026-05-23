@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.11.17] - 2026-05-23
+
+### Added
+- Hand-reviewed pixel sprites for 14 rare handle cards, covering twin, lifesteal, gold, gambler, piercing, blood, wall, plague, ignition, dynamo, cycle, giant, and clone grips.
+
+### Changed
+- Rare handles now share the clearer grip silhouette language established for common handles while keeping their archetype color and side motifs distinct.
+- Product readiness now treats those rare handle sprites as hand-reviewed art with detail and color-separation checks.
+- Menu version updated to v1.11.17.
+
+### Design Notes
+- Rare handles are mid-run build pivots, so their icons now emphasize grip identity and upgrade weight rather than looking like generic symbols.
+
+---
+
 ## [1.11.16] - 2026-05-23
 
 ### Added

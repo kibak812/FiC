@@ -1472,6 +1472,7 @@ const generatedCardSprite = ({ kind, theme, rarity, variant = 0, motif }: Genera
 export const HAND_DRAWN_CARD_SPRITE_IDS = new Set<number>([
   101, 102, 103, 104, 105, 106,
   212, 216, 217, 218, 220, 221, 222, 223, 224, 225,
+  301, 302, 307, 309, 317, 318, 321, 322, 323, 324, 325, 326, 327, 328,
   209, 213, 214, 226, 227, 228, 229, 230, 231, 232, 233, 234, 235, 246, 248, 249,
   210, 211, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 247,
   405, 407,
@@ -2266,7 +2267,7 @@ const reviewedHandleSprite = (config: ReviewedHandleSpriteConfig): React.FC<{ cl
   );
 };
 
-const reviewedCommonHandleSprites: Record<number, React.FC<{ className?: string }>> = {
+const reviewedHandleSprites: Record<number, React.FC<{ className?: string }>> = {
   212: reviewedHandleSprite({ accent: '#AEEBFF', mid: '#D8C49C', dark: '#6B5438', shine: '#FFFFFF', motif: 'light' }),
   216: reviewedHandleSprite({ accent: '#D94A4A', mid: '#8B1E2D', dark: '#3A1014', shine: '#F8A8A8', motif: 'blood' }),
   217: reviewedHandleSprite({ accent: '#78D6FF', mid: '#557080', dark: '#25343B', shine: '#D7F4FF', motif: 'shield' }),
@@ -2277,10 +2278,24 @@ const reviewedCommonHandleSprites: Record<number, React.FC<{ className?: string 
   223: reviewedHandleSprite({ accent: '#BFA3FF', mid: '#7E6AA8', dark: '#2D2540', shine: '#F4ECFF', motif: 'scribe' }),
   224: reviewedHandleSprite({ accent: '#D6B26A', mid: '#7A5636', dark: '#2E2118', shine: '#F6E1A6', motif: 'heavy' }),
   225: reviewedHandleSprite({ accent: '#8FE8FF', mid: '#4E6D82', dark: '#1B2F3B', shine: '#FFFFFF', motif: 'split' }),
-  248: reviewedHandleSprite({ accent: '#FFD166', mid: '#8A6A3D', dark: '#322619', shine: '#FFF1B0', motif: 'counterweight' })
+  248: reviewedHandleSprite({ accent: '#FFD166', mid: '#8A6A3D', dark: '#322619', shine: '#FFF1B0', motif: 'counterweight' }),
+  301: reviewedHandleSprite({ accent: '#D49CFF', mid: '#7D4ACF', dark: '#3A225C', shine: '#FFFFFF', motif: 'split' }),
+  302: reviewedHandleSprite({ accent: '#D94A4A', mid: '#3D8B4D', dark: '#14331F', shine: '#D9FFD2', motif: 'poison' }),
+  307: reviewedHandleSprite({ accent: '#FFD700', mid: '#D4A017', dark: '#7A4D00', shine: '#FFFFAA', motif: 'counterweight' }),
+  309: reviewedHandleSprite({ accent: '#FFD166', mid: '#7E6AA8', dark: '#2D2540', shine: '#FFF4A8', motif: 'counterweight' }),
+  317: reviewedHandleSprite({ accent: '#DCE6F0', mid: '#708090', dark: '#3F4650', shine: '#FFFFFF', motif: 'light' }),
+  318: reviewedHandleSprite({ accent: '#D94A4A', mid: '#8B1E2D', dark: '#3A1014', shine: '#F8A8A8', motif: 'blood' }),
+  321: reviewedHandleSprite({ accent: '#F08A8A', mid: '#8B1E2D', dark: '#2A0508', shine: '#FFD0D0', motif: 'scribe' }),
+  322: reviewedHandleSprite({ accent: '#78D6FF', mid: '#557080', dark: '#25343B', shine: '#D7F4FF', motif: 'shield' }),
+  323: reviewedHandleSprite({ accent: '#83F27D', mid: '#3D8B4D', dark: '#14331F', shine: '#D9FFD2', motif: 'poison' }),
+  324: reviewedHandleSprite({ accent: '#FF9F1A', mid: '#A8441C', dark: '#3A130E', shine: '#FFE08A', motif: 'ember' }),
+  325: reviewedHandleSprite({ accent: '#56C8FF', mid: '#2D6D9B', dark: '#10283F', shine: '#FFFFFF', motif: 'spark' }),
+  326: reviewedHandleSprite({ accent: '#BFA3FF', mid: '#7E6AA8', dark: '#2D2540', shine: '#F4ECFF', motif: 'scribe' }),
+  327: reviewedHandleSprite({ accent: '#D6B26A', mid: '#7A5636', dark: '#2E2118', shine: '#F6E1A6', motif: 'heavy' }),
+  328: reviewedHandleSprite({ accent: '#8FE8FF', mid: '#4E6D82', dark: '#1B2F3B', shine: '#FFFFFF', motif: 'split' })
 };
 
-Object.assign(CardSprites, reviewedCommonHandleSprites);
+Object.assign(CardSprites, reviewedHandleSprites);
 
 type ReviewedHeadMotif =
   | 'gear'
