@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.11.21] - 2026-05-23
+
+### Added
+- Hand-reviewed pixel sprites for 9 legacy legendary cards, covering giant grips, void crystals, philosopher stones, meteor fragments, time gears, frost blades, executioner blades, evasion grips, and dragon sigils.
+
+### Changed
+- Legacy legendary cards now share the same payoff-grade frame and silhouette language as newer legendary rewards.
+- Product readiness now treats those legacy legendary sprites as hand-reviewed art with detail and color-separation checks.
+- Menu version updated to v1.11.21.
+
+### Design Notes
+- Legendary cards should feel like run-defining rewards on sight, so the remaining early icons now favor readable artifact silhouettes over simple colored blocks.
+
+---
+
 ## [1.11.20] - 2026-05-23
 
 ### Added

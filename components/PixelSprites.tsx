@@ -1477,6 +1477,7 @@ export const HAND_DRAWN_CARD_SPRITE_IDS = new Set<number>([
   303, 304, 306, 308, 310, 312, 313, 314, 329, 330, 331, 332, 333, 334, 335, 336,
   305, 311, 319, 320, 337, 338, 339, 340, 341, 342, 343, 344,
   210, 211, 236, 237, 238, 239, 240, 241, 242, 243, 244, 245, 247,
+  401, 402, 403, 404, 406, 408, 409, 412, 413,
   405, 407,
   414, 415, 416, 417, 418, 419, 420, 421, 422, 423, 424, 425
 ]);
@@ -3313,6 +3314,83 @@ const renderLegendPayoffFrame = (accent: string) => (
 );
 
 const legendaryPayoffCardSprites: Record<number, React.FC<{ className?: string }>> = {
+  401: ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      {renderLegendPayoffFrame("#FFCC66")}
+      <rect x="9" y="4" width="6" height="16" fill="#2E1C12"/>
+      <rect x="10" y="5" width="4" height="14" fill="#7A4A28"/>
+      <rect x="11" y="6" width="2" height="12" fill="#D6B26A"/>
+      <rect x="7" y="7" width="3" height="9" fill="#A66A3A"/>
+      <rect x="14" y="7" width="3" height="9" fill="#A66A3A"/>
+      <rect x="5" y="9" width="4" height="5" fill="#6B3A24"/>
+      <rect x="15" y="9" width="4" height="5" fill="#6B3A24"/>
+      <rect x="6" y="8" width="2" height="2" fill="#F0B060"/>
+      <rect x="16" y="8" width="2" height="2" fill="#F0B060"/>
+      <rect x="6" y="13" width="2" height="3" fill="#3A2117"/>
+      <rect x="16" y="13" width="2" height="3" fill="#3A2117"/>
+      <rect x="8" y="16" width="8" height="2" fill="#D8B95E"/>
+      <rect x="10" y="18" width="4" height="2" fill="#3A2117"/>
+      <rect x="11" y="9" width="2" height="2" fill="#FFF2A8"/>
+      <rect x="7" y="5" width="2" height="2" fill="#FFCC66"/>
+      <rect x="15" y="5" width="2" height="2" fill="#FFCC66"/>
+    </svg>
+  ),
+  402: ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      {renderLegendPayoffFrame("#B76BFF")}
+      <rect x="10" y="3" width="4" height="3" fill="#D9A7FF"/>
+      <rect x="8" y="6" width="8" height="10" fill="#1A082C"/>
+      <rect x="9" y="5" width="6" height="12" fill="#4B0082"/>
+      <rect x="10" y="6" width="4" height="10" fill="#7A22B8"/>
+      <rect x="11" y="8" width="2" height="6" fill="#050009"/>
+      <rect x="8" y="9" width="2" height="4" fill="#B76BFF"/>
+      <rect x="14" y="9" width="2" height="4" fill="#5B1A8F"/>
+      <rect x="7" y="11" width="2" height="2" fill="#68E8FF"/>
+      <rect x="15" y="13" width="2" height="2" fill="#68E8FF"/>
+      <rect x="10" y="16" width="4" height="3" fill="#2C0A4A"/>
+      <rect x="9" y="19" width="6" height="1" fill="#09070D"/>
+      <rect x="12" y="5" width="1" height="10" fill="#FFFFFF"/>
+      <rect x="6" y="6" width="2" height="2" fill="#B76BFF"/>
+      <rect x="17" y="7" width="1" height="3" fill="#D9A7FF"/>
+    </svg>
+  ),
+  403: ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      {renderLegendPayoffFrame("#FFD166")}
+      <rect x="8" y="6" width="8" height="11" fill="#5A1118"/>
+      <rect x="9" y="5" width="6" height="2" fill="#FFD166"/>
+      <rect x="9" y="16" width="6" height="2" fill="#7A4D00"/>
+      <rect x="7" y="8" width="2" height="7" fill="#D6B26A"/>
+      <rect x="15" y="8" width="2" height="7" fill="#D6B26A"/>
+      <rect x="9" y="8" width="6" height="7" fill="#DC143C"/>
+      <rect x="10" y="9" width="4" height="5" fill="#FF6A1A"/>
+      <rect x="11" y="10" width="2" height="3" fill="#FFF2A8"/>
+      <rect x="6" y="11" width="12" height="2" fill="#FFD166"/>
+      <rect x="11" y="6" width="2" height="12" fill="#FFE8A3"/>
+      <rect x="8" y="18" width="8" height="1" fill="#2A0508"/>
+      <rect x="6" y="6" width="2" height="2" fill="#FFFFFF"/>
+      <rect x="16" y="16" width="2" height="2" fill="#FFFFFF"/>
+    </svg>
+  ),
+  404: ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      {renderLegendPayoffFrame("#FF8A24")}
+      <rect x="7" y="7" width="10" height="9" fill="#2A1110"/>
+      <rect x="8" y="6" width="8" height="10" fill="#7A1F12"/>
+      <rect x="9" y="8" width="6" height="7" fill="#B84A24"/>
+      <rect x="10" y="9" width="4" height="5" fill="#FF6A1A"/>
+      <rect x="11" y="10" width="2" height="3" fill="#FFD166"/>
+      <rect x="6" y="10" width="3" height="4" fill="#5A1810"/>
+      <rect x="15" y="9" width="3" height="5" fill="#5A1810"/>
+      <rect x="8" y="16" width="8" height="2" fill="#3A130E"/>
+      <rect x="5" y="5" width="2" height="2" fill="#FFE08A"/>
+      <rect x="17" y="6" width="2" height="2" fill="#FF9F1A"/>
+      <rect x="4" y="14" width="3" height="1" fill="#FFD166"/>
+      <rect x="17" y="16" width="2" height="2" fill="#FFE08A"/>
+      <rect x="9" y="5" width="2" height="2" fill="#D8E0E6"/>
+      <rect x="14" y="15" width="2" height="2" fill="#D8E0E6"/>
+    </svg>
+  ),
   405: ({ className }) => (
     <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
       {renderLegendPayoffFrame("#D9A441")}
@@ -3332,6 +3410,25 @@ const legendaryPayoffCardSprites: Record<number, React.FC<{ className?: string }
       <rect x="18" y="5" width="1" height="3" fill="#D9A441"/>
     </svg>
   ),
+  406: ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      {renderLegendPayoffFrame("#7DD6FF")}
+      <rect x="7" y="6" width="10" height="10" fill="#2D2540"/>
+      <rect x="8" y="7" width="8" height="8" fill="#D6B26A"/>
+      <rect x="9" y="8" width="6" height="6" fill="#21171A"/>
+      <rect x="10" y="9" width="4" height="4" fill="#7DD6FF"/>
+      <rect x="11" y="10" width="2" height="2" fill="#FFFFFF"/>
+      <rect x="11" y="5" width="2" height="3" fill="#D6B26A"/>
+      <rect x="11" y="16" width="2" height="3" fill="#D6B26A"/>
+      <rect x="5" y="10" width="3" height="2" fill="#D6B26A"/>
+      <rect x="16" y="10" width="3" height="2" fill="#D6B26A"/>
+      <rect x="12" y="7" width="1" height="5" fill="#FFF2A8"/>
+      <rect x="12" y="12" width="4" height="1" fill="#FFF2A8"/>
+      <rect x="6" y="15" width="3" height="1" fill="#7DD6FF"/>
+      <rect x="15" y="5" width="3" height="1" fill="#7DD6FF"/>
+      <rect x="9" y="18" width="6" height="1" fill="#09070D"/>
+    </svg>
+  ),
   407: ({ className }) => (
     <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
       {renderLegendPayoffFrame("#7CFC7C")}
@@ -3349,6 +3446,82 @@ const legendaryPayoffCardSprites: Record<number, React.FC<{ className?: string }
       <rect x="5" y="16" width="2" height="2" fill="#7CFC7C"/>
       <rect x="18" y="16" width="1" height="2" fill="#7CFC7C"/>
       <rect x="12" y="4" width="2" height="1" fill="#FFFFFF"/>
+    </svg>
+  ),
+  408: ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      {renderLegendPayoffFrame("#AEEBFF")}
+      <rect x="10" y="3" width="4" height="13" fill="#1B4F6A"/>
+      <rect x="9" y="6" width="3" height="9" fill="#87CEEB"/>
+      <rect x="12" y="5" width="3" height="10" fill="#DFFFFF"/>
+      <rect x="11" y="4" width="2" height="11" fill="#FFFFFF"/>
+      <rect x="7" y="8" width="3" height="2" fill="#AFEEEE"/>
+      <rect x="14" y="9" width="3" height="2" fill="#AFEEEE"/>
+      <rect x="6" y="12" width="3" height="2" fill="#DFFFFF"/>
+      <rect x="15" y="13" width="2" height="2" fill="#DFFFFF"/>
+      <rect x="8" y="15" width="8" height="2" fill="#00CED1"/>
+      <rect x="10" y="17" width="4" height="3" fill="#0A3A4A"/>
+      <rect x="6" y="6" width="2" height="2" fill="#FFFFFF"/>
+      <rect x="16" y="6" width="2" height="2" fill="#FFFFFF"/>
+      <rect x="5" y="15" width="2" height="1" fill="#AEEBFF"/>
+    </svg>
+  ),
+  409: ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      {renderLegendPayoffFrame("#E8E8DC")}
+      <rect x="7" y="3" width="10" height="5" fill="#1B1B1F"/>
+      <rect x="8" y="4" width="8" height="4" fill="#4A4A50"/>
+      <rect x="9" y="7" width="6" height="9" fill="#2F2F34"/>
+      <rect x="10" y="8" width="4" height="7" fill="#6B6F75"/>
+      <rect x="7" y="8" width="3" height="6" fill="#D8E0E6"/>
+      <rect x="14" y="8" width="3" height="6" fill="#50555C"/>
+      <rect x="8" y="14" width="8" height="2" fill="#8B1E2D"/>
+      <rect x="9" y="16" width="6" height="4" fill="#5C2A24"/>
+      <rect x="11" y="9" width="2" height="2" fill="#E8E8DC"/>
+      <rect x="10" y="12" width="1" height="1" fill="#E8E8DC"/>
+      <rect x="13" y="12" width="1" height="1" fill="#E8E8DC"/>
+      <rect x="6" y="6" width="2" height="3" fill="#D94A4A"/>
+      <rect x="16" y="5" width="2" height="4" fill="#D94A4A"/>
+      <rect x="11" y="17" width="2" height="2" fill="#D6B26A"/>
+    </svg>
+  ),
+  412: ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      {renderLegendPayoffFrame("#CFA9FF")}
+      <rect x="10" y="5" width="4" height="13" fill="#2D2540"/>
+      <rect x="9" y="8" width="6" height="8" fill="#4A4A6A"/>
+      <rect x="11" y="6" width="2" height="12" fill="#BFA3FF"/>
+      <rect x="7" y="7" width="3" height="2" fill="#E8E8FF" opacity="0.9"/>
+      <rect x="14" y="7" width="3" height="2" fill="#E8E8FF" opacity="0.8"/>
+      <rect x="5" y="9" width="4" height="1" fill="#A0A0C0" opacity="0.75"/>
+      <rect x="15" y="10" width="4" height="1" fill="#A0A0C0" opacity="0.75"/>
+      <rect x="4" y="12" width="4" height="1" fill="#8080A0" opacity="0.65"/>
+      <rect x="16" y="13" width="3" height="1" fill="#8080A0" opacity="0.65"/>
+      <rect x="8" y="16" width="8" height="2" fill="#1B1428"/>
+      <rect x="10" y="18" width="4" height="2" fill="#09070D"/>
+      <rect x="11" y="10" width="2" height="2" fill="#FFFFFF"/>
+      <rect x="6" y="15" width="2" height="1" fill="#CFA9FF"/>
+      <rect x="17" y="15" width="2" height="1" fill="#CFA9FF"/>
+    </svg>
+  ),
+  413: ({ className }) => (
+    <svg viewBox="0 0 24 24" className={className} style={{ imageRendering: 'pixelated' }}>
+      {renderLegendPayoffFrame("#FFD166")}
+      <rect x="7" y="6" width="10" height="12" fill="#3A1014"/>
+      <rect x="8" y="7" width="8" height="10" fill="#8B1E2D"/>
+      <rect x="9" y="8" width="6" height="8" fill="#D94A4A"/>
+      <rect x="10" y="9" width="4" height="4" fill="#FFD166"/>
+      <rect x="11" y="10" width="2" height="2" fill="#FF6A1A"/>
+      <rect x="12" y="10" width="1" height="1" fill="#09070D"/>
+      <rect x="8" y="5" width="3" height="2" fill="#D6B26A"/>
+      <rect x="13" y="5" width="3" height="2" fill="#D6B26A"/>
+      <rect x="6" y="9" width="2" height="6" fill="#D6B26A"/>
+      <rect x="16" y="9" width="2" height="6" fill="#D6B26A"/>
+      <rect x="9" y="14" width="2" height="2" fill="#B52232"/>
+      <rect x="13" y="14" width="2" height="2" fill="#B52232"/>
+      <rect x="11" y="16" width="2" height="2" fill="#5A0A12"/>
+      <rect x="5" y="16" width="3" height="1" fill="#FFD166"/>
+      <rect x="16" y="16" width="3" height="1" fill="#FFD166"/>
     </svg>
   ),
   414: ({ className }) => (
