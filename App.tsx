@@ -46,6 +46,7 @@ import {
 // --- Hooks ---
 import { useAnimations } from './hooks/useAnimations';
 import { useToast } from './hooks/useToast';
+import { useAudioEngine } from './hooks/useAudioEngine';
 
 // --- Screens ---
 import MenuScreen from './screens/MenuScreen';
@@ -72,6 +73,7 @@ export default function App() {
   const [gameState, setGameState] = useState<GameState>('MENU');
   const [savedRunSummary, setSavedRunSummary] = useState<SavedRunSummary | null>(() => loadSavedRunSummary());
   const [settings, setSettings] = useState<GameSettings>(() => loadGameSettings());
+  const { playSound, startMusic, stopMusic } = useAudioEngine(settings);
   const [floor, setFloor] = useState(0);
   const [act, setAct] = useState(1);
   const [hasRested, setHasRested] = useState(false); // New state to track if player used Heal/Smelt this rest
@@ -273,6 +275,7 @@ const startCombat = (enemyData: EnemyData) => {
       setActiveMapNode(null);
       setHasRested(false);
       showFeedback(`ACT ${nextAct} 시작!`);
+      playSound('reward');
       setGameState('MAP');
   };
 
@@ -280,9 +283,11 @@ const startCombat = (enemyData: EnemyData) => {
       const availableNodeIds = getAvailableMapNodeIds(mapNodes, currentMapNodeId);
       if (!availableNodeIds.includes(node.id)) {
           showFeedback("아직 갈 수 없는 경로입니다.");
+          playSound('bad');
           return;
       }
 
+      playSound('ui');
       setActiveMapNode(node);
       setAct(node.act);
       setFloor(node.floor);
@@ -313,6 +318,9 @@ const startCombat = (enemyData: EnemyData) => {
   // --- Game Loop Methods ---
 
   const startGame = () => {
+    playSound('start');
+    startMusic();
+
     const newDeck = INITIAL_DECK_IDS.map(id => createCardInstance(id));
     const firstActMap = createActMap(1);
 
@@ -351,9 +359,12 @@ const startCombat = (enemyData: EnemyData) => {
       if (!savedRun) {
           setSavedRunSummary(null);
           showFeedback("이어할 저장 파일이 없습니다.");
+          playSound('bad');
           return;
       }
 
+      playSound('start');
+      startMusic();
       applySavedRun(savedRun);
       setSavedRunSummary({
           savedAt: savedRun.savedAt,
@@ -384,6 +395,27 @@ const startCombat = (enemyData: EnemyData) => {
   useEffect(() => {
       saveGameSettings(settings);
   }, [settings]);
+
+  useEffect(() => {
+      const root = document.documentElement;
+      root.classList.toggle('fic-reduce-motion', settings.reduceMotion);
+      root.classList.toggle('fic-high-contrast', settings.highContrast);
+      root.classList.toggle('fic-large-text', settings.largeText);
+
+      return () => {
+          root.classList.remove('fic-reduce-motion', 'fic-high-contrast', 'fic-large-text');
+      };
+  }, [settings.reduceMotion, settings.highContrast, settings.largeText]);
+
+  useEffect(() => {
+      if (gameState === 'WIN') {
+          playSound('win');
+          stopMusic();
+      } else if (gameState === 'LOSE') {
+          playSound('lose');
+          stopMusic();
+      }
+  }, [gameState, playSound, stopMusic]);
 
   useEffect(() => {
       if (gameState === 'WIN' || gameState === 'LOSE') {
@@ -465,6 +497,7 @@ const startCombat = (enemyData: EnemyData) => {
 
       const options = createCombatCardRewards(rewardRule);
       showFeedback(`승리! ${goldReward} 골드 획득`);
+      playSound('reward');
 
       setRewardOptions(options);
       setGameState('REWARD');
@@ -474,8 +507,10 @@ const startCombat = (enemyData: EnemyData) => {
       if (card) {
           setDeck(prev => [...prev, card]);
           showFeedback(`${card.name} 획득!`);
+          playSound('reward');
       } else {
           showFeedback("보상 건너뛰기");
+          playSound('ui');
       }
 
       // Check if Boss was defeated
@@ -509,12 +544,14 @@ const startCombat = (enemyData: EnemyData) => {
       }
 
       showFeedback(reward.feedback);
+      playSound('reward');
       startNextActMap();
   };
 
 
   const handleRestAction = (action: 'REPAIR' | 'SMELT' | 'SHOP') => {
       if (action === 'SHOP') {
+          playSound('ui');
           setGameState('SHOP');
           return;
       }
@@ -522,6 +559,7 @@ const startCombat = (enemyData: EnemyData) => {
       // If already rested, block these actions
       if (hasRested) {
           showFeedback("이미 정비를 마쳤습니다.");
+          playSound('bad');
           return;
       }
 
@@ -529,8 +567,10 @@ const startCombat = (enemyData: EnemyData) => {
           const healAmount = Math.floor(player.maxHp * 0.3);
           setPlayer(prev => ({ ...prev, hp: Math.min(prev.maxHp, prev.hp + healAmount) }));
           showFeedback(`수리 완료! +${healAmount} HP`);
+          playSound('reward');
           setHasRested(true); // Mark as rested
       } else {
+          playSound('ui');
           setRemovalContext('REST');
           setSelectedCardId(null); 
           setGameState('REMOVE_CARD');
@@ -543,6 +583,7 @@ const startCombat = (enemyData: EnemyData) => {
 
       if (player.gold < item.price) {
           showFeedback("골드가 부족합니다!");
+          playSound('bad');
           return;
       }
 
@@ -555,10 +596,12 @@ const startCombat = (enemyData: EnemyData) => {
                   hp: Math.min(prev.maxHp, prev.hp + Math.floor(prev.maxHp * percent))
               }));
               showFeedback("체력 회복!");
+              playSound('reward');
               break;
           }
           case 'REMOVE_CARD':
               setPlayer(prev => ({ ...prev, gold: prev.gold - item.price }));
+              playSound('ui');
               setRemovalContext('SHOP');
               setSelectedCardId(null);
               setGameState('REMOVE_CARD'); // Go to remove screen
@@ -567,6 +610,7 @@ const startCombat = (enemyData: EnemyData) => {
               const newCard = createRandomCardReward(item.effect.rarity);
               setPlayer(prev => ({ ...prev, gold: prev.gold - item.price }));
               showFeedback('희귀 설계도 획득!');
+              playSound('reward');
               setDeck(prev => [...prev, newCard]);
               setAcquiredCard(newCard); // Trigger Modal
               break;
@@ -579,12 +623,14 @@ const startCombat = (enemyData: EnemyData) => {
                   maxEnergy: prev.maxEnergy + amount
               }));
               showFeedback("최대 에너지 +1 증가!");
+              playSound('reward');
               break;
           }
       }
   };
 
   const handleShopExit = () => {
+      playSound('ui');
       if (activeMapNode?.type === NodeType.SHOP) {
           completeActiveMapNode();
           return;
@@ -645,10 +691,12 @@ const startCombat = (enemyData: EnemyData) => {
   const handleEventOption = (option: EventOption) => {
       if (!canPayEventOption(option)) {
           showFeedback("조건을 충족하지 못했습니다.");
+          playSound('bad');
           return;
       }
 
       if (option.type === 'REMOVE_CARD') {
+          playSound('ui');
           setRemovalContext('EVENT');
           setPendingEventRemovalOption(option);
           setSelectedCardId(null);
@@ -662,6 +710,7 @@ const startCombat = (enemyData: EnemyData) => {
           case 'HEAL':
               setPlayer(prev => ({ ...prev, hp: Math.min(prev.maxHp, prev.hp + (option.value || 0)) }));
               showFeedback(`체력 +${option.value || 0}`);
+              playSound('reward');
               break;
           case 'DAMAGE': {
               const damage = option.value || 0;
@@ -669,6 +718,7 @@ const startCombat = (enemyData: EnemyData) => {
               setPlayer(prev => ({ ...prev, hp: Math.max(0, prev.hp - damage) }));
               triggerPlayerHit();
               showFeedback(`체력 -${damage}`, 'bad');
+              playSound('bad');
               if (nextHp <= 0) {
                   setGameState('LOSE');
                   return;
@@ -679,25 +729,30 @@ const startCombat = (enemyData: EnemyData) => {
               const newCard = createRandomCardReward(CardRarity.RARE);
               setDeck(prev => [...prev, newCard]);
               showFeedback(`${newCard.name} 획득!`);
+              playSound('reward');
               break;
           }
           case 'GAIN_GOLD':
               setPlayer(prev => ({ ...prev, gold: prev.gold + (option.value || 0) }));
               showFeedback(`${option.value || 0} 골드 획득`);
+              playSound('reward');
               break;
           case 'LOSE_GOLD':
               setPlayer(prev => ({ ...prev, gold: Math.max(0, prev.gold - (option.value || 0)) }));
               showFeedback(`${option.value || 0} 골드 상실`, 'bad');
+              playSound('bad');
               break;
           case 'FULL_HEAL':
               setPlayer(prev => ({ ...prev, hp: prev.maxHp }));
               showFeedback("체력 완전 회복!");
+              playSound('reward');
               break;
           case 'RANDOM_UPGRADE':
               upgradeRandomDeckCard();
               break;
           case 'LEAVE':
               showFeedback("아무 일도 일어나지 않았습니다.");
+              playSound('ui');
               break;
       }
 
@@ -710,6 +765,7 @@ const startCombat = (enemyData: EnemyData) => {
       if (removalContext === 'EVENT' && pendingEventRemovalOption) {
           if (!canPayEventOption(pendingEventRemovalOption)) {
               showFeedback("조건을 충족하지 못했습니다.");
+              playSound('bad');
               return;
           }
           payEventCost(pendingEventRemovalOption);
@@ -717,6 +773,7 @@ const startCombat = (enemyData: EnemyData) => {
 
       setDeck(prev => prev.filter(c => c.instanceId !== selectedCardId));
       showFeedback("카드 제거 완료!");
+      playSound('reward');
       
       if (removalContext === 'REST') {
           setHasRested(true);
@@ -735,6 +792,7 @@ const startCombat = (enemyData: EnemyData) => {
   };
 
   const handleCancelRemoval = () => {
+      playSound('ui');
       if (removalContext === 'EVENT' && currentEvent) {
           setPendingEventRemovalOption(null);
           setRemovalContext(null);
@@ -789,16 +847,19 @@ const startCombat = (enemyData: EnemyData) => {
 
     if (card.unplayable) {
         showFeedback("사용 불가 카드입니다!");
+        playSound('bad');
         return;
     }
 
     if (card.type !== slotType) {
         if (card.type !== CardType.JUNK) showFeedback("타입 불일치!");
+        playSound('bad');
         return;
     }
     
     if (slotType === CardType.HEAD && player.disarmed) {
         showFeedback("무장 해제됨! 머리 장착 불가");
+        playSound('bad');
         return;
     }
 
@@ -828,6 +889,7 @@ const startCombat = (enemyData: EnemyData) => {
     }
 
     if (returnedCard) setHand(prev => [...prev, returnedCard!]);
+    playSound('slot');
   };
 
   const handleCardClick = (card: CardInstance) => {
@@ -849,6 +911,7 @@ const startCombat = (enemyData: EnemyData) => {
     const card = type === CardType.HANDLE ? slots.handle : type === CardType.HEAD ? slots.head : slots.deco;
     if (!card) return;
 
+    playSound('ui');
     setSlots(prev => ({
       ...prev,
       [type === CardType.HANDLE ? 'handle' : type === CardType.HEAD ? 'head' : 'deco']: null
@@ -860,6 +923,7 @@ const startCombat = (enemyData: EnemyData) => {
     const cardsToReturn = [slots.handle, slots.head, slots.deco].filter(Boolean) as CardInstance[];
     if (cardsToReturn.length === 0) return;
 
+    playSound('ui');
     setHand(prev => [...prev, ...cardsToReturn]);
     setSlots({ handle: null, head: null, deco: null });
   };
@@ -997,14 +1061,17 @@ const startCombat = (enemyData: EnemyData) => {
     
     if (player.costLimit !== null && stats.totalCost > player.costLimit) {
       showFeedback(`과부하! 비용 ${player.costLimit} 이하만 가능!`);
+      playSound('bad');
       return;
     }
 
     if (stats.totalCost > player.energy) {
       showFeedback('기력이 부족합니다!');
+      playSound('bad');
       return;
     }
 
+    playSound('craft');
     setIsResolvingAction(true);
 
     try {
@@ -1107,6 +1174,7 @@ const startCombat = (enemyData: EnemyData) => {
             damageTakenThisTurn: prev.damageTakenThisTurn + damageDealt
           }));
           showFeedback(`${i > 0 ? '연타!' : ''} -${damageDealt} 피해!`);
+          playSound('hit');
         }
 
         // ON-HIT effects (Midas Touch, Vampiric)
@@ -1125,6 +1193,7 @@ const startCombat = (enemyData: EnemyData) => {
       setPlayer(prev => ({ ...prev, block: prev.block + finalBlock }));
       triggerPlayerBlock();
       showFeedback(`+${finalBlock} 방어도`, 'good');
+      playSound('block');
     }
 
     // === POST-DAMAGE PHASE ===
@@ -1160,6 +1229,7 @@ const startCombat = (enemyData: EnemyData) => {
   };
 
   const endTurn = () => {
+    playSound('ui');
     setCombatState(prev => ({ ...prev, phase: 'PLAYER_DISCARD' }));
   };
 
@@ -1343,9 +1413,11 @@ case 'PLAYER_DRAW':
                   if (unblockedDamage > 0) {
                     triggerPlayerHit();
                     showFeedback(`${unblockedDamage} 피해!`, 'bad');
+                    playSound('bad');
                   } else {
                     triggerPlayerBlock();
                     showFeedback("방어 성공!", 'good');
+                    playSound('block');
                   }
                  
                  if (i < intentPlan.attackCount - 1) await new Promise(r => setTimeout(r, 400));
@@ -1442,6 +1514,8 @@ case 'PLAYER_DRAW':
   const weaponPrediction = calculateCurrentWeaponStats();
   const canCraft = !!(slots.handle && slots.head);
   const availableMapNodeIds = getAvailableMapNodeIds(mapNodes, currentMapNodeId);
+  const effectiveAnimationsEnabled = settings.animationsEnabled && !settings.reduceMotion;
+  const effectiveScreenShake = settings.screenShake && !settings.reduceMotion;
   const shouldShowFirstCombatTutorial =
     gameState === 'PLAYING' &&
     combatState.phase === 'PLAYER_ACTION' &&
@@ -1551,7 +1625,7 @@ case 'PLAYER_DRAW':
 
   // --- Main Gameplay Screen ---
   return (
-    <div className={`w-full h-screen-safe flex flex-col bg-stone-950 text-stone-200 overflow-hidden relative ${settings.screenShake && shake ? 'animate-shake' : ''} ${settings.animationsEnabled && shieldEffect ? 'animate-shield-pulse' : ''} ${settings.animationsEnabled && playerHit ? 'animate-player-hit' : ''}`}>
+    <div className={`w-full h-screen-safe flex flex-col bg-stone-950 text-stone-200 overflow-hidden relative ${effectiveScreenShake && shake ? 'animate-shake' : ''} ${effectiveAnimationsEnabled && shieldEffect ? 'animate-shield-pulse' : ''} ${effectiveAnimationsEnabled && playerHit ? 'animate-player-hit' : ''}`}>
       
       {/* Acquired Card Overlay - Pixel Style */}
       {acquiredCard && (
@@ -1659,11 +1733,11 @@ case 'PLAYER_DRAW':
         act={act}
         floor={floor}
         playerGold={player.gold}
-        shake={settings.screenShake && shake}
-        enemyPoisoned={settings.animationsEnabled && enemyPoisoned}
-        enemyBurning={settings.animationsEnabled && enemyBurning}
-        enemyBleeding={settings.animationsEnabled && enemyBleeding}
-        enemyAttacking={settings.animationsEnabled && enemyAttacking}
+        shake={effectiveScreenShake && shake}
+        enemyPoisoned={effectiveAnimationsEnabled && enemyPoisoned}
+        enemyBurning={effectiveAnimationsEnabled && enemyBurning}
+        enemyBleeding={effectiveAnimationsEnabled && enemyBleeding}
+        enemyAttacking={effectiveAnimationsEnabled && enemyAttacking}
         onIntentClick={() => setShowIntentDetail(true)}
         onStatusClick={(status) => setShowStatusDetail(status)}
       />
@@ -1679,9 +1753,9 @@ case 'PLAYER_DRAW':
           maxEnergy={player.maxEnergy}
           disarmed={player.disarmed}
           costLimit={player.costLimit}
-          playerHealing={settings.animationsEnabled && playerHealing}
-          playerHit={settings.animationsEnabled && playerHit}
-          playerBlocking={settings.animationsEnabled && playerBlocking}
+          playerHealing={effectiveAnimationsEnabled && playerHealing}
+          playerHit={effectiveAnimationsEnabled && playerHit}
+          playerBlocking={effectiveAnimationsEnabled && playerBlocking}
         />
 
         {/* Deck/Discard HUD */}

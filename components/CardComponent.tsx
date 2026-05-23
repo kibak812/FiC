@@ -158,6 +158,8 @@ const CardComponent: React.FC<CardProps> = ({
   return (
     <div
       ref={elementRef}
+      data-card-name={card.name}
+      data-card-type={card.type}
       draggable={!disabled}
       onDragStart={handleDragStart}
       onClick={() => !disabled && onClick(card)}

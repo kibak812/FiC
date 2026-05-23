@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.10.0] - 2026-05-23
+
+### Added
+- Procedural Web Audio sound effects and background music loop with persisted sound settings.
+- Accessibility settings for reduced motion, high contrast, and larger text.
+- Local Tailwind build pipeline with `tailwind.config.cjs`, `postcss.config.cjs`, and `styles.css`.
+- Store release checklist covering validation commands, offline packaging, deployment, and manual smoke testing.
+
+### Changed
+- Removed runtime CDN dependencies from `index.html`; fonts now use offline fallback stacks and styles build through Vite.
+- Settings save data migrated to version 3 with volume clamping for older or malformed settings.
+- Menu version updated to v1.10.0.
+
+### Design Notes
+- Audio uses generated cues rather than remote assets so packaged builds remain playable offline.
+
+---
+
 ## [1.9.0] - 2026-05-23
 
 ### Added

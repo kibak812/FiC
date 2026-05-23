@@ -1,5 +1,5 @@
 import React from 'react';
-import { Check, Play, RotateCcw, Settings, X } from 'lucide-react';
+import { Check, Contrast, Music, Play, RotateCcw, Settings, Type, Volume2, VolumeX, X, ZapOff } from 'lucide-react';
 import type { GameSettings } from '@/types';
 import type { SavedRunSummary } from '@/utils/saveUtils';
 
@@ -10,6 +10,69 @@ interface MenuScreenProps {
   settings: GameSettings;
   onSettingsChange: (settings: GameSettings) => void;
 }
+
+interface SettingsToggleProps {
+  label: string;
+  active: boolean;
+  onToggle: () => void;
+  icon: React.ReactNode;
+  accent?: 'green' | 'orange' | 'cyan';
+}
+
+interface SettingsSliderProps {
+  label: string;
+  value: number;
+  onChange: (value: number) => void;
+  disabled?: boolean;
+}
+
+const toggleAccentClasses = {
+  green: 'border-green-500 bg-green-900/50 text-green-300',
+  orange: 'border-orange-500 bg-orange-900/50 text-orange-200',
+  cyan: 'border-cyan-500 bg-cyan-900/50 text-cyan-200'
+};
+
+const SettingsToggle: React.FC<SettingsToggleProps> = ({
+  label,
+  active,
+  onToggle,
+  icon,
+  accent = 'green'
+}) => (
+  <button
+    onClick={onToggle}
+    className="w-full px-4 py-3 pixel-border border-2 border-stone-500 bg-black/40 flex items-center justify-between gap-3 font-pixel-kr text-sm"
+    aria-pressed={active}
+  >
+    <span className="flex items-center gap-2 text-left">
+      {icon}
+      {label}
+    </span>
+    <span className={`px-3 py-1 pixel-border border-2 font-pixel text-[10px] ${active ? toggleAccentClasses[accent] : 'border-stone-600 bg-stone-900 text-stone-500'}`}>
+      {active ? 'ON' : 'OFF'}
+    </span>
+  </button>
+);
+
+const SettingsSlider: React.FC<SettingsSliderProps> = ({ label, value, onChange, disabled }) => (
+  <label className={`block w-full px-4 py-3 pixel-border border-2 border-stone-500 bg-black/40 font-pixel-kr text-sm ${disabled ? 'opacity-50' : ''}`}>
+    <span className="flex items-center justify-between gap-3 mb-2">
+      <span>{label}</span>
+      <span className="font-pixel text-[10px] text-stone-300">{Math.round(value * 100)}%</span>
+    </span>
+    <input
+      type="range"
+      min="0"
+      max="1"
+      step="0.05"
+      value={value}
+      disabled={disabled}
+      onChange={(event) => onChange(Number(event.target.value))}
+      className="w-full accent-orange-500"
+      aria-label={label}
+    />
+  </label>
+);
 
 const MenuScreen: React.FC<MenuScreenProps> = ({
   onStartGame,
@@ -44,7 +107,7 @@ const MenuScreen: React.FC<MenuScreenProps> = ({
     onStartGame();
   };
 
-  const updateSetting = (key: keyof GameSettings, value: boolean) => {
+  const updateSetting = <K extends keyof GameSettings>(key: K, value: GameSettings[K]) => {
     onSettingsChange({ ...settings, [key]: value });
   };
 
@@ -80,7 +143,7 @@ const MenuScreen: React.FC<MenuScreenProps> = ({
 
       {showSettings && (
         <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/80 px-4">
-          <div className="w-full max-w-sm bg-gradient-to-b from-stone-700 to-stone-800 pixel-border border-4 border-stone-500 p-5"
+          <div className="w-full max-w-md max-h-[88vh] overflow-y-auto bg-gradient-to-b from-stone-700 to-stone-800 pixel-border border-4 border-stone-500 p-5"
                style={{ boxShadow: '0 8px 0 0 #1c1917' }}>
             <div className="flex items-center justify-between mb-5">
               <h3 className="font-pixel-kr text-lg text-stone-100">설정</h3>
@@ -93,25 +156,84 @@ const MenuScreen: React.FC<MenuScreenProps> = ({
               </button>
             </div>
 
-            <div className="space-y-3">
-              <button
-                onClick={() => updateSetting('animationsEnabled', !settings.animationsEnabled)}
-                className="w-full px-4 py-3 pixel-border border-2 border-stone-500 bg-black/40 flex items-center justify-between font-pixel-kr text-sm"
-              >
-                <span>전투 애니메이션</span>
-                <span className={`px-3 py-1 pixel-border border-2 font-pixel text-[10px] ${settings.animationsEnabled ? 'border-green-500 bg-green-900/50 text-green-300' : 'border-stone-600 bg-stone-900 text-stone-500'}`}>
-                  {settings.animationsEnabled ? 'ON' : 'OFF'}
-                </span>
-              </button>
-              <button
-                onClick={() => updateSetting('screenShake', !settings.screenShake)}
-                className="w-full px-4 py-3 pixel-border border-2 border-stone-500 bg-black/40 flex items-center justify-between font-pixel-kr text-sm"
-              >
-                <span>화면 흔들림</span>
-                <span className={`px-3 py-1 pixel-border border-2 font-pixel text-[10px] ${settings.screenShake ? 'border-green-500 bg-green-900/50 text-green-300' : 'border-stone-600 bg-stone-900 text-stone-500'}`}>
-                  {settings.screenShake ? 'ON' : 'OFF'}
-                </span>
-              </button>
+            <div className="space-y-4">
+              <div className="space-y-3">
+                <p className="font-pixel-kr text-xs text-stone-400 text-left">표현</p>
+                <SettingsToggle
+                  label="전투 애니메이션"
+                  active={settings.animationsEnabled}
+                  onToggle={() => updateSetting('animationsEnabled', !settings.animationsEnabled)}
+                  icon={<ZapOff size={16} className="text-stone-300" />}
+                />
+                <SettingsToggle
+                  label="화면 흔들림"
+                  active={settings.screenShake}
+                  onToggle={() => updateSetting('screenShake', !settings.screenShake)}
+                  icon={<ZapOff size={16} className="text-stone-300" />}
+                />
+              </div>
+
+              <div className="space-y-3">
+                <p className="font-pixel-kr text-xs text-stone-400 text-left">사운드</p>
+                <SettingsToggle
+                  label="전체 음향"
+                  active={settings.soundEnabled}
+                  onToggle={() => updateSetting('soundEnabled', !settings.soundEnabled)}
+                  icon={settings.soundEnabled ? <Volume2 size={16} className="text-stone-300" /> : <VolumeX size={16} className="text-stone-300" />}
+                  accent="cyan"
+                />
+                <SettingsToggle
+                  label="배경 음악"
+                  active={settings.musicEnabled}
+                  onToggle={() => updateSetting('musicEnabled', !settings.musicEnabled)}
+                  icon={<Music size={16} className="text-stone-300" />}
+                  accent="cyan"
+                />
+                <SettingsSlider
+                  label="마스터 볼륨"
+                  value={settings.masterVolume}
+                  onChange={(value) => updateSetting('masterVolume', value)}
+                  disabled={!settings.soundEnabled}
+                />
+                <SettingsSlider
+                  label="효과음"
+                  value={settings.sfxVolume}
+                  onChange={(value) => updateSetting('sfxVolume', value)}
+                  disabled={!settings.soundEnabled}
+                />
+                <SettingsSlider
+                  label="음악"
+                  value={settings.musicVolume}
+                  onChange={(value) => updateSetting('musicVolume', value)}
+                  disabled={!settings.soundEnabled || !settings.musicEnabled}
+                />
+              </div>
+
+              <div className="space-y-3">
+                <p className="font-pixel-kr text-xs text-stone-400 text-left">접근성</p>
+                <SettingsToggle
+                  label="움직임 줄이기"
+                  active={settings.reduceMotion}
+                  onToggle={() => updateSetting('reduceMotion', !settings.reduceMotion)}
+                  icon={<ZapOff size={16} className="text-stone-300" />}
+                  accent="orange"
+                />
+                <SettingsToggle
+                  label="고대비"
+                  active={settings.highContrast}
+                  onToggle={() => updateSetting('highContrast', !settings.highContrast)}
+                  icon={<Contrast size={16} className="text-stone-300" />}
+                  accent="orange"
+                />
+                <SettingsToggle
+                  label="큰 글자"
+                  active={settings.largeText}
+                  onToggle={() => updateSetting('largeText', !settings.largeText)}
+                  icon={<Type size={16} className="text-stone-300" />}
+                  accent="orange"
+                />
+              </div>
+
               <button
                 onClick={() => updateSetting('tutorialCompleted', false)}
                 className="w-full px-4 py-3 pixel-border border-2 border-orange-600 bg-orange-950/40 flex items-center justify-between font-pixel-kr text-sm"
@@ -206,7 +328,7 @@ const MenuScreen: React.FC<MenuScreenProps> = ({
 
       {/* Version */}
       <div className="absolute bottom-4 right-4 text-xs text-stone-600 font-pixel">
-        v1.9.0
+        v1.10.0
       </div>
     </div>
   );

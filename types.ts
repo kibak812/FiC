@@ -36,6 +36,14 @@ export interface GameSettings {
   animationsEnabled: boolean;
   screenShake: boolean;
   tutorialCompleted: boolean;
+  soundEnabled: boolean;
+  musicEnabled: boolean;
+  masterVolume: number;
+  sfxVolume: number;
+  musicVolume: number;
+  reduceMotion: boolean;
+  highContrast: boolean;
+  largeText: boolean;
 }
 
 export type CardArchetypeId =

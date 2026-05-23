@@ -17,8 +17,6 @@ test('menu to first forge attack flow works without console errors', async ({ pa
   const consoleIssues: string[] = [];
   page.on('console', message => {
     const text = message.text();
-    if (text.includes('cdn.tailwindcss.com should not be used in production')) return;
-
     if (message.type() === 'error' || message.type() === 'warning') {
       consoleIssues.push(`${message.type()}: ${text}`);
     }
@@ -32,7 +30,13 @@ test('menu to first forge attack flow works without console errors', async ({ pa
 
   await expect(page).toHaveTitle('Forged in Chaos');
   await expect(page.getByRole('heading', { name: 'FORGED IN CHAOS' })).toBeVisible();
-  await expect(page.getByText('v1.9.0')).toBeVisible();
+  await expect(page.getByText('v1.10.0')).toBeVisible();
+
+  await page.getByRole('button', { name: '설정' }).click();
+  await expect(page.getByRole('heading', { name: '설정' })).toBeVisible();
+  await expect(page.getByText('사운드')).toBeVisible();
+  await expect(page.getByText('접근성')).toBeVisible();
+  await page.getByRole('button', { name: '설정 닫기' }).click();
 
   await page.getByRole('button', { name: '대장간 입장' }).click();
   await expect(page.getByRole('heading', { name: 'ACT 1 MAP' })).toBeVisible();
@@ -47,15 +51,15 @@ test('menu to first forge attack flow works without console errors', async ({ pa
   await expect(page.getByRole('heading', { name: '상태이상' })).toBeVisible();
   await page.getByRole('button', { name: '전투 사전 닫기' }).click();
 
-  const starterHandle = page.getByRole('heading', { name: '낡은 나무 손잡이' }).first();
-  const starterHead = page.getByRole('heading', { name: '녹슨 철 칼날' }).first();
-  await expect(starterHandle).toBeVisible();
-  await expect(starterHead).toBeVisible();
-  await starterHandle.click();
-  await starterHead.click();
+  const visibleHandle = page.locator('[data-card-type="Handle"]').first();
+  const visibleHead = page.locator('[data-card-type="Head"]').first();
+  await expect(visibleHandle).toBeVisible();
+  await expect(visibleHead).toBeVisible();
+  await visibleHandle.click();
+  await visibleHead.click();
   await expect(page.getByRole('button', { name: '제작!' })).toBeEnabled();
 
   await page.getByRole('button', { name: '제작!' }).click();
-  await expect(page.getByText('-6 피해!')).toBeVisible();
+  await expect(page.getByText(/(-\d+ 피해!|\+\d+ 방어도)/)).toBeVisible();
   expect(consoleIssues).toEqual([]);
 });

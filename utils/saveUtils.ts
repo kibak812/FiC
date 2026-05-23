@@ -14,12 +14,20 @@ import {
 const RUN_SAVE_KEY = 'fic.runSave';
 const SETTINGS_SAVE_KEY = 'fic.settings';
 const CURRENT_RUN_SAVE_VERSION = 2;
-const CURRENT_SETTINGS_VERSION = 2;
+const CURRENT_SETTINGS_VERSION = 3;
 
 export const DEFAULT_GAME_SETTINGS: GameSettings = {
   animationsEnabled: true,
   screenShake: true,
-  tutorialCompleted: false
+  tutorialCompleted: false,
+  soundEnabled: true,
+  musicEnabled: true,
+  masterVolume: 0.7,
+  sfxVolume: 0.75,
+  musicVolume: 0.35,
+  reduceMotion: false,
+  highContrast: false,
+  largeText: false
 };
 
 export interface SaveSlots {
@@ -94,6 +102,11 @@ const parseStoredJson = (key: string): unknown | null => {
 
 const isObjectRecord = (value: unknown): value is Record<string, unknown> => {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
+};
+
+const clampVolume = (value: unknown, fallback: number): number => {
+  if (typeof value !== 'number' || Number.isNaN(value)) return fallback;
+  return Math.min(1, Math.max(0, value));
 };
 
 const migrateRunSave = (value: unknown): SavedRunData | null => {
@@ -208,7 +221,25 @@ const migrateSettings = (value: unknown): SavedSettingsData => {
         : DEFAULT_GAME_SETTINGS.screenShake,
       tutorialCompleted: typeof rawSettings.tutorialCompleted === 'boolean'
         ? rawSettings.tutorialCompleted
-        : DEFAULT_GAME_SETTINGS.tutorialCompleted
+        : DEFAULT_GAME_SETTINGS.tutorialCompleted,
+      soundEnabled: typeof rawSettings.soundEnabled === 'boolean'
+        ? rawSettings.soundEnabled
+        : DEFAULT_GAME_SETTINGS.soundEnabled,
+      musicEnabled: typeof rawSettings.musicEnabled === 'boolean'
+        ? rawSettings.musicEnabled
+        : DEFAULT_GAME_SETTINGS.musicEnabled,
+      masterVolume: clampVolume(rawSettings.masterVolume, DEFAULT_GAME_SETTINGS.masterVolume),
+      sfxVolume: clampVolume(rawSettings.sfxVolume, DEFAULT_GAME_SETTINGS.sfxVolume),
+      musicVolume: clampVolume(rawSettings.musicVolume, DEFAULT_GAME_SETTINGS.musicVolume),
+      reduceMotion: typeof rawSettings.reduceMotion === 'boolean'
+        ? rawSettings.reduceMotion
+        : DEFAULT_GAME_SETTINGS.reduceMotion,
+      highContrast: typeof rawSettings.highContrast === 'boolean'
+        ? rawSettings.highContrast
+        : DEFAULT_GAME_SETTINGS.highContrast,
+      largeText: typeof rawSettings.largeText === 'boolean'
+        ? rawSettings.largeText
+        : DEFAULT_GAME_SETTINGS.largeText
     }
   };
 };
