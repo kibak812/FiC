@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.11.24] - 2026-05-23
+
+### Changed
+- Product readiness now validates enemy sprite silhouettes, color separation, and overcrowding in addition to card icon quality.
+- Menu version updated to v1.11.24.
+
+### Design Notes
+- Enemy art quality is now protected by the same readability principle as cards: one clear combat silhouette first, detail second.
+
+---
+
 ## [1.11.23] - 2026-05-23
 
 ### Changed

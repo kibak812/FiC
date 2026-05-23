@@ -146,17 +146,31 @@ const allEnemyPoolEnemies = (act: Act): EnemyData[] => {
   ];
 };
 
-const countSpriteRects = (cardId: number): number => {
-  const Sprite = CardSprites[cardId];
+const countRenderedRects = (Sprite: React.FC<{ className?: string }> | undefined): number => {
   if (!Sprite) return 0;
   return renderToStaticMarkup(React.createElement(Sprite)).match(/<rect\b/g)?.length || 0;
 };
 
-const countSpriteFillColors = (cardId: number): number => {
-  const Sprite = CardSprites[cardId];
+const countRenderedFillColors = (Sprite: React.FC<{ className?: string }> | undefined): number => {
   if (!Sprite) return 0;
   const markup = renderToStaticMarkup(React.createElement(Sprite));
   return new Set([...markup.matchAll(/fill="([^"]+)"/g)].map(match => match[1])).size;
+};
+
+const countSpriteRects = (cardId: number): number => {
+  return countRenderedRects(CardSprites[cardId]);
+};
+
+const countSpriteFillColors = (cardId: number): number => {
+  return countRenderedFillColors(CardSprites[cardId]);
+};
+
+const countEnemySpriteRects = (enemyId: string): number => {
+  return countRenderedRects(MonsterSprites[enemyId]);
+};
+
+const countEnemySpriteFillColors = (enemyId: string): number => {
+  return countRenderedFillColors(MonsterSprites[enemyId]);
 };
 
 const hasEnemyFamily = (enemies: EnemyData[], family: string): boolean => {
@@ -252,6 +266,12 @@ section('Card and enemy pixel art', () => {
   const missingEnemySpriteIds = Object.values(ENEMIES)
     .filter(enemy => !MonsterSprites[enemy.id])
     .map(enemy => `${enemy.id}:${enemy.name}`);
+  const unreadableEnemySprites = Object.values(ENEMIES)
+    .filter(enemy => countEnemySpriteRects(enemy.id) < 10 || countEnemySpriteFillColors(enemy.id) < 4)
+    .map(enemy => `${enemy.id}:${enemy.name}`);
+  const overcrowdedEnemySprites = Object.values(ENEMIES)
+    .filter(enemy => countEnemySpriteRects(enemy.id) > 45 || countEnemySpriteFillColors(enemy.id) > 20)
+    .map(enemy => `${enemy.id}:${enemy.name}`);
 
   requireReady(missingCardSpriteIds.length === 0, `Every playable card needs a dedicated pixel sprite. Missing: ${missingCardSpriteIds.join(', ') || 'none'}.`);
   requireReady(missingHandReviewedSprites.length === 0, `Recently added cards need hand-reviewed pixel sprites. Missing: ${missingHandReviewedSprites.join(', ') || 'none'}.`);
@@ -260,6 +280,8 @@ section('Card and enemy pixel art', () => {
   requireReady(!/width="20" height="20"/.test(generatedFrameSource), 'Generated card sprites should avoid full square panel backgrounds that obscure item silhouettes.');
   requireReady(handleMotifIndex >= 0 && handleMotifIndex < handleSilhouetteIndex, 'Generated handle motifs should render behind the grip silhouette so handles read as handles.');
   requireReady(missingEnemySpriteIds.length === 0, `Every enemy needs a dedicated pixel sprite. Missing: ${missingEnemySpriteIds.join(', ') || 'none'}.`);
+  requireReady(unreadableEnemySprites.length === 0, `Enemy sprites need readable silhouettes and color separation. Unreadable: ${unreadableEnemySprites.join(', ') || 'none'}.`);
+  requireReady(overcrowdedEnemySprites.length === 0, `Enemy sprites should avoid overcrowded tiny details. Overcrowded: ${overcrowdedEnemySprites.join(', ') || 'none'}.`);
 });
 
 section('Enemy roster and patterns', () => {
