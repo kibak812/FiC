@@ -38,10 +38,24 @@ export enum IntentType {
   SPECIAL = 'SPECIAL'
 }
 
+export type EnemyIntentEffect =
+  | { type: 'ADD_JUNK'; count: number }
+  | { type: 'INCREASE_RANDOM_HANDLE_COST'; amount: number }
+  | { type: 'SET_PLAYER_COST_LIMIT'; limit: number }
+  | { type: 'DISARM_HEAD' }
+  | { type: 'REFLECT_DAMAGE_TAKEN' }
+  | { type: 'ATTACK_FROM_PLAYER_BLOCK'; multiplier: number; minimumBonus?: number }
+  | { type: 'ATTACK_FROM_WEAPONS_USED'; perWeapon: number }
+  | { type: 'CLEANSE_STATUSES_GAIN_STRENGTH'; amountPerStatus: number; minGain?: number; maxGain?: number }
+  | { type: 'GAIN_STRENGTH'; amount: number; randomMax?: number }
+  | { type: 'HEAL_SELF'; amount: number };
+
 export interface EnemyIntent {
   type: IntentType;
   value: number;
   description: string;
+  hits?: number;
+  effect?: EnemyIntentEffect;
 }
 
 export enum EnemyTrait {

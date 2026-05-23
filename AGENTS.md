@@ -113,7 +113,6 @@ export interface CardData {
   value: number;
   rarity: CardRarity;
   description: string;
-  effectId?: string;
   unplayable?: boolean;
 }
 

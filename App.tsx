@@ -1183,30 +1183,50 @@ if (enemy.statuses.poison > 0) {
 
           const intent = enemy.intents[enemy.currentIntentIndex];
           let dmg = 0;
+          let handleCostIncrease = 0;
 
-          if (enemy.id === 'hammerhead' && intent.type === IntentType.DEBUFF) {
+          if (intent.effect?.type === 'INCREASE_RANDOM_HANDLE_COST') {
+            handleCostIncrease = intent.effect.amount;
+          } else if (enemy.id === 'hammerhead' && intent.type === IntentType.DEBUFF) {
+            handleCostIncrease = 1;
+          }
+
+          if (handleCostIncrease > 0) {
              const allHandles = [...deck, ...discardPile].filter(c => c.type === CardType.HANDLE);
              if (allHandles.length > 0) {
                  const target = allHandles[Math.floor(Math.random() * allHandles.length)];
-                 target.cost += 1;
-                 showFeedback(`[${target.name}] 비용 +1`, 'bad');
+                 target.cost += handleCostIncrease;
+                 showFeedback(`[${target.name}] 비용 +${handleCostIncrease}`, 'bad');
              }
           }
 
-          if (enemy.id === 'deus_ex_machina' && intent.description.includes('코스트 제한')) {
-             setPlayer(prev => ({ ...prev, costLimit: 2 }));
-             showFeedback("과부하: 다음 턴 비용 제한 2", 'bad');
+          if (intent.effect?.type === 'SET_PLAYER_COST_LIMIT' || (enemy.id === 'deus_ex_machina' && intent.description.includes('코스트 제한'))) {
+             const limit = intent.effect?.type === 'SET_PLAYER_COST_LIMIT' ? intent.effect.limit : 2;
+             setPlayer(prev => ({ ...prev, costLimit: limit }));
+             showFeedback(`과부하: 다음 턴 비용 제한 ${limit}`, 'bad');
           }
 
-          if (enemy.id === 'corrupted_smith' && intent.type === IntentType.SPECIAL) {
+          if (intent.effect?.type === 'DISARM_HEAD' || (enemy.id === 'corrupted_smith' && intent.type === IntentType.SPECIAL)) {
              setPlayer(prev => ({ ...prev, disarmed: true }));
              showFeedback("무장 해제: 다음 턴 머리 사용 불가", 'bad');
           }
 
-          if (enemy.id === 'mimic_anvil' && intent.description.includes('반사')) {
+          if (intent.effect?.type === 'REFLECT_DAMAGE_TAKEN' || (enemy.id === 'mimic_anvil' && intent.description.includes('반사'))) {
               dmg = enemy.damageTakenThisTurn;
           } else if (intent.type === IntentType.ATTACK) {
               dmg = intent.value;
+          }
+
+          if (intent.effect?.type === 'ATTACK_FROM_PLAYER_BLOCK') {
+              const blockBonus = Math.max(intent.effect.minimumBonus || 0, Math.floor(player.block * intent.effect.multiplier));
+              dmg += blockBonus;
+              if (blockBonus > 0) showFeedback(`방어 카운터 +${blockBonus} 피해`, 'bad');
+          }
+
+          if (intent.effect?.type === 'ATTACK_FROM_WEAPONS_USED') {
+              const comboBonus = player.weaponsUsedThisTurn * intent.effect.perWeapon;
+              dmg += comboBonus;
+              if (comboBonus > 0) showFeedback(`연속 제작 카운터 +${comboBonus} 피해`, 'bad');
           }
 
           if (intent.type === IntentType.ATTACK && enemy.statuses.strength > 0) {
@@ -1218,7 +1238,7 @@ if (enemy.statuses.poison > 0) {
               dmg = Math.floor(dmg * 0.75); // 25% damage reduction
           }
 
-          const attackCount = intent.description.includes('(x3)') ? 3 : 1;
+          const attackCount = intent.hits || (intent.description.includes('(x3)') ? 3 : 1);
 
           if (intent.type === IntentType.ATTACK || (enemy.id === 'mimic_anvil' && intent.description.includes('반사'))) {
              triggerEnemyAttack();
@@ -1282,6 +1302,44 @@ if (enemy.statuses.poison > 0) {
              const blockGain = intent.value;
              setEnemy(prev => ({ ...prev, block: prev.block + blockGain }));
              showFeedback(`적 방어 태세! +${blockGain} 방어도`, 'bad');
+          } else if (intent.effect?.type === 'GAIN_STRENGTH') {
+             const gain = intent.effect.randomMax
+               ? Math.floor(Math.random() * intent.effect.randomMax) + intent.effect.amount
+               : intent.effect.amount;
+             setEnemy(prev => ({
+                 ...prev,
+                 statuses: { ...prev.statuses, strength: (prev.statuses.strength || 0) + gain }
+             }));
+             showFeedback(`적 공격력 +${gain} 증가!`, 'bad');
+          } else if (intent.effect?.type === 'HEAL_SELF') {
+             setEnemy(e => ({ ...e, currentHp: Math.min(e.maxHp, e.currentHp + intent.effect.amount) }));
+             showFeedback(`적 회복 +${intent.effect.amount} HP`, 'bad');
+          } else if (intent.effect?.type === 'CLEANSE_STATUSES_GAIN_STRENGTH') {
+             const statusStacks = enemy.statuses.poison + enemy.statuses.bleed + enemy.statuses.burn + enemy.statuses.vulnerable + enemy.statuses.weak + enemy.statuses.stunned;
+             if (statusStacks > 0) {
+                 const rawGain = Math.max(intent.effect.minGain || 0, Math.floor(statusStacks * intent.effect.amountPerStatus));
+                 const gain = intent.effect.maxGain ? Math.min(intent.effect.maxGain, rawGain) : rawGain;
+                 setEnemy(prev => ({
+                     ...prev,
+                     statuses: {
+                         ...prev.statuses,
+                         poison: 0,
+                         bleed: 0,
+                         burn: 0,
+                         vulnerable: 0,
+                         weak: 0,
+                         stunned: 0,
+                         strength: (prev.statuses.strength || 0) + gain
+                     }
+                 }));
+                 showFeedback(`상태이상 정화! 공격력 +${gain}`, 'bad');
+             } else {
+                 showFeedback('상태이상 정화 실패', 'good');
+             }
+          } else if (intent.effect?.type === 'ADD_JUNK') {
+             const junkCards: CardInstance[] = Array(intent.effect.count).fill(null).map(() => createCardInstance(901));
+             setDiscardPile(prev => [...prev, ...junkCards]);
+             showFeedback(`녹슨 덩어리 ${intent.effect.count}장 추가!`, 'bad');
           } else if (intent.type === IntentType.BUFF) {
              if (intent.description.includes('공격력')) {
                  let gain = intent.value;
@@ -1308,7 +1366,7 @@ if (enemy.statuses.poison > 0) {
                  setEnemy(e => ({ ...e, currentHp: Math.min(e.maxHp, e.currentHp + intent.value) }));
                  showFeedback(`적 회복 +${intent.value} HP`, 'bad');
              }
-          } else if (intent.type === IntentType.DEBUFF && enemy.id !== 'hammerhead' && enemy.id !== 'deus_ex_machina') {
+          } else if (intent.type === IntentType.DEBUFF && !intent.effect && enemy.id !== 'hammerhead' && enemy.id !== 'deus_ex_machina') {
              const count = intent.value || 1;
              const junkCards: CardInstance[] = Array(count).fill(null).map(() => createCardInstance(901));
              setDiscardPile(prev => [...prev, ...junkCards]);

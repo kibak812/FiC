@@ -109,154 +109,457 @@ const DEFAULT_STATUS = { poison: 0, bleed: 0, stunned: 0, strength: 0, vulnerabl
 
 // --- Enemies ---
 
+const defineEnemy = (
+  id: string,
+  name: string,
+  tier: EnemyTier,
+  maxHp: number,
+  intents: EnemyData['intents'],
+  traits: EnemyTrait[] = []
+): EnemyData => ({
+  id,
+  name,
+  tier,
+  maxHp,
+  currentHp: maxHp,
+  block: 0,
+  currentIntentIndex: 0,
+  traits,
+  statuses: { ...DEFAULT_STATUS },
+  damageTakenThisTurn: 0,
+  intents
+});
+
 export const ENEMIES: Record<string, EnemyData> = {
   // Floor 1: The Abandoned Mine
-RUST_SLIME: { // Balance Patch v1.0: Debuff moved to 3rd intent for better new player experience
-    id: 'rust_slime', name: '녹슨 슬라임', tier: EnemyTier.COMMON, maxHp: 30, currentHp: 30, block: 0, currentIntentIndex: 0, traits: [], statuses: { ...DEFAULT_STATUS },
-    damageTakenThisTurn: 0,
-    intents: [
+	RUST_SLIME: defineEnemy(
+    'rust_slime',
+    '녹슨 슬라임',
+    EnemyTier.COMMON,
+    30,
+    [
       { type: IntentType.ATTACK, value: 5, description: '몸통 박치기' },
       { type: IntentType.ATTACK, value: 7, description: '녹슨 돌진' },
       { type: IntentType.DEBUFF, value: 1, description: '덱에 [녹슨 덩어리] 추가' },
     ]
-  },
-  KOBOLD_SCRAPPER: { // Balance Patch v1.2: HP 45 -> 36, removed REACTIVE_RARE (too complex for Floor 1)
-    id: 'kobold_scrapper', name: '코볼트 수집가', tier: EnemyTier.COMMON, maxHp: 36, currentHp: 36, block: 0, currentIntentIndex: 0, traits: [], statuses: { ...DEFAULT_STATUS },
-    damageTakenThisTurn: 0,
-    intents: [
+  ),
+  KOBOLD_SCRAPPER: defineEnemy(
+    'kobold_scrapper',
+    '코볼트 수집가',
+    EnemyTier.COMMON,
+    36,
+    [
       { type: IntentType.ATTACK, value: 5, description: '할퀴기' },
       { type: IntentType.ATTACK, value: 5, description: '할퀴기' },
       { type: IntentType.BUFF, value: 0, description: '가방 뒤적이기 (일시적 공격력 1~3 증가)' },
     ]
-  },
-  SKELETON_WARRIOR: { // NERFED: HP 40->32, DMG 8->6, 10->8
-    id: 'skeleton_warrior', name: '해골 전사', tier: EnemyTier.COMMON, maxHp: 32, currentHp: 32, block: 0, currentIntentIndex: 0, traits: [], statuses: { ...DEFAULT_STATUS },
-    damageTakenThisTurn: 0,
-    intents: [
+  ),
+  SKELETON_WARRIOR: defineEnemy(
+    'skeleton_warrior',
+    '해골 전사',
+    EnemyTier.COMMON,
+    32,
+    [
       { type: IntentType.ATTACK, value: 6, description: '낡은 검' },
       { type: IntentType.DEFEND, value: 5, description: '방어 태세' },
       { type: IntentType.ATTACK, value: 8, description: '강하게 베기' },
     ]
-  },
-  ROCK_CRUSHER: { // Elite
-    id: 'rock_crusher', name: '바위 분쇄기 (정예)', tier: EnemyTier.ELITE, maxHp: 80, currentHp: 80, block: 0, currentIntentIndex: 0, traits: [EnemyTrait.DAMAGE_CAP_15], statuses: { ...DEFAULT_STATUS },
-    damageTakenThisTurn: 0,
-    intents: [
+  ),
+  MINE_BAT: defineEnemy(
+    'mine_bat',
+    '광산 박쥐',
+    EnemyTier.COMMON,
+    28,
+    [
+      { type: IntentType.ATTACK, value: 4, hits: 2, description: '쪼아대기 (x2)' },
+      { type: IntentType.DEFEND, value: 4, description: '천장 매달리기' },
+      { type: IntentType.ATTACK, value: 6, description: '급강하' },
+    ]
+  ),
+  SPORE_TOTEM: defineEnemy(
+    'spore_totem',
+    '포자 토템',
+    EnemyTier.COMMON,
+    42,
+    [
+      { type: IntentType.ATTACK, value: 8, description: '독포자 침' },
+      { type: IntentType.BUFF, value: 0, description: '상태이상 흡수', effect: { type: 'CLEANSE_STATUSES_GAIN_STRENGTH', amountPerStatus: 1, minGain: 2, maxGain: 6 } },
+    ]
+  ),
+  SHIELD_MITE: defineEnemy(
+    'shield_mite',
+    '방패 진드기',
+    EnemyTier.COMMON,
+    38,
+    [
+      { type: IntentType.DEFEND, value: 8, description: '껍질 세우기' },
+      { type: IntentType.ATTACK, value: 5, description: '방패 물기 (플레이어 방어도 반영)', effect: { type: 'ATTACK_FROM_PLAYER_BLOCK', multiplier: 0.5 } },
+      { type: IntentType.ATTACK, value: 7, description: '틈새 물어뜯기' },
+    ]
+  ),
+  COPPER_TINKER: defineEnemy(
+    'copper_tinker',
+    '구리 땜장이',
+    EnemyTier.COMMON,
+    44,
+    [
+      { type: IntentType.DEBUFF, value: 0, description: '손잡이 나사 조이기', effect: { type: 'INCREASE_RANDOM_HANDLE_COST', amount: 1 } },
+      { type: IntentType.ATTACK, value: 8, description: '렌치 타격' },
+    ]
+  ),
+  ROCK_CRUSHER: defineEnemy(
+    'rock_crusher',
+    '바위 분쇄기 (정예)',
+    EnemyTier.ELITE,
+    80,
+    [
       { type: IntentType.ATTACK, value: 12, description: '육중한 강타' },
       { type: IntentType.DEFEND, value: 15, description: '바위 숨기' },
       { type: IntentType.ATTACK, value: 8, description: '지진' },
+    ],
+    [EnemyTrait.DAMAGE_CAP_15]
+  ),
+  BARBED_MINE: defineEnemy(
+    'barbed_mine',
+    '가시 광맥 (정예)',
+    EnemyTier.ELITE,
+    76,
+    [
+      { type: IntentType.DEFEND, value: 12, description: '가시 결정화' },
+      { type: IntentType.ATTACK, value: 7, hits: 2, description: '파편 폭발 (x2)' },
+      { type: IntentType.ATTACK, value: 10, description: '날카로운 돌진' },
+    ],
+    [EnemyTrait.THORNS_5]
+  ),
+  ORE_WARDEN: defineEnemy(
+    'ore_warden',
+    '광맥 파수꾼 (정예)',
+    EnemyTier.ELITE,
+    92,
+    [
+      { type: IntentType.DEFEND, value: 15, description: '철벽 태세' },
+      { type: IntentType.ATTACK, value: 10, description: '방어 균열 추적', effect: { type: 'ATTACK_FROM_PLAYER_BLOCK', multiplier: 0.75 } },
+      { type: IntentType.BUFF, value: 0, description: '광맥 공명', effect: { type: 'GAIN_STRENGTH', amount: 2 } },
+      { type: IntentType.ATTACK, value: 14, description: '수호자의 강타' },
     ]
-  },
-  JUNK_KING: { // Boss 1
-    id: 'junk_king', name: '고철의 왕 (보스)', tier: EnemyTier.BOSS, maxHp: 150, currentHp: 150, block: 0, currentIntentIndex: 0, traits: [], statuses: { ...DEFAULT_STATUS },
-    damageTakenThisTurn: 0,
-    intents: [
+  ),
+  JUNK_KING: defineEnemy(
+    'junk_king',
+    '고철의 왕 (보스)',
+    EnemyTier.BOSS,
+    150,
+    [
       { type: IntentType.ATTACK, value: 10, description: '자석 펀치' },
-      { type: IntentType.DEBUFF, value: 3, description: '[녹슨 덩어리] 3장 추가' },
+      { type: IntentType.DEBUFF, value: 0, description: '[녹슨 덩어리] 3장 추가', effect: { type: 'ADD_JUNK', count: 3 } },
       { type: IntentType.ATTACK, value: 15, description: '폐품 투척' },
     ]
-  },
+  ),
+  CAVE_HEART: defineEnemy(
+    'cave_heart',
+    '광산의 심장 (보스)',
+    EnemyTier.BOSS,
+    168,
+    [
+      { type: IntentType.ATTACK, value: 12, description: '맥동 충격' },
+      { type: IntentType.BUFF, value: 0, description: '오염 정화', effect: { type: 'CLEANSE_STATUSES_GAIN_STRENGTH', amountPerStatus: 1, minGain: 2, maxGain: 8 } },
+      { type: IntentType.DEBUFF, value: 0, description: '폐석 붕괴', effect: { type: 'ADD_JUNK', count: 2 } },
+      { type: IntentType.ATTACK, value: 22, description: '방어 파쇄 맥동', effect: { type: 'ATTACK_FROM_PLAYER_BLOCK', multiplier: 0.5 } },
+    ]
+  ),
 
   // Floor 2: The Molten Forge
-  EMBER_WISP: {
-    id: 'ember_wisp', name: '화염의 위습', tier: EnemyTier.COMMON, maxHp: 50, currentHp: 50, block: 0, currentIntentIndex: 0, traits: [], statuses: { ...DEFAULT_STATUS },
-    damageTakenThisTurn: 0,
-    intents: [
-      { type: IntentType.ATTACK, value: 4, description: '불씨' },
-      { type: IntentType.ATTACK, value: 4, description: '불씨' },
-      { type: IntentType.ATTACK, value: 4, description: '불씨' }, // Multi-hit punishes no-block
+  EMBER_WISP: defineEnemy(
+    'ember_wisp',
+    '화염의 위습',
+    EnemyTier.COMMON,
+    50,
+    [
+      { type: IntentType.ATTACK, value: 5, hits: 2, description: '불씨 난사 (x2)' },
+      { type: IntentType.ATTACK, value: 8, description: '응축 화염' },
     ]
-  },
-  HAMMERHEAD: {
-    id: 'hammerhead', name: '망치 머리 고블린', tier: EnemyTier.COMMON, maxHp: 65, currentHp: 65, block: 0, currentIntentIndex: 0, traits: [], statuses: { ...DEFAULT_STATUS },
-    damageTakenThisTurn: 0,
-    intents: [
+  ),
+  HAMMERHEAD: defineEnemy(
+    'hammerhead',
+    '망치 머리 고블린',
+    EnemyTier.COMMON,
+    65,
+    [
       { type: IntentType.ATTACK, value: 12, description: '내려찍기' },
       { type: IntentType.DEBUFF, value: 0, description: '무작위 손잡이 비용 +1' },
     ]
-  },
-  LOOT_GOBLIN: { // New Common (Floor 2)
-    id: 'loot_goblin', name: '도굴꾼 고블린', tier: EnemyTier.COMMON, maxHp: 55, currentHp: 55, block: 0, currentIntentIndex: 0, traits: [EnemyTrait.THIEVERY], statuses: { ...DEFAULT_STATUS },
-    damageTakenThisTurn: 0,
-    intents: [
-        { type: IntentType.ATTACK, value: 5, description: '소매치기 (골드 강탈)' },
-        { type: IntentType.DEBUFF, value: 0, description: '모래 뿌리기 (덱에 [녹슨 덩어리])' },
+  ),
+  LOOT_GOBLIN: defineEnemy(
+    'loot_goblin',
+    '도굴꾼 고블린',
+    EnemyTier.COMMON,
+    55,
+    [
+        { type: IntentType.ATTACK, value: 10, description: '소매치기 (골드 강탈)' },
+        { type: IntentType.DEBUFF, value: 0, description: '모래 뿌리기', effect: { type: 'ADD_JUNK', count: 1 } },
         { type: IntentType.DEFEND, value: 10, description: '도주 준비' }
+    ],
+    [EnemyTrait.THIEVERY]
+  ),
+  ASH_LEECH: defineEnemy(
+    'ash_leech',
+    '잿불 거머리',
+    EnemyTier.COMMON,
+    58,
+    [
+      { type: IntentType.ATTACK, value: 6, hits: 2, description: '흡열 물기 (x2)' },
+      { type: IntentType.BUFF, value: 0, description: '불순물 흡수', effect: { type: 'CLEANSE_STATUSES_GAIN_STRENGTH', amountPerStatus: 1, minGain: 2, maxGain: 8 } },
+      { type: IntentType.ATTACK, value: 10, description: '달궈진 흡혈' },
     ]
-  },
-  MIMIC_ANVIL: { // Elite
-    id: 'mimic_anvil', name: '흉내쟁이 모루 (정예)', tier: EnemyTier.ELITE, maxHp: 100, currentHp: 100, block: 0, currentIntentIndex: 0, traits: [], statuses: { ...DEFAULT_STATUS },
-    damageTakenThisTurn: 0,
-    intents: [
+  ),
+  FURNACE_SENTRY: defineEnemy(
+    'furnace_sentry',
+    '용광로 보초',
+    EnemyTier.COMMON,
+    75,
+    [
+      { type: IntentType.DEFEND, value: 12, description: '내열 방패' },
+      { type: IntentType.ATTACK, value: 8, description: '방패 열반응', effect: { type: 'ATTACK_FROM_PLAYER_BLOCK', multiplier: 0.5 } },
+      { type: IntentType.ATTACK, value: 12, description: '과열 베기' },
+    ]
+  ),
+  COAL_IMP: defineEnemy(
+    'coal_imp',
+    '석탄 임프',
+    EnemyTier.COMMON,
+    50,
+    [
+      { type: IntentType.DEBUFF, value: 0, description: '끈적한 그을음', effect: { type: 'INCREASE_RANDOM_HANDLE_COST', amount: 1 } },
+      { type: IntentType.ATTACK, value: 9, description: '숯검댕 찌르기' },
+      { type: IntentType.ATTACK, value: 6, hits: 2, description: '불똥 튀기기 (x2)' },
+    ]
+  ),
+  CINDER_RAT: defineEnemy(
+    'cinder_rat',
+    '그을음 쥐',
+    EnemyTier.COMMON,
+    54,
+    [
+      { type: IntentType.DEBUFF, value: 0, description: '재 더미 흩뿌리기', effect: { type: 'ADD_JUNK', count: 2 } },
+      { type: IntentType.ATTACK, value: 10, description: '타다 남은 이빨' },
+      { type: IntentType.DEFEND, value: 8, description: '연기 속 숨기' },
+    ]
+  ),
+  MIMIC_ANVIL: defineEnemy(
+    'mimic_anvil',
+    '흉내쟁이 모루 (정예)',
+    EnemyTier.ELITE,
+    100,
+    [
       { type: IntentType.DEFEND, value: 20, description: '단단해지기' },
-      { type: IntentType.ATTACK, value: 0, description: '받은 피해 반사' },
+      { type: IntentType.ATTACK, value: 0, description: '받은 피해 반사', effect: { type: 'REFLECT_DAMAGE_TAKEN' } },
     ]
-  },
-CORRUPTED_SMITH: { // Boss 2 - Balance Patch v1.0: HP 250 -> 220
-    id: 'corrupted_smith', name: '타락한 대장장이 (보스)', tier: EnemyTier.BOSS, maxHp: 220, currentHp: 220, block: 0, currentIntentIndex: 0, traits: [], statuses: { ...DEFAULT_STATUS },
-    damageTakenThisTurn: 0,
-    intents: [
+  ),
+  GLASS_GOLEM: defineEnemy(
+    'glass_golem',
+    '유리 골렘 (정예)',
+    EnemyTier.ELITE,
+    115,
+    [
+      { type: IntentType.ATTACK, value: 14, description: '깨지는 주먹' },
+      { type: IntentType.DEFEND, value: 20, description: '결정 방벽' },
+      { type: IntentType.ATTACK, value: 10, hits: 2, description: '파편 난사 (x2)' },
+    ],
+    [EnemyTrait.DAMAGE_CAP_15]
+  ),
+  CINDER_ARCHIVIST: defineEnemy(
+    'cinder_archivist',
+    '잿빛 기록관 (정예)',
+    EnemyTier.ELITE,
+    105,
+    [
+      { type: IntentType.DEBUFF, value: 0, description: '불탄 설계도 삽입', effect: { type: 'ADD_JUNK', count: 3 } },
+      { type: IntentType.ATTACK, value: 15, description: '잉걸불 낙인' },
+      { type: IntentType.DEBUFF, value: 0, description: '용광로 규칙 강제', effect: { type: 'SET_PLAYER_COST_LIMIT', limit: 2 } },
+      { type: IntentType.ATTACK, value: 12, description: '재갈퀴' },
+    ]
+  ),
+	CORRUPTED_SMITH: defineEnemy(
+    'corrupted_smith',
+    '타락한 대장장이 (보스)',
+    EnemyTier.BOSS,
+    220,
+    [
       { type: IntentType.ATTACK, value: 20, description: '달궈진 망치' },
-      { type: IntentType.SPECIAL, value: 0, description: '다음 턴 무기 파괴' },
+      { type: IntentType.SPECIAL, value: 0, description: '다음 턴 무기 파괴', effect: { type: 'DISARM_HEAD' } },
       { type: IntentType.ATTACK, value: 30, description: '대멸종' },
     ]
-  },
+  ),
+  MOLTEN_OVERSEER: defineEnemy(
+    'molten_overseer',
+    '용광로 감독관 (보스)',
+    EnemyTier.BOSS,
+    260,
+    [
+      { type: IntentType.ATTACK, value: 18, hits: 2, description: '쌍망치 압연 (x2)' },
+      { type: IntentType.DEBUFF, value: 0, description: '공정 지연', effect: { type: 'INCREASE_RANDOM_HANDLE_COST', amount: 1 } },
+      { type: IntentType.BUFF, value: 0, description: '슬래그 정화', effect: { type: 'CLEANSE_STATUSES_GAIN_STRENGTH', amountPerStatus: 1, minGain: 3, maxGain: 10 } },
+      { type: IntentType.ATTACK, value: 28, description: '용융 강타' },
+      { type: IntentType.DEFEND, value: 30, description: '강철 장벽' },
+    ]
+  ),
 
   // Floor 3: Clockwork Sanctuary
-  AUTOMATON_DEFENDER: {
-    id: 'automaton_defender', name: '자동화 방패병', tier: EnemyTier.COMMON, maxHp: 80, currentHp: 80, block: 0, currentIntentIndex: 0, traits: [EnemyTrait.THORNS_5], statuses: { ...DEFAULT_STATUS },
-    damageTakenThisTurn: 0,
-    intents: [
+  AUTOMATON_DEFENDER: defineEnemy(
+    'automaton_defender',
+    '자동화 방패병',
+    EnemyTier.COMMON,
+    80,
+    [
       { type: IntentType.DEFEND, value: 15, description: '방패 전개' },
       { type: IntentType.ATTACK, value: 10, description: '방패 밀치기' },
-      { type: IntentType.BUFF, value: 15, description: '긴급 수리 (HP 15 회복)' },
+      { type: IntentType.BUFF, value: 0, description: '긴급 수리', effect: { type: 'HEAL_SELF', amount: 15 } },
+    ],
+    [EnemyTrait.THORNS_5]
+  ),
+  NULL_PRIEST: defineEnemy(
+    'null_priest',
+    '무효 사제',
+    EnemyTier.COMMON,
+    86,
+    [
+      { type: IntentType.BUFF, value: 0, description: '상태 코드 삭제', effect: { type: 'CLEANSE_STATUSES_GAIN_STRENGTH', amountPerStatus: 1, minGain: 3, maxGain: 12 } },
+      { type: IntentType.ATTACK, value: 12, description: '영점 충격' },
+      { type: IntentType.DEBUFF, value: 0, description: '오류 조각 삽입', effect: { type: 'ADD_JUNK', count: 2 } },
     ]
-  },
-  SHADOW_ASSASSIN: { // New Elite (Floor 3)
-      id: 'shadow_assassin', name: '그림자 암살자 (정예)', tier: EnemyTier.ELITE, maxHp: 120, currentHp: 120, block: 0, currentIntentIndex: 0, traits: [], statuses: { ...DEFAULT_STATUS },
-      damageTakenThisTurn: 0,
-      intents: [
+  ),
+  TAX_CLOCK: defineEnemy(
+    'tax_clock',
+    '세금 시계',
+    EnemyTier.COMMON,
+    78,
+    [
+      { type: IntentType.DEBUFF, value: 0, description: '시간세 징수', effect: { type: 'SET_PLAYER_COST_LIMIT', limit: 2 } },
+      { type: IntentType.ATTACK, value: 14, description: '분침 찌르기' },
+      { type: IntentType.ATTACK, value: 8, hits: 2, description: '초침 난타 (x2)' },
+    ]
+  ),
+  SCRAP_DRONE_SWARM: defineEnemy(
+    'scrap_drone_swarm',
+    '폐품 드론떼',
+    EnemyTier.COMMON,
+    72,
+    [
+      { type: IntentType.ATTACK, value: 6, hits: 3, description: '드론 난사 (x3)' },
+      { type: IntentType.DEFEND, value: 10, description: '편대 재정렬' },
+      { type: IntentType.ATTACK, value: 10, description: '전기톱 돌입' },
+    ],
+    [EnemyTrait.THORNS_5]
+  ),
+  LEDGER_WRAITH: defineEnemy(
+    'ledger_wraith',
+    '원장 망령',
+    EnemyTier.COMMON,
+    88,
+    [
+      { type: IntentType.DEBUFF, value: 0, description: '부채 기록 추가', effect: { type: 'ADD_JUNK', count: 2 } },
+      { type: IntentType.ATTACK, value: 13, description: '채무 독촉' },
+      { type: IntentType.BUFF, value: 0, description: '이자 누적', effect: { type: 'GAIN_STRENGTH', amount: 3 } },
+    ]
+  ),
+  BULWARK_SENTINEL: defineEnemy(
+    'bulwark_sentinel',
+    '보루 파수기',
+    EnemyTier.COMMON,
+    98,
+    [
+      { type: IntentType.DEFEND, value: 15, description: '보루 전개' },
+      { type: IntentType.ATTACK, value: 10, description: '방어도 역류', effect: { type: 'ATTACK_FROM_PLAYER_BLOCK', multiplier: 0.75 } },
+      { type: IntentType.ATTACK, value: 15, description: '압축 충돌' },
+    ]
+  ),
+  GEAR_LEECH: defineEnemy(
+    'gear_leech',
+    '톱니 거머리',
+    EnemyTier.COMMON,
+    82,
+    [
+      { type: IntentType.ATTACK, value: 8, hits: 2, description: '맞물림 절단 (x2)' },
+      { type: IntentType.BUFF, value: 0, description: '부품 흡수', effect: { type: 'HEAL_SELF', amount: 15 } },
+      { type: IntentType.ATTACK, value: 12, description: '기어 물어뜯기' },
+    ]
+  ),
+  SHADOW_ASSASSIN: defineEnemy(
+      'shadow_assassin',
+      '그림자 암살자 (정예)',
+      EnemyTier.ELITE,
+      120,
+      [
           { type: IntentType.ATTACK, value: 25, description: '급소 찌르기' },
           { type: IntentType.DEFEND, value: 30, description: '그림자 숨기 (높은 방어도)' },
           { type: IntentType.BUFF, value: 5, description: '칼날 연마 (공격력 +5)' }
       ]
-  },
-CHIMERA_ENGINE: { // Elite - Balance Patch v1.0: HP 180 -> 150
-    id: 'chimera_engine', name: '키메라 엔진 (정예)', tier: EnemyTier.ELITE, maxHp: 150, currentHp: 150, block: 0, currentIntentIndex: 0, traits: [], statuses: { ...DEFAULT_STATUS },
-    damageTakenThisTurn: 0,
-    intents: [
-      { type: IntentType.ATTACK, value: 5, description: '기관총 (x3)' },
-      { type: IntentType.ATTACK, value: 5, description: '기관총 (x3)' },
-      { type: IntentType.ATTACK, value: 5, description: '기관총 (x3)' },
+  ),
+	CHIMERA_ENGINE: defineEnemy(
+    'chimera_engine',
+    '키메라 엔진 (정예)',
+    EnemyTier.ELITE,
+    150,
+    [
+      { type: IntentType.ATTACK, value: 7, hits: 3, description: '기관총 (x3)' },
+      { type: IntentType.DEFEND, value: 20, description: '장갑판 재배열' },
+      { type: IntentType.ATTACK, value: 7, hits: 3, description: '기관총 (x3)' },
+      { type: IntentType.BUFF, value: 0, description: '엔진 가속', effect: { type: 'GAIN_STRENGTH', amount: 2 } },
     ]
-  },
-DEUS_EX_MACHINA: { // Final Boss - Balance Patch v1.0: HP 500 -> 400
-    id: 'deus_ex_machina', name: '데우스 엑스 마키나', tier: EnemyTier.BOSS, maxHp: 400, currentHp: 400, block: 0, currentIntentIndex: 0, traits: [], statuses: { ...DEFAULT_STATUS },
-    damageTakenThisTurn: 0,
-    intents: [
-      { type: IntentType.ATTACK, value: 10, description: '창조의 모방' },
+  ),
+  PARADOX_JAILER: defineEnemy(
+    'paradox_jailer',
+    '역설 간수 (정예)',
+    EnemyTier.ELITE,
+    150,
+    [
+      { type: IntentType.DEBUFF, value: 0, description: '시간 감옥', effect: { type: 'SET_PLAYER_COST_LIMIT', limit: 1 } },
+      { type: IntentType.ATTACK, value: 20, description: '제작 횟수 처벌', effect: { type: 'ATTACK_FROM_WEAPONS_USED', perWeapon: 2 } },
+      { type: IntentType.DEBUFF, value: 0, description: '역설 파편 삽입', effect: { type: 'ADD_JUNK', count: 3 } },
+      { type: IntentType.DEFEND, value: 25, description: '폐쇄 루프' },
+    ]
+  ),
+	DEUS_EX_MACHINA: defineEnemy(
+    'deus_ex_machina',
+    '데우스 엑스 마키나',
+    EnemyTier.BOSS,
+    400,
+    [
+      { type: IntentType.ATTACK, value: 14, description: '창조의 모방' },
       { type: IntentType.ATTACK, value: 15, description: '창조의 모방' },
-      { type: IntentType.DEBUFF, value: 0, description: '코스트 제한 (MAX 2)' },
+      { type: IntentType.DEBUFF, value: 0, description: '코스트 제한 (MAX 2)', effect: { type: 'SET_PLAYER_COST_LIMIT', limit: 2 } },
       { type: IntentType.ATTACK, value: 50, description: '최후의 심판' },
     ]
-  },
+  ),
+  CLOCKWORK_SERAPH: defineEnemy(
+    'clockwork_seraph',
+    '시계장치 세라프 (보스)',
+    EnemyTier.BOSS,
+    420,
+    [
+      { type: IntentType.ATTACK, value: 18, hits: 2, description: '쌍익 절단 (x2)' },
+      { type: IntentType.BUFF, value: 0, description: '오류 정화', effect: { type: 'CLEANSE_STATUSES_GAIN_STRENGTH', amountPerStatus: 1, minGain: 4, maxGain: 14 } },
+      { type: IntentType.ATTACK, value: 35, description: '방어 알고리즘 역산', effect: { type: 'ATTACK_FROM_PLAYER_BLOCK', multiplier: 0.5 } },
+      { type: IntentType.DEBUFF, value: 0, description: '시간세 부과', effect: { type: 'SET_PLAYER_COST_LIMIT', limit: 2 } },
+      { type: IntentType.DEFEND, value: 40, description: '천상 기어 방벽' },
+    ]
+  ),
 };
 
-export const ENEMY_POOLS = {
+export const ENEMY_POOLS: Record<1 | 2 | 3, Record<EnemyTier, EnemyData[]>> = {
   1: {
-    [EnemyTier.COMMON]: [ENEMIES.RUST_SLIME, ENEMIES.KOBOLD_SCRAPPER, ENEMIES.SKELETON_WARRIOR],
-    [EnemyTier.ELITE]: [ENEMIES.ROCK_CRUSHER],
-    [EnemyTier.BOSS]: ENEMIES.JUNK_KING
+    [EnemyTier.COMMON]: [ENEMIES.RUST_SLIME, ENEMIES.KOBOLD_SCRAPPER, ENEMIES.SKELETON_WARRIOR, ENEMIES.MINE_BAT, ENEMIES.SPORE_TOTEM, ENEMIES.SHIELD_MITE, ENEMIES.COPPER_TINKER],
+    [EnemyTier.ELITE]: [ENEMIES.ROCK_CRUSHER, ENEMIES.BARBED_MINE, ENEMIES.ORE_WARDEN],
+    [EnemyTier.BOSS]: [ENEMIES.JUNK_KING, ENEMIES.CAVE_HEART]
   },
   2: {
-    [EnemyTier.COMMON]: [ENEMIES.EMBER_WISP, ENEMIES.HAMMERHEAD, ENEMIES.LOOT_GOBLIN],
-    [EnemyTier.ELITE]: [ENEMIES.MIMIC_ANVIL],
-    [EnemyTier.BOSS]: ENEMIES.CORRUPTED_SMITH
+    [EnemyTier.COMMON]: [ENEMIES.EMBER_WISP, ENEMIES.HAMMERHEAD, ENEMIES.LOOT_GOBLIN, ENEMIES.ASH_LEECH, ENEMIES.FURNACE_SENTRY, ENEMIES.COAL_IMP, ENEMIES.CINDER_RAT],
+    [EnemyTier.ELITE]: [ENEMIES.MIMIC_ANVIL, ENEMIES.GLASS_GOLEM, ENEMIES.CINDER_ARCHIVIST],
+    [EnemyTier.BOSS]: [ENEMIES.CORRUPTED_SMITH, ENEMIES.MOLTEN_OVERSEER]
   },
   3: {
-    [EnemyTier.COMMON]: [ENEMIES.AUTOMATON_DEFENDER, ENEMIES.SKELETON_WARRIOR],
-    [EnemyTier.ELITE]: [ENEMIES.CHIMERA_ENGINE, ENEMIES.SHADOW_ASSASSIN],
-    [EnemyTier.BOSS]: ENEMIES.DEUS_EX_MACHINA
+    [EnemyTier.COMMON]: [ENEMIES.AUTOMATON_DEFENDER, ENEMIES.NULL_PRIEST, ENEMIES.TAX_CLOCK, ENEMIES.SCRAP_DRONE_SWARM, ENEMIES.LEDGER_WRAITH, ENEMIES.BULWARK_SENTINEL, ENEMIES.GEAR_LEECH],
+    [EnemyTier.ELITE]: [ENEMIES.CHIMERA_ENGINE, ENEMIES.SHADOW_ASSASSIN, ENEMIES.PARADOX_JAILER],
+    [EnemyTier.BOSS]: [ENEMIES.DEUS_EX_MACHINA, ENEMIES.CLOCKWORK_SERAPH]
   }
 };
 

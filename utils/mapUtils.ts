@@ -48,7 +48,7 @@ const getEnemyIdForNode = (act: 1 | 2 | 3, type: NodeType): string | undefined =
   }
 
   if (type === NodeType.BOSS) {
-    return ENEMY_POOLS[act][EnemyTier.BOSS].id;
+    return randomEntry(ENEMY_POOLS[act][EnemyTier.BOSS]).id;
   }
 
   return undefined;

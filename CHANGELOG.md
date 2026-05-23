@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.4.0] - 2026-05-23
+
+### Added
+- Expanded the enemy roster from 14 to 36 static enemies across three acts.
+- Each act now has at least 7 common enemies, 3 elite enemies, and 2 boss candidates in `ENEMY_POOLS`.
+- Added structured enemy intent effects for junk injection, handle cost pressure, cost limits, disarm, reflect damage, defense counters, combo counters, status cleansing, strength gain, and self-healing.
+
+### Changed
+- Boss map nodes now choose from static boss pools instead of a single fixed boss per act.
+- Enemy balance validation now infers enemy act placement from `ENEMY_POOLS` and accounts for multi-hit intent damage.
+
+### Design Notes
+- Enemy content now covers the requested counter pattern families per act: status counter, defense counter, multi-hit counter, cost pressure, and deck pollution.
+- The new intent effect data keeps offline enemy behavior visible in static content definitions instead of hiding new patterns behind enemy-id conditionals.
+
+---
+
 ## [1.3.2] - 2026-05-23
 
 ### Changed

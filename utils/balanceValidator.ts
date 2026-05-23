@@ -4,6 +4,7 @@
  * These functions validate offline cards and enemies against the balance system rules.
  */
 
+import { ENEMY_POOLS } from '../constants';
 import { CardData, CardType, CardRarity, EnemyData, EnemyTier, IntentType, EnemyTrait } from '../types';
 import {
   ENERGY_ECONOMY,
@@ -646,6 +647,14 @@ function validateEnemyFields(enemy: EnemyData, errors: ValidationError[]): void 
   }
 }
 
+function getIntentDamageForValidation(intent: EnemyData['intents'][number]): number {
+  if (intent.effect?.type === 'REFLECT_DAMAGE_TAKEN') {
+    return 12;
+  }
+
+  return intent.value * (intent.hits || 1);
+}
+
 function validateTierConstraints(
   enemy: EnemyData,
   act: number,
@@ -719,6 +728,8 @@ function validateTierConstraints(
 
   for (const intent of enemy.intents) {
     if (intent.type === IntentType.ATTACK) {
+      if (intent.effect?.type === 'REFLECT_DAMAGE_TAKEN') continue;
+
       if (intent.value < scaledDmgMin || intent.value > scaledDmgMax) {
         warnings.push({
           code: 'DAMAGE_OUT_OF_RANGE',
@@ -830,7 +841,7 @@ function validateIntentPatterns(enemy: EnemyData, errors: ValidationError[], war
     // Check total damage per cycle
     const totalDamage = enemy.intents
       .filter(i => i.type === IntentType.ATTACK)
-      .reduce((sum, i) => sum + i.value, 0);
+      .reduce((sum, i) => sum + getIntentDamageForValidation(i), 0);
 
     if (totalDamage > bossRules.maxDamagePerCycle) {
       warnings.push({
@@ -855,7 +866,7 @@ function validateDifficulty(
   // Calculate average damage per turn
   const attackIntents = enemy.intents.filter(i => i.type === IntentType.ATTACK);
   const avgDamagePerIntent = attackIntents.length > 0
-    ? attackIntents.reduce((sum, i) => sum + i.value, 0) / attackIntents.length
+    ? attackIntents.reduce((sum, i) => sum + getIntentDamageForValidation(i), 0) / attackIntents.length
     : 0;
   const attackRatio = attackIntents.length / enemy.intents.length;
   const expectedDamagePerTurn = avgDamagePerIntent * attackRatio;
@@ -901,15 +912,17 @@ export function validateAllCards(cards: CardData[]): Map<number, ValidationResul
  */
 export function validateAllEnemies(enemies: Record<string, EnemyData>): Map<string, ValidationResult> {
   const results = new Map<string, ValidationResult>();
+  const enemyActById = new Map<string, 1 | 2 | 3>();
+
+  Object.entries(ENEMY_POOLS).forEach(([actKey, pools]) => {
+    const act = Number(actKey) as 1 | 2 | 3;
+    Object.values(pools).flat().forEach(enemy => {
+      enemyActById.set(enemy.id, act);
+    });
+  });
 
   for (const [key, enemy] of Object.entries(enemies)) {
-    // Determine act from enemy pool (simplified)
-    let act = 1;
-    if (['ember_wisp', 'hammerhead', 'loot_goblin', 'mimic_anvil', 'corrupted_smith'].includes(enemy.id)) {
-      act = 2;
-    } else if (['automaton_defender', 'shadow_assassin', 'chimera_engine', 'deus_ex_machina'].includes(enemy.id)) {
-      act = 3;
-    }
+    const act = enemyActById.get(enemy.id) || 1;
 
     results.set(key, validateEnemyBalance(enemy, act));
   }
