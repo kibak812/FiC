@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.11.15] - 2026-05-23
+
+### Added
+- Production chunk splitting for sprite code, React runtime, and icon runtime.
+
+### Changed
+- Vite packaging now separates the expanding pixel-art sprite module from the main application chunk.
+- Product readiness now checks that production packaging keeps sprite and vendor chunks split.
+- Menu version updated to v1.11.15.
+
+### Design Notes
+- Card art can keep improving without forcing all sprite code into one oversized main bundle.
+
+---
+
 ## [1.11.14] - 2026-05-23
 
 ### Added

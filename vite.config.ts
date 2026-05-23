@@ -15,6 +15,25 @@ export default defineConfig(({ mode }) => {
         'process.env.API_KEY': JSON.stringify(env.GEMINI_API_KEY),
         'process.env.GEMINI_API_KEY': JSON.stringify(env.GEMINI_API_KEY)
       },
+      build: {
+        rollupOptions: {
+          output: {
+            manualChunks(id) {
+              const normalizedId = id.replace(/\\/g, '/');
+
+              if (normalizedId.includes('/components/PixelSprites.tsx')) {
+                return 'fic-sprites';
+              }
+              if (normalizedId.includes('/node_modules/react') || normalizedId.includes('/node_modules/react-dom')) {
+                return 'vendor-react';
+              }
+              if (normalizedId.includes('/node_modules/lucide-react')) {
+                return 'vendor-icons';
+              }
+            }
+          }
+        }
+      },
       resolve: {
         alias: {
           '@': path.resolve(__dirname, '.'),

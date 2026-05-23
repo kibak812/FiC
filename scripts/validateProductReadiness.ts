@@ -337,6 +337,7 @@ section('Save, onboarding, and packaging', () => {
   const menuSource = readText('screens/MenuScreen.tsx');
   const gameOverSource = readText('screens/GameOverScreen.tsx');
   const learningFeedbackSource = readText('utils/learningFeedback.ts');
+  const viteSource = readText('vite.config.ts');
   const simSource = readText('scripts/simulateRuns.ts');
   const playerSource = readText('utils/playerUtils.ts');
   const packageJson = readJsonRecord('package.json');
@@ -382,6 +383,7 @@ section('Save, onboarding, and packaging', () => {
   requireReady(Boolean(dependencies['@fontsource/press-start-2p']) && Boolean(dependencies.galmuri), 'Offline pixel font dependencies should be bundled.');
   requireReady(Boolean(devDependencies.tailwindcss) && Boolean(devDependencies.postcss) && Boolean(devDependencies.autoprefixer), 'Local Tailwind/PostCSS build dependencies should exist.');
   requireReady(exists('docs/release.md'), 'Store release checklist should exist.');
+  requireReady(viteSource.includes('manualChunks') && viteSource.includes('fic-sprites') && viteSource.includes('vendor-react'), 'Production build should split sprite and vendor chunks for store-ready packaging.');
 
   for (const runtimeFile of ['index.html', 'styles.css', 'tailwind.config.cjs']) {
     requireReady(!/\bhttps?:\/\//.test(readText(runtimeFile)), `${runtimeFile} should not reference remote runtime URLs.`);
