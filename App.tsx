@@ -1699,7 +1699,7 @@ case 'PLAYER_DRAW':
         <DeckHUD deckCount={deck.length} discardCount={discardPile.length} />
 
         {/* THE ANVIL */}
-        <div className="w-full h-full min-h-0 flex items-center justify-center p-1 md:p-2">
+        <div className="w-full h-full min-h-0 flex items-end md:items-center justify-center p-1 pb-16 md:p-2">
             <Anvil
                 slots={slots}
                 onRemove={handleSlotRemove}

@@ -74,7 +74,7 @@ const EnemySection: React.FC<EnemySectionProps> = ({
       </div>
 
       {/* Horizontal Enemy Layout */}
-      <div className="flex items-center justify-center gap-2 md:gap-5 w-full max-w-xl mt-5">
+      <div className="flex items-center justify-center gap-3 md:gap-5 w-full max-w-xl mt-8 md:mt-5">
         
         {/* Left: Intent (with long-press for mobile) */}
         <div 
@@ -91,20 +91,20 @@ const EnemySection: React.FC<EnemySectionProps> = ({
           }}
         >
           <div className={`
-            pixel-border border-3 p-1.5 md:p-2 flex items-center justify-center
+            pixel-border border-3 p-2 flex items-center justify-center
             ${currentIntent.type === IntentType.ATTACK ? 'bg-red-900/80 border-red-500' :
               currentIntent.type === IntentType.BUFF ? 'bg-green-900/80 border-green-500' :
               currentIntent.type === IntentType.DEBUFF ? 'bg-purple-900/80 border-purple-500' :
               'bg-blue-900/80 border-blue-500'}
           `}>
-            {currentIntent.type === IntentType.ATTACK ? <Skull size={24} className="text-red-400" /> :
-             currentIntent.type === IntentType.BUFF ? <RefreshCw size={24} className="text-green-400" /> :
-             currentIntent.type === IntentType.DEBUFF ? <Zap size={24} className="text-purple-400" /> :
-             <Shield size={24} className="text-blue-400" />}
+            {currentIntent.type === IntentType.ATTACK ? <Skull size={24} className="w-7 h-7 md:w-6 md:h-6 text-red-400" /> :
+             currentIntent.type === IntentType.BUFF ? <RefreshCw size={24} className="w-7 h-7 md:w-6 md:h-6 text-green-400" /> :
+             currentIntent.type === IntentType.DEBUFF ? <Zap size={24} className="w-7 h-7 md:w-6 md:h-6 text-purple-400" /> :
+             <Shield size={24} className="w-7 h-7 md:w-6 md:h-6 text-blue-400" />}
           </div>
           <div 
             className={`
-              mt-1 px-2 py-0.5 pixel-border border-2 font-pixel text-xs flex items-center gap-1
+              mt-1 px-2.5 md:px-2 py-0.5 pixel-border border-2 font-pixel text-sm md:text-xs flex items-center gap-1
               ${currentIntent.type === IntentType.ATTACK ? 'bg-red-800 border-red-400 text-red-200' :
                 currentIntent.type === IntentType.DEFEND ? 'bg-blue-800 border-blue-400 text-blue-200' :
                 currentIntent.type === IntentType.BUFF ? 'bg-green-800 border-green-400 text-green-200' :
@@ -124,7 +124,7 @@ const EnemySection: React.FC<EnemySectionProps> = ({
         <div className={`flex flex-col items-center flex-shrink-0 ${enemyAttacking ? 'animate-enemy-attack' : ''}`}>
           {/* Enemy Sprite */}
           <div className={`
-            w-20 h-20 md:w-28 md:h-28
+            w-24 h-24 md:w-28 md:h-28
             pixel-border border-3
             flex items-center justify-center
             relative overflow-hidden
@@ -135,7 +135,7 @@ const EnemySection: React.FC<EnemySectionProps> = ({
               enemyBleeding ? 'border-red-600 animate-bleed bg-red-900/30' :
               'border-stone-600 bg-stone-800'}
           `}>
-            {React.createElement(getMonsterSprite(enemy.id), { className: 'w-16 h-16 md:w-24 md:h-24' })}
+            {React.createElement(getMonsterSprite(enemy.id), { className: 'w-20 h-20 md:w-24 md:h-24' })}
             
             {/* Block indicator on sprite */}
             {enemy.block > 0 && (
@@ -146,8 +146,8 @@ const EnemySection: React.FC<EnemySectionProps> = ({
           </div>
           
           {/* HP Bar - Compact */}
-          <div className="w-28 md:w-36 relative mt-1">
-            <div className="h-4 bg-stone-900 pixel-border border-2 border-stone-600 overflow-hidden relative flex">
+          <div className="w-32 md:w-36 relative mt-1">
+            <div className="h-5 md:h-4 bg-stone-900 pixel-border border-2 border-stone-600 overflow-hidden relative flex">
               {Array.from({ length: 10 }).map((_, i) => {
                 const segmentPercent = (i + 1) * 10;
                 const hpPercent = (enemy.currentHp / enemy.maxHp) * 100;
@@ -161,7 +161,7 @@ const EnemySection: React.FC<EnemySectionProps> = ({
                   />
                 );
               })}
-              <div className="absolute inset-0 flex items-center justify-center font-pixel text-[9px] text-white" style={{ textShadow: '1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 0 0 4px #000' }}>
+              <div className="absolute inset-0 flex items-center justify-center font-pixel text-[10px] md:text-[9px] text-white" style={{ textShadow: '1px 1px 0 #000, -1px -1px 0 #000, 1px -1px 0 #000, -1px 1px 0 #000, 0 0 4px #000' }}>
                 {enemy.currentHp}/{enemy.maxHp}
               </div>
             </div>
@@ -169,7 +169,7 @@ const EnemySection: React.FC<EnemySectionProps> = ({
 
           {/* Name + Traits inline */}
           <div className="mt-1 flex items-center gap-1 flex-wrap justify-center">
-            <span className="font-pixel-kr font-bold text-stone-200 text-xs bg-black/50 px-1.5 py-0.5 pixel-border border border-stone-600">{enemy.name}</span>
+            <span className="font-pixel-kr font-bold text-stone-200 text-sm md:text-xs bg-black/50 px-1.5 py-0.5 pixel-border border border-stone-600">{enemy.name}</span>
             {enemy.traits.includes(EnemyTrait.THORNS_5) && (
               <span className="text-[8px] bg-green-900 border border-green-600 px-1 pixel-border font-pixel-kr text-green-300">{'\uAC00\uC2DC'}</span>
             )}

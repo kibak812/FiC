@@ -229,12 +229,29 @@
   }
 
   .combat-enemy-section {
-    height: 20dvh;
-    min-height: 145px;
+    height: 24dvh;
+    min-height: 188px;
   }
 
   .combat-anvil {
     padding: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) and (min-height: 780px) {
+  .anvil-container .combat-card,
+  .anvil-slot-placeholder {
+    width: 5.5rem;
+    height: 8.45rem;
+  }
+
+  .combat-enemy-section {
+    height: 27dvh;
+    min-height: 228px;
+  }
+
+  .combat-anvil {
+    padding: 0.875rem;
   }
 }
 

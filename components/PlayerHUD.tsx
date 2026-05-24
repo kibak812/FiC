@@ -25,7 +25,7 @@ const PlayerHUD: React.FC<PlayerHUDProps> = ({
   playerBlocking
 }) => {
   return (
-    <div className="absolute left-2 top-2 md:left-4 md:top-4 flex flex-col gap-1 md:gap-2 z-20 pointer-events-none">
+    <div className="absolute left-2 top-6 md:left-4 md:top-4 flex flex-col gap-1 md:gap-2 z-20 pointer-events-none">
       <div className={`flex items-center gap-2 font-pixel text-sm md:text-base text-pixel-hp bg-black/50 px-2 py-1 pixel-border border-2 border-red-800 transition-all ${playerHealing ? 'animate-heal' : ''} ${playerHit ? 'animate-hp-flash border-red-400' : ''}`}>
         <Heart className={`w-4 h-4 md:w-5 md:h-5 fill-current ${playerHit ? 'animate-pulse' : ''}`} /> {hp}
       </div>

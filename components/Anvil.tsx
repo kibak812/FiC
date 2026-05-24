@@ -33,14 +33,13 @@ interface AnvilProps {
 }
 
 interface SlotPlaceholderProps {
-  type: string;
   label: string;
   subLabel: string;
   isOver: boolean;
   isFocused?: boolean;
 }
 
-const SlotPlaceholder: React.FC<SlotPlaceholderProps> = ({ type, label, subLabel, isOver, isFocused }) => (
+const SlotPlaceholder: React.FC<SlotPlaceholderProps> = ({ label, subLabel, isOver, isFocused }) => (
   <div className={`
     anvil-slot-placeholder
     w-24 h-36 md:w-32 md:h-48
@@ -53,11 +52,10 @@ const SlotPlaceholder: React.FC<SlotPlaceholderProps> = ({ type, label, subLabel
     ${isFocused ? 'tutorial-focus border-yellow-300 bg-yellow-900/30' : ''}
   `}>
     <span className={`
-      font-pixel text-2xl md:text-3xl mb-2 opacity-60
-      ${isOver ? 'text-orange-300' : 'text-stone-500'}
-    `}>{type}</span>
-    <span className="font-pixel-kr text-xs md:text-sm text-stone-400">{label}</span>
-    <span className="font-pixel-kr text-[10px] text-stone-500 mt-1">{subLabel}</span>
+      font-pixel-kr text-sm md:text-base font-bold mb-1
+      ${isOver ? 'text-orange-200' : 'text-stone-300'}
+    `}>{label}</span>
+    <span className="font-pixel-kr text-[10px] md:text-xs text-stone-500">{subLabel}</span>
   </div>
 );
 
@@ -145,7 +143,7 @@ const Anvil: React.FC<AnvilProps> = ({
       <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-48 h-24 bg-orange-600/10 blur-2xl pointer-events-none" />
 
       {/* Slots Container */}
-      <div className="flex flex-wrap justify-center items-end gap-2 md:gap-3 mb-3 md:mb-4 z-10 min-h-[136px] md:min-h-[190px]">
+      <div className="flex flex-wrap justify-center items-end gap-2 md:gap-3 mb-3 md:mb-4 z-10 min-h-[148px] md:min-h-[190px]">
 
         {/* Handle Slot */}
         <div
@@ -164,7 +162,6 @@ const Anvil: React.FC<AnvilProps> = ({
             />
           ) : (
             <SlotPlaceholder
-              type="손"
               label="손잡이"
               subLabel="배율"
               isOver={dragOverType === CardType.HANDLE}
@@ -195,7 +192,6 @@ const Anvil: React.FC<AnvilProps> = ({
             />
           ) : (
             <SlotPlaceholder
-              type="머"
               label="머리"
               subLabel="기본"
               isOver={dragOverType === CardType.HEAD}
@@ -226,7 +222,6 @@ const Anvil: React.FC<AnvilProps> = ({
             />
           ) : (
             <SlotPlaceholder
-              type="장"
               label="장식"
               subLabel="보너스"
               isOver={dragOverType === CardType.DECO}
@@ -303,10 +298,6 @@ const Anvil: React.FC<AnvilProps> = ({
           <span>{canCraft ? '제작' : craftBlockReason || '제작 불가'}</span>
           {canCraft && <Hammer className="w-4 h-4 md:w-5 md:h-5" />}
         </button>
-
-        <div className={`w-full text-center font-pixel-kr text-[11px] md:text-xs ${canCraft ? 'text-orange-200' : 'text-red-300'}`}>
-          {canCraft ? '손잡이와 머리가 준비되었습니다.' : craftBlockReason || '손잡이와 머리를 올려 제작하세요.'}
-        </div>
       </div>
 
     </div>
