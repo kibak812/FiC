@@ -23,8 +23,8 @@ const RestScreen: React.FC<RestScreenProps> = ({ gold, maxHp, hasRested, onRestA
       </div>
 
       <div className="flex-shrink-0 mb-8 text-center mt-16 md:mt-0">
-        <h2 className="text-xl md:text-2xl font-pixel mb-3 text-orange-400" style={{ textShadow: '0 0 10px rgba(251,146,60,0.5)' }}>
-          REST STOP
+        <h2 className="text-xl md:text-2xl font-pixel-kr font-bold mb-3 text-orange-400" style={{ textShadow: '0 0 10px rgba(251,146,60,0.5)' }}>
+          정비소
         </h2>
         <p className="text-stone-400 font-pixel-kr text-sm">다음 전투를 준비하세요.</p>
         {hasRested && <p className="text-red-400 font-pixel-kr text-xs mt-2">* 정비를 완료했습니다.</p>}
@@ -81,7 +81,7 @@ const RestScreen: React.FC<RestScreenProps> = ({ gold, maxHp, hasRested, onRestA
           <h3 className="font-pixel-kr text-base font-bold mb-1">제련</h3>
           <p className="text-stone-400 font-pixel-kr text-[9px] px-2 text-center">카드 1장 제거</p>
           <div className={`mt-2 font-pixel text-xs flex items-center gap-1 ${hasRested ? 'text-stone-600' : 'text-red-400'}`}>
-            <Ban size={12} /> REMOVE
+            <Ban size={12} /> 제거
           </div>
         </button>
 
@@ -104,7 +104,7 @@ const RestScreen: React.FC<RestScreenProps> = ({ gold, maxHp, hasRested, onRestA
           <h3 className="font-pixel-kr text-base font-bold mb-1">상점</h3>
           <p className="text-stone-400 font-pixel-kr text-[9px] px-2 text-center">아이템 구매</p>
           <div className="mt-2 text-yellow-400 font-pixel text-xs flex items-center gap-1">
-            <Coins size={12} /> ENTER
+            <Coins size={12} /> 입장
           </div>
         </button>
       </div>

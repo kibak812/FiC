@@ -16,6 +16,8 @@ import {
   ShopItemDefinition
 } from './types';
 
+export const APP_VERSION = '1.12.0';
+
 // --- Card Database ---
 
 export const CARD_DATABASE: CardData[] = [
@@ -731,21 +733,39 @@ export const ENEMY_POOLS: Record<1 | 2 | 3, Record<EnemyTier, EnemyData[]>> = {
 export const COMBAT_REWARD_RULES: Record<CombatRewardId, CombatRewardRule> = {
   COMMON: {
     id: 'COMMON',
-    gold: { min: 15, max: 34 },
+    gold: { min: 15, max: 32 },
     cardOptionCount: 3,
-    cardRarities: [CardRarity.COMMON, CardRarity.RARE, CardRarity.LEGEND]
+    cardRarities: [CardRarity.COMMON, CardRarity.RARE, CardRarity.LEGEND],
+    rarityWeights: {
+      [CardRarity.COMMON]: 86,
+      [CardRarity.RARE]: 13,
+      [CardRarity.LEGEND]: 1
+    },
+    legendUnlockFloor: 10
   },
   ELITE: {
     id: 'ELITE',
-    gold: { min: 30, max: 49 },
+    gold: { min: 32, max: 55 },
     cardOptionCount: 4,
-    cardRarities: [CardRarity.COMMON, CardRarity.RARE, CardRarity.LEGEND]
+    cardRarities: [CardRarity.COMMON, CardRarity.RARE, CardRarity.LEGEND],
+    rarityWeights: {
+      [CardRarity.COMMON]: 50,
+      [CardRarity.RARE]: 44,
+      [CardRarity.LEGEND]: 6
+    },
+    legendUnlockFloor: 6
   },
   BOSS: {
     id: 'BOSS',
-    gold: { min: 30, max: 49 },
+    gold: { min: 45, max: 70 },
     cardOptionCount: 4,
-    cardRarities: [CardRarity.COMMON, CardRarity.RARE, CardRarity.LEGEND]
+    cardRarities: [CardRarity.COMMON, CardRarity.RARE, CardRarity.LEGEND],
+    rarityWeights: {
+      [CardRarity.COMMON]: 20,
+      [CardRarity.RARE]: 65,
+      [CardRarity.LEGEND]: 15
+    },
+    legendUnlockFloor: 1
   }
 };
 

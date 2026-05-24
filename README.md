@@ -1,6 +1,6 @@
-# Forged in Chaos
+# 혼돈의 대장간 (Forged in Chaos)
 
-Korean roguelike deckbuilder about forging weapons from card parts.
+손잡이, 머리, 장식 카드를 조합해 매 턴 무기를 제작하는 한국어 roguelike deckbuilder입니다.
 
 Players combine a Handle, Head, and optional Deco card to build a weapon each turn, then survive a fixed-act dungeon through combat rewards, rest stops, shops, and boss upgrades.
 

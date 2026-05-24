@@ -79,8 +79,8 @@ const MapScreen: React.FC<MapScreenProps> = ({
     <div className="w-full h-screen-safe flex flex-col bg-pixel-bg-dark text-stone-100 overflow-hidden">
       <div className="p-4 md:p-5 bg-pixel-bg-mid pixel-border border-b-4 border-stone-700 flex items-center justify-between gap-4">
         <div>
-          <h2 className="text-lg md:text-xl font-pixel text-orange-400" style={{ textShadow: '0 0 10px rgba(251,146,60,0.45)' }}>
-            ACT {act} MAP
+          <h2 className="text-lg md:text-xl font-pixel-kr font-bold text-orange-400" style={{ textShadow: '0 0 10px rgba(251,146,60,0.45)' }}>
+            제 {act}막 지도
           </h2>
           <p className="font-pixel-kr text-xs text-stone-400 mt-1">현재 층 {floor}</p>
         </div>
@@ -104,7 +104,7 @@ const MapScreen: React.FC<MapScreenProps> = ({
 
               return (
                 <div key={mapFloor} className="flex flex-col items-center gap-4">
-                  <div className="font-pixel text-[9px] text-stone-500">F{mapFloor}</div>
+                  <div className="font-pixel-kr text-[11px] text-stone-500">{mapFloor}층</div>
                   <div className="flex flex-col gap-4 justify-center min-h-[210px]">
                     {floorNodes.map(node => {
                       const available = availableNodeIds.includes(node.id);

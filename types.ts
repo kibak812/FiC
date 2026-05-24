@@ -174,6 +174,14 @@ export interface CombatRewardRule {
   };
   cardOptionCount: number;
   cardRarities: CardRarity[];
+  rarityWeights: Partial<Record<CardRarity, number>>;
+  legendUnlockFloor: number;
+}
+
+export interface CombatRewardContext {
+  act: 1 | 2 | 3;
+  floor: number;
+  deck: CardInstance[];
 }
 
 export type ShopItemId = 'REMOVE' | 'HEAL' | 'RARE' | 'ENERGY';

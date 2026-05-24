@@ -1,5 +1,6 @@
 import React from 'react';
 import { Check, Contrast, Music, Play, RotateCcw, Settings, Type, Volume2, VolumeX, X, ZapOff } from 'lucide-react';
+import { APP_VERSION } from '@/constants';
 import type { GameSettings } from '@/types';
 import type { SavedRunSummary } from '@/utils/saveUtils';
 
@@ -49,7 +50,7 @@ const SettingsToggle: React.FC<SettingsToggleProps> = ({
       {label}
     </span>
     <span className={`px-3 py-1 pixel-border border-2 font-pixel text-[10px] ${active ? toggleAccentClasses[accent] : 'border-stone-600 bg-stone-900 text-stone-500'}`}>
-      {active ? 'ON' : 'OFF'}
+      {active ? '켜짐' : '꺼짐'}
     </span>
   </button>
 );
@@ -239,8 +240,8 @@ const MenuScreen: React.FC<MenuScreenProps> = ({
                 className="w-full px-4 py-3 pixel-border border-2 border-orange-600 bg-orange-950/40 flex items-center justify-between font-pixel-kr text-sm"
               >
                 <span>첫 전투 튜토리얼</span>
-                <span className="px-3 py-1 pixel-border border-2 border-orange-500 bg-orange-900/50 text-orange-200 font-pixel text-[10px]">
-                  RESET
+                <span className="px-3 py-1 pixel-border border-2 border-orange-500 bg-orange-900/50 text-orange-200 font-pixel-kr text-[11px]">
+                  다시 보기
                 </span>
               </button>
             </div>
@@ -260,13 +261,13 @@ const MenuScreen: React.FC<MenuScreenProps> = ({
       <div className="absolute bottom-0 left-1/2 -translate-x-1/2 w-96 h-48 bg-orange-600/20 blur-3xl pointer-events-none" />
 
       {/* Title */}
-      <h1 className="font-pixel text-2xl md:text-4xl mb-2 text-orange-500 animate-pulse"
+      <h1 className="font-pixel-kr text-3xl md:text-5xl font-bold mb-2 text-orange-400 animate-pulse"
           style={{ textShadow: '4px 4px 0 #7c2d12, 0 0 20px rgba(249,115,22,0.5)' }}>
-        FORGED IN CHAOS
-      </h1>
-      <h2 className="font-pixel-kr text-3xl md:text-5xl font-bold mb-6 text-orange-400"
-          style={{ textShadow: '3px 3px 0 #431407' }}>
         혼돈의 대장간
+      </h1>
+      <h2 className="font-pixel text-lg md:text-2xl mb-6 text-orange-500"
+          style={{ textShadow: '3px 3px 0 #431407' }}>
+        FORGED IN CHAOS
       </h2>
 
       <p className="mb-6 text-base md:text-lg text-stone-400 font-pixel-kr">
@@ -276,7 +277,7 @@ const MenuScreen: React.FC<MenuScreenProps> = ({
       <div className="flex flex-col items-center gap-3">
         {savedRunSummary && (
           <div className="pixel-border border-2 border-stone-700 bg-black/50 px-4 py-2 font-pixel-kr text-xs text-stone-300">
-            Act {savedRunSummary.act} - {savedRunSummary.floor}F · {savedRunSummary.hp}/{savedRunSummary.maxHp} HP · {savedRunSummary.gold} G · {savedAtLabel}
+            제 {savedRunSummary.act}막 {savedRunSummary.floor}층 · 체력 {savedRunSummary.hp}/{savedRunSummary.maxHp} · {savedRunSummary.gold} 골드 · {savedAtLabel}
           </div>
         )}
 
@@ -327,8 +328,8 @@ const MenuScreen: React.FC<MenuScreenProps> = ({
       </div>
 
       {/* Version */}
-      <div className="absolute bottom-4 right-4 text-xs text-stone-600 font-pixel">
-        v1.11.27
+      <div className="absolute bottom-4 right-4 text-xs text-stone-600 font-pixel-kr">
+        v{APP_VERSION}
       </div>
     </div>
   );

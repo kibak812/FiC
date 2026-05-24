@@ -66,7 +66,7 @@ const ShopScreen: React.FC<ShopScreenProps> = ({ gold, onBuyItem, onExit }) => {
               </div>
               <div className="flex items-center gap-2 bg-black/40 px-4 py-2 pixel-border border-2 border-yellow-600">
                 <Coins className="text-yellow-400" size={16} />
-                <span className="font-pixel text-base text-yellow-300">{selectedItem.price} G</span>
+                <span className="font-pixel-kr text-sm text-yellow-300">{selectedItem.price} 골드</span>
               </div>
             </div>
 
@@ -103,8 +103,8 @@ const ShopScreen: React.FC<ShopScreenProps> = ({ gold, onBuyItem, onExit }) => {
       )}
 
       <div className="p-4 md:p-6 bg-pixel-bg-mid pixel-border border-b-4 border-stone-700 flex justify-between items-center">
-        <h2 className="text-lg md:text-xl font-pixel flex items-center gap-2 text-yellow-400" style={{ textShadow: '0 0 10px rgba(250,204,21,0.5)' }}>
-          <Store size={20} /> BLACK MARKET
+        <h2 className="text-lg md:text-xl font-pixel-kr font-bold flex items-center gap-2 text-yellow-400" style={{ textShadow: '0 0 10px rgba(250,204,21,0.5)' }}>
+          <Store size={20} /> 암시장
         </h2>
         <div className="flex items-center gap-2 bg-black/60 px-3 py-1.5 pixel-border border-2 border-yellow-600">
           <Coins className="text-yellow-400" size={14} />
@@ -135,7 +135,7 @@ const ShopScreen: React.FC<ShopScreenProps> = ({ gold, onBuyItem, onExit }) => {
               >
                 {item.id === 'ENERGY' && (
                   <div className="absolute top-0 right-0 bg-yellow-600 font-pixel text-[7px] px-1.5 py-0.5 text-white pixel-border border-l-2 border-b-2 border-yellow-400">
-                    LIMITED
+                    1회
                   </div>
                 )}
                 <div className={`p-2 pixel-border border-2 mb-2 ${getColorClasses(item.color, 'bg')} ${getColorClasses(item.color, 'border')} ${getColorClasses(item.color, 'text')}`}>
@@ -144,7 +144,7 @@ const ShopScreen: React.FC<ShopScreenProps> = ({ gold, onBuyItem, onExit }) => {
                 <div className="font-pixel-kr text-xs font-bold">{item.name}</div>
                 <div className="text-[8px] text-stone-400 font-pixel-kr text-center mb-1">{item.description}</div>
                 <div className={`font-pixel text-xs ${canAfford ? 'text-yellow-400' : 'text-red-500'}`}>
-                  {item.price} G
+                  {item.price} 골드
                 </div>
               </button>
             );

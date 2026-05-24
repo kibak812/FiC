@@ -708,8 +708,19 @@ const processNonCombatNode = (state: SimState, node: MapNode, rng: () => number)
   }
 };
 
-const applyCombatReward = (state: SimState, enemyTier: EnemyTier, rng: () => number, result: SimResult): void => {
-  const rewardBundle = createCombatRewardBundle(enemyTier, rng);
+const applyCombatReward = (
+  state: SimState,
+  enemyTier: EnemyTier,
+  act: 1 | 2 | 3,
+  floor: number,
+  rng: () => number,
+  result: SimResult
+): void => {
+  const rewardBundle = createCombatRewardBundle(enemyTier, rng, {
+    act,
+    floor,
+    deck: [...state.deck, ...state.hand, ...state.discard]
+  });
   state.player.gold += rewardBundle.gold;
   const rewardCard = chooseRewardCard(state, rewardBundle.cardOptions);
 
@@ -821,7 +832,7 @@ const simulateRun = (seed: number): SimResult => {
           return result;
         }
 
-        applyCombatReward(state, enemy!.tier, rng, result);
+        applyCombatReward(state, enemy!.tier, act, node.floor, rng, result);
 
         if (node.type === NodeType.BOSS) {
           if (act === 3) {

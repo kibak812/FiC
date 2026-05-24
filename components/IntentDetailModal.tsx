@@ -1,6 +1,6 @@
 import React from 'react';
 import { createPortal } from 'react-dom';
-import { Shield, Zap, RefreshCw, Skull } from 'lucide-react';
+import { Shield, Zap, RefreshCw, Skull, X } from 'lucide-react';
 import { EnemyIntent, IntentType } from '@/types';
 
 interface IntentDetailModalProps {
@@ -66,7 +66,16 @@ const IntentDetailModal: React.FC<IntentDetailModalProps> = ({ intent, onClose }
         onClick={(e) => e.stopPropagation()}
         onTouchStart={(e) => e.stopPropagation()}
       >
+        <button
+          onClick={onClose}
+          className="absolute -top-3 -right-3 w-8 h-8 pixel-border border-2 border-stone-400 bg-stone-900 text-stone-200 flex items-center justify-center"
+          aria-label="의도 상세 닫기"
+        >
+          <X size={16} />
+        </button>
+
         {/* Header */}
+        <p className="font-pixel-kr text-xs text-stone-300 mb-2">의도 상세</p>
         <div className="flex items-center gap-3 mb-4">
           <div className={`pixel-border border-3 p-3 flex items-center justify-center ${styles.headerBg} ${styles.headerBorder}`}>
             {getIntentIcon()}

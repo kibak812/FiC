@@ -35,7 +35,7 @@ const CombatHelpModal: React.FC<CombatHelpModalProps> = ({ onClose }) => {
       >
         <div className="flex items-center justify-between gap-3 mb-4">
           <div>
-            <p className="font-pixel text-[10px] text-cyan-300 mb-1">HELP</p>
+            <p className="font-pixel-kr text-xs text-cyan-300 mb-1">도움말</p>
             <h3 className="font-pixel-kr text-xl text-white font-bold">전투 사전</h3>
           </div>
           <button

@@ -9,8 +9,10 @@ Run these from the repository root before tagging or pushing a release commit:
 ```bash
 npm ci
 npx tsc --noEmit
+npm run test:readiness
 npm run test:balance
-npm test
+npm run test:logic
+npm run test:e2e
 npm run build
 npm audit --audit-level=moderate
 ```
@@ -25,7 +27,7 @@ npm audit --audit-level=moderate
 
 ## Store Build Notes
 
-- Push to `main` triggers CI and GitHub Pages deployment.
+- Push to `main` triggers CI and a GitHub Pages deployment that repeats the required verification gates before publishing.
 - Confirm both workflows complete successfully before announcing a build.
 - The settings menu must expose sound, music, motion, contrast, text size, and tutorial reset controls.
 - Save migrations must preserve old settings and clamp volume values to `0..1`.
@@ -34,8 +36,11 @@ npm audit --audit-level=moderate
 
 1. Open the packaged build.
 2. Start a new run and confirm the map appears.
-3. Enter a combat node and verify the first-combat tutorial can be skipped.
+3. Enter a combat node and verify the first-combat tutorial walks through handle, head, craft, and enemy intent inspection.
 4. Open the combat help dictionary and close it.
 5. Place a handle and head on the anvil, craft, and end the turn.
-6. Return to menu after a reload and confirm the saved run can continue.
-7. Toggle sound/music/accessibility settings and reload to confirm they persist.
+6. Choose or skip a combat reward, then confirm the route advances.
+7. Return to menu after a reload and confirm the saved run can continue.
+8. Toggle sound/music/accessibility settings and tutorial reset, then reload to confirm they persist.
+9. Check 1280x720 and 390x844 combat viewports: enemy, anvil, hand, craft button, and turn-end button must all remain visible and clickable.
+10. Confirm the browser console has no relevant errors or warnings.

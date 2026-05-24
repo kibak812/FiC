@@ -37,8 +37,8 @@ interface BossRewardScreenProps {
 const BossRewardScreen: React.FC<BossRewardScreenProps> = ({ onSelectReward }) => {
   return (
     <div className="w-full h-screen-safe flex flex-col items-center justify-center bg-pixel-bg-dark text-stone-100 p-4">
-      <h2 className="text-xl md:text-2xl font-pixel mb-3 text-yellow-400 flex items-center gap-3" style={{ textShadow: '0 0 15px rgba(250,204,21,0.5)' }}>
-        <Hammer size={24} /> FORGE UPGRADE
+      <h2 className="text-xl md:text-2xl font-pixel-kr font-bold mb-3 text-yellow-400 flex items-center gap-3" style={{ textShadow: '0 0 15px rgba(250,204,21,0.5)' }}>
+        <Hammer size={24} /> 대장간 강화
       </h2>
       <p className="text-stone-400 font-pixel-kr text-sm mb-8 text-center">보스를 물리쳤습니다! 대장간을 업그레이드할 기회입니다.</p>
 

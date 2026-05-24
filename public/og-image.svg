@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 630">
+  <rect width="1200" height="630" fill="#0f0a12"/>
+  <rect x="0" y="430" width="1200" height="200" fill="#2d2137"/>
+  <rect x="120" y="390" width="960" height="52" fill="#4b3621"/>
+  <rect x="220" y="328" width="760" height="62" fill="#7c4a22"/>
+  <rect x="330" y="258" width="540" height="70" fill="#c96a2d"/>
+  <rect x="535" y="168" width="130" height="90" fill="#f0b24a"/>
+  <rect x="470" y="456" width="260" height="62" fill="#1a1423"/>
+  <text x="600" y="112" fill="#f97316" font-size="54" text-anchor="middle" font-family="Apple SD Gothic Neo, Malgun Gothic, sans-serif" font-weight="700">혼돈의 대장간</text>
+  <text x="600" y="570" fill="#e7e5e4" font-size="32" text-anchor="middle" font-family="Apple SD Gothic Neo, Malgun Gothic, sans-serif">손잡이 + 머리 + 장식으로 매 턴 무기를 제작하세요</text>
+</svg>

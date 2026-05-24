@@ -42,13 +42,13 @@ const PlayerHUD: React.FC<PlayerHUDProps> = ({
       {/* Debuff Indicators */}
       <div className="flex flex-col gap-1 mt-2">
         {disarmed && (
-          <div className="flex items-center gap-1 text-red-400 font-pixel text-[8px] bg-black/60 px-2 py-1 pixel-border border-2 border-red-600">
-            <Ban size={10} /> DISARM
+          <div className="flex items-center gap-1 text-red-400 font-pixel-kr text-[10px] bg-black/60 px-2 py-1 pixel-border border-2 border-red-600">
+            <Ban size={10} /> 머리 봉인
           </div>
         )}
         {costLimit !== null && (
-          <div className="flex items-center gap-1 text-purple-400 font-pixel text-[8px] bg-black/60 px-2 py-1 pixel-border border-2 border-purple-600">
-            <Lock size={10} /> LIMIT:{costLimit}
+          <div className="flex items-center gap-1 text-purple-400 font-pixel-kr text-[10px] bg-black/60 px-2 py-1 pixel-border border-2 border-purple-600">
+            <Lock size={10} /> 비용 제한 {costLimit}
           </div>
         )}
       </div>

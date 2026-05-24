@@ -17,6 +17,7 @@ interface EnemySectionProps {
   // Callbacks
   onIntentClick: () => void;
   onStatusClick: (status: string) => void;
+  tutorialFocus?: 'intent' | null;
 }
 
 const EnemySection: React.FC<EnemySectionProps> = ({
@@ -30,7 +31,8 @@ const EnemySection: React.FC<EnemySectionProps> = ({
   enemyBleeding,
   enemyAttacking,
   onIntentClick,
-  onStatusClick
+  onStatusClick,
+  tutorialFocus = null
 }) => {
   const intentLongPressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -57,7 +59,7 @@ const EnemySection: React.FC<EnemySectionProps> = ({
   const currentIntent = enemy.intents[enemy.currentIntentIndex];
 
   return (
-    <div className="flex-[0_0_auto] h-[28%] min-h-[180px] flex justify-center items-center relative border-b border-stone-800 bg-stone-900/50 px-2">
+    <div className="combat-enemy-section flex-[0_0_auto] h-[23dvh] min-h-[150px] md:min-h-[165px] flex justify-center items-center relative border-b border-stone-800 bg-stone-900/50 px-2" data-testid="enemy-section">
       
       {/* Stage Indicator - Pixel Style */}
       <div className="absolute top-2 left-2 font-pixel text-[10px] text-stone-400 flex items-center gap-1 bg-black/50 px-2 py-1 pixel-border border-2 border-stone-700 z-10">
@@ -72,18 +74,24 @@ const EnemySection: React.FC<EnemySectionProps> = ({
       </div>
 
       {/* Horizontal Enemy Layout */}
-      <div className="flex items-center justify-center gap-3 md:gap-6 w-full max-w-xl mt-6">
+      <div className="flex items-center justify-center gap-2 md:gap-5 w-full max-w-xl mt-5">
         
         {/* Left: Intent (with long-press for mobile) */}
         <div 
-          className="flex flex-col items-center animate-intent-drop flex-shrink-0 cursor-help"
+          className={`flex flex-col items-center animate-intent-drop flex-shrink-0 cursor-help ${tutorialFocus === 'intent' ? 'tutorial-focus' : ''}`}
+          role="button"
+          tabIndex={0}
+          aria-label="적 의도 자세히 보기"
           onTouchStart={handleIntentTouchStart}
           onTouchMove={handleIntentTouchMove}
           onTouchEnd={handleIntentTouchEnd}
           onClick={onIntentClick}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter' || event.key === ' ') onIntentClick();
+          }}
         >
           <div className={`
-            pixel-border border-3 p-2 flex items-center justify-center
+            pixel-border border-3 p-1.5 md:p-2 flex items-center justify-center
             ${currentIntent.type === IntentType.ATTACK ? 'bg-red-900/80 border-red-500' :
               currentIntent.type === IntentType.BUFF ? 'bg-green-900/80 border-green-500' :
               currentIntent.type === IntentType.DEBUFF ? 'bg-purple-900/80 border-purple-500' :
@@ -109,14 +117,14 @@ const EnemySection: React.FC<EnemySectionProps> = ({
             )}
           </div>
           {/* Hint for tap */}
-          <div className="text-[7px] text-stone-500 mt-0.5 font-pixel-kr">TAP</div>
+          <div className="text-[7px] text-stone-500 mt-0.5 font-pixel-kr">누르기</div>
         </div>
 
         {/* Center: Sprite + HP + Name */}
         <div className={`flex flex-col items-center flex-shrink-0 ${enemyAttacking ? 'animate-enemy-attack' : ''}`}>
           {/* Enemy Sprite */}
           <div className={`
-            w-24 h-24 md:w-32 md:h-32
+            w-20 h-20 md:w-28 md:h-28
             pixel-border border-3
             flex items-center justify-center
             relative overflow-hidden
@@ -127,7 +135,7 @@ const EnemySection: React.FC<EnemySectionProps> = ({
               enemyBleeding ? 'border-red-600 animate-bleed bg-red-900/30' :
               'border-stone-600 bg-stone-800'}
           `}>
-            {React.createElement(getMonsterSprite(enemy.id), { className: 'w-20 h-20 md:w-28 md:h-28' })}
+            {React.createElement(getMonsterSprite(enemy.id), { className: 'w-16 h-16 md:w-24 md:h-24' })}
             
             {/* Block indicator on sprite */}
             {enemy.block > 0 && (

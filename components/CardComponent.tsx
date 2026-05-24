@@ -167,6 +167,7 @@ const CardComponent: React.FC<CardProps> = ({
       onTouchMove={handleTouchMove}
       onTouchEnd={handleTouchEnd}
       className={`
+        combat-card
         relative flex flex-col justify-between select-none overflow-hidden
         w-24 h-36 md:w-32 md:h-48
         pixel-border border-4 p-1 md:p-1.5
@@ -204,13 +205,13 @@ const CardComponent: React.FC<CardProps> = ({
       </div>
 
       {/* Icon Area - Unique Pixel Art */}
-      <div className="flex-grow flex items-center justify-center py-1">
+      <div className="combat-card-art flex-grow flex items-center justify-center py-1">
         <div className={`
           pixel-border border-2
           bg-black/40 border-white/20
           overflow-hidden
         `}>
-          <CardSprite className="w-10 h-10 md:w-12 md:h-12" />
+          <CardSprite className="combat-card-sprite w-10 h-10 md:w-12 md:h-12" />
         </div>
       </div>
 
@@ -221,6 +222,7 @@ const CardComponent: React.FC<CardProps> = ({
           {card.name}
         </h3>
         <p className={`
+          combat-card-description
           text-[6px] md:text-[8px] font-pixel-kr
           text-stone-300 leading-tight
           h-[28px] md:h-[36px]

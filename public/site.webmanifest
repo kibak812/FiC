@@ -1,0 +1,19 @@
+{
+  "name": "혼돈의 대장간",
+  "short_name": "FiC",
+  "description": "손잡이, 머리, 장식을 조합해 매 턴 무기를 제작하는 한국어 로그라이크 덱빌더입니다.",
+  "lang": "ko",
+  "start_url": "/FiC/",
+  "scope": "/FiC/",
+  "display": "standalone",
+  "background_color": "#0f0a12",
+  "theme_color": "#0f0a12",
+  "icons": [
+    {
+      "src": "/FiC/favicon.svg",
+      "sizes": "64x64",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}

@@ -362,6 +362,9 @@ section('Map, rewards, shops, and events', () => {
 
   requireReady(valuesEqual(rewardIds, ['COMMON', 'ELITE', 'BOSS']), 'Combat reward rules should cover common, elite, and boss tiers.');
   requireReady(Object.values(COMBAT_REWARD_RULES).every(rule => rule.gold.min > 0 && rule.gold.max >= rule.gold.min && rule.cardOptionCount >= 3), 'Combat reward rules should have valid gold ranges and card options.');
+  requireReady(Object.values(COMBAT_REWARD_RULES).every(rule => rule.legendUnlockFloor >= 1 && (rule.rarityWeights[CardRarity.COMMON] || 0) > 0 && (rule.rarityWeights[CardRarity.RARE] || 0) > 0), 'Combat reward rules should define rarity weights and legend unlock floors.');
+  requireReady((COMBAT_REWARD_RULES.COMMON.rarityWeights[CardRarity.LEGEND] || 0) < (COMBAT_REWARD_RULES.ELITE.rarityWeights[CardRarity.LEGEND] || 0), 'Elite reward legend weight should exceed common reward legend weight.');
+  requireReady((COMBAT_REWARD_RULES.ELITE.rarityWeights[CardRarity.LEGEND] || 0) < (COMBAT_REWARD_RULES.BOSS.rarityWeights[CardRarity.LEGEND] || 0), 'Boss reward legend weight should exceed elite reward legend weight.');
   requireReady(valuesEqual(shopIds, validShopIds), 'Shop items should expose remove, heal, rare card, and energy choices.');
   requireReady(SHOP_ITEMS.every(item => item.price > 0 && item.name.length > 0 && item.description.length > 0), 'Shop items need positive prices and display copy.');
   requireReady(valuesEqual(bossRewardIds, validBossRewardIds), 'Boss rewards should expose energy, max HP, and gold choices.');
@@ -455,6 +458,7 @@ section('Validation and CI gates', () => {
   const packageJson = readJsonRecord('package.json');
   const scripts = isRecord(packageJson.scripts) ? packageJson.scripts : {};
   const ciSource = readText('.github/workflows/ci.yml');
+  const deploySource = readText('.github/workflows/deploy.yml');
   const combatEngineSource = readText('utils/combatEngine.ts');
   const rewardUtilsSource = readText('utils/rewardUtils.ts');
   const eventUtilsSource = readText('utils/eventUtils.ts');
@@ -477,7 +481,8 @@ section('Validation and CI gates', () => {
   requireReady(appSource.includes('resolveEnemyTurn(enemy, player)'), 'Runtime combat should use shared enemy turn resolution instead of duplicating enemy turn calculations in App.');
   requireReady(appSource.includes('resolvePlayerWeaponAttack({'), 'Runtime combat should use shared player weapon attack resolution instead of duplicating hit calculations in App.');
   requireReady(rewardUtilsSource.includes('createCombatRewardBundle') && rewardUtilsSource.includes('resolveShopPurchase') && rewardUtilsSource.includes('resolveBossReward'), 'Reward utilities should expose UI-free combat reward, shop, and boss reward resolution.');
-  requireReady(appSource.includes('createCombatRewardBundle(enemy.tier)') && appSource.includes('resolveShopPurchase(player, itemId)') && appSource.includes('resolveBossReward(player, rewardId'), 'Runtime reward, shop, and boss reward flows should use shared static-data resolvers.');
+  requireReady(rewardUtilsSource.includes('CombatRewardContext') && rewardUtilsSource.includes('scoreCombatRewardCandidate'), 'Reward utilities should account for act progress, deck slot needs, and archetype demand.');
+  requireReady(appSource.includes('createCombatRewardBundle(enemy.tier') && appSource.includes('resolveShopPurchase(player, itemId)') && appSource.includes('resolveBossReward(player, rewardId'), 'Runtime reward, shop, and boss reward flows should use shared static-data resolvers.');
   requireReady(simSource.includes('createCombatRewardBundle(enemyTier') && simSource.includes('resolveShopPurchase(state.player') && simSource.includes('resolveBossReward(state.player'), 'Seeded simulation should use the same reward, shop, and boss reward resolvers as runtime.');
   requireReady(eventUtilsSource.includes('resolveEventOption') && eventUtilsSource.includes('resolveEventCardRemoval') && eventUtilsSource.includes('canPayEventOption'), 'Event utilities should expose UI-free GAME_EVENTS option resolution and removal handling.');
   requireReady(appSource.includes('resolveEventOption(player, deck, option)') && appSource.includes('resolveEventCardRemoval(player, deck'), 'Runtime events should use shared static-data event resolvers.');
@@ -491,6 +496,12 @@ section('Validation and CI gates', () => {
   requireReady(ciSource.includes('npm run test:logic'), 'CI should run logic and simulation tests.');
   requireReady(ciSource.includes('npm run test:e2e'), 'CI should run UI e2e tests.');
   requireReady(ciSource.includes('npm audit --audit-level=moderate'), 'CI should run a moderate-or-higher security audit.');
+  requireReady(deploySource.includes('npx tsc --noEmit'), 'Deploy workflow should run the type check before publishing.');
+  requireReady(deploySource.includes('npm run test:readiness'), 'Deploy workflow should run product readiness before publishing.');
+  requireReady(deploySource.includes('npm run test:logic'), 'Deploy workflow should run logic and simulation tests before publishing.');
+  requireReady(deploySource.includes('npm run test:balance'), 'Deploy workflow should run balance validation before publishing.');
+  requireReady(deploySource.includes('npm run test:e2e'), 'Deploy workflow should run UI e2e tests before publishing.');
+  requireReady(deploySource.includes('npm audit --audit-level=moderate'), 'Deploy workflow should run the security audit before publishing.');
 
   warnReady(readText('scripts/simulateRuns.ts').includes('1000'), 'Seeded simulation script should keep the 1000-run target visible.');
   requireReady(readText('scripts/simulateRuns.ts').includes('SIM_MIN_WIN_RATE'), 'Seeded simulation should enforce a minimum win-rate sanity gate.');

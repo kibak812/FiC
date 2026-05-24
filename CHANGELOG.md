@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/).
 
 ---
 
+## [1.12.0] - 2026-05-25
+
+### Added
+- Added first-combat guidance tied to the actual handle, head, craft, and enemy-intent interaction flow.
+- Added release metadata assets for favicon, manifest, and social preview.
+- Added reward regression coverage for early legendary gating, slot demand, and archetype-aware reward scoring.
+
+### Changed
+- Reworked the combat layout and card sizing for 1280x720 desktop and 390px mobile readability.
+- Combat reward rules now use separate common, elite, and boss rarity weights with Act progress, deck slot needs, and archetype demand influencing candidates.
+- Korean-first UI copy now replaces combat and reward labels such as deck, discard, turn end, loot, market, and tutorial reset.
+- Package, menu, and changelog version are aligned at v1.12.0.
+- GitHub Pages deployment now runs the same core verification gates before publishing.
+
+### Fixed
+- Crafting now shows explicit unavailable reasons such as missing handle/head, energy shortage, or cost limit instead of an ambiguous disabled state.
+- Release checklist now covers mobile, save, settings, tutorial reset, reward, and console-health flows.
+
+### Design Notes
+- This RC pass focuses on removing first-five-minute confusion and release packaging risk without changing the core weapon assembly loop or adding large content pools.
+
+---
+
 ## [1.11.27] - 2026-05-23
 
 ### Changed

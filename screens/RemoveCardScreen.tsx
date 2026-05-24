@@ -24,8 +24,8 @@ const RemoveCardScreen: React.FC<RemoveCardScreenProps> = ({
   return (
     <div className="w-full h-screen-safe flex flex-col bg-pixel-bg-dark text-stone-100 overflow-hidden">
       <div className="flex-shrink-0 text-center p-4 bg-pixel-bg-mid pixel-border border-b-4 border-stone-700 z-10">
-        <h2 className="text-lg md:text-xl font-pixel text-red-400 mb-2 flex items-center justify-center gap-2" style={{ textShadow: '0 0 10px rgba(248,113,113,0.5)' }}>
-          <Flame size={20} /> SMELT CARD
+        <h2 className="text-lg md:text-xl font-pixel-kr font-bold text-red-400 mb-2 flex items-center justify-center gap-2" style={{ textShadow: '0 0 10px rgba(248,113,113,0.5)' }}>
+          <Flame size={20} /> 카드 제련
         </h2>
         <p className="text-stone-400 font-pixel-kr text-xs">제거할 카드를 선택한 후 확인 버튼을 누르세요.</p>
       </div>

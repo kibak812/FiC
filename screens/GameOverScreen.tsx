@@ -40,7 +40,7 @@ const GameOverScreen: React.FC<GameOverScreenProps> = ({
         ${isWin ? 'text-yellow-400' : 'text-red-400'}
       `}
       style={{ textShadow: '3px 3px 0 #000' }}>
-        {isWin ? 'VICTORY!' : 'GAME OVER'}
+        {isWin ? '승리' : '패배'}
       </h2>
 
       <p className="mb-2 font-pixel-kr text-xl md:text-2xl text-stone-300">
@@ -50,18 +50,18 @@ const GameOverScreen: React.FC<GameOverScreenProps> = ({
       <p className="mb-8 text-stone-500 font-pixel-kr">
         {isWin
           ? '대장간의 전설이 되셨습니다.'
-          : `Act ${act} - Floor ${floor} 에서 쓰러졌습니다.`}
+          : `제 ${act}막 ${floor}층에서 쓰러졌습니다.`}
       </p>
 
       {/* Stats Box */}
       <div className="pixel-border border-2 border-stone-600 bg-stone-900/80 p-4 mb-8 min-w-[200px]">
         <div className="flex justify-between gap-8 font-pixel-kr text-sm mb-2">
           <span className="text-stone-500">획득 골드:</span>
-          <span className="text-yellow-400">{gold} G</span>
+          <span className="text-yellow-400">{gold} 골드</span>
         </div>
         <div className="flex justify-between gap-8 font-pixel-kr text-sm">
           <span className="text-stone-500">도달 층:</span>
-          <span className="text-stone-300">Act {act} - {floor}F</span>
+          <span className="text-stone-300">제 {act}막 {floor}층</span>
         </div>
       </div>
 

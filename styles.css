@@ -160,6 +160,84 @@
   animation: slot-snap 0.25s ease-out;
 }
 
+@keyframes tutorial-focus-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.55), 3px 3px 0 0 rgba(0,0,0,0.5);
+    filter: brightness(1);
+  }
+  50% {
+    box-shadow: 0 0 0 4px rgba(250, 204, 21, 0.18), 0 0 18px rgba(250, 204, 21, 0.65), 3px 3px 0 0 rgba(0,0,0,0.5);
+    filter: brightness(1.15);
+  }
+}
+.tutorial-focus {
+  animation: tutorial-focus-pulse 1.1s ease-in-out infinite;
+  outline: 2px solid rgba(250, 204, 21, 0.9);
+  outline-offset: 2px;
+}
+
+@media (max-height: 760px) and (min-width: 768px) {
+  .combat-card,
+  .anvil-slot-placeholder {
+    width: 6rem;
+    height: 9rem;
+  }
+
+  .combat-card-sprite {
+    width: 2.5rem;
+    height: 2.5rem;
+  }
+
+  .combat-card-description {
+    height: 1.75rem;
+  }
+
+  .combat-hand {
+    height: 12rem;
+  }
+
+  .combat-enemy-section {
+    height: 22dvh;
+    min-height: 145px;
+  }
+
+  .combat-anvil {
+    max-width: 44rem;
+    padding: 0.5rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .combat-card {
+    width: 5.25rem;
+    height: 8rem;
+  }
+
+  .anvil-container .combat-card,
+  .anvil-slot-placeholder {
+    width: 4.75rem;
+    height: 7.25rem;
+  }
+
+  .combat-card-sprite {
+    width: 2.25rem;
+    height: 2.25rem;
+  }
+
+  .combat-card-description {
+    height: 1.55rem;
+  }
+
+  .combat-enemy-section {
+    height: 20dvh;
+    min-height: 145px;
+  }
+
+  .combat-anvil {
+    padding: 0.5rem;
+  }
+}
+
 /* Rare Glow Pulse */
 @keyframes rare-glow {
   0%, 100% {

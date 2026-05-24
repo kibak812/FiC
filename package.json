@@ -1,7 +1,7 @@
 {
   "name": "혼돈의-대장간",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.12.0",
   "type": "module",
   "scripts": {
     "dev": "vite",

@@ -39,7 +39,8 @@ import {
   getCombatRewardRule,
   resolveBossReward,
   resolveShopPurchase,
-  rollGoldReward
+  rollGoldReward,
+  scoreCombatRewardCandidate
 } from '../utils/rewardUtils';
 import {
   applyEventOptionCost,
@@ -955,7 +956,12 @@ runSuite('Static reward, map, and archetype tests', [
       assert(rule.gold.min > 0 && rule.gold.max >= rule.gold.min, `${rule.id} gold reward range should be valid`);
       assert(rule.cardOptionCount >= 3, `${rule.id} should offer at least three card choices`);
       assert(rule.cardRarities.every(rarity => [CardRarity.COMMON, CardRarity.RARE, CardRarity.LEGEND].includes(rarity)), `${rule.id} should only use reward-pool rarities`);
+      assert(rule.legendUnlockFloor >= 1, `${rule.id} should declare when legends can enter the reward pool`);
+      assert((rule.rarityWeights[CardRarity.COMMON] || 0) > 0, `${rule.id} should keep common rewards weighted`);
+      assert((rule.rarityWeights[CardRarity.RARE] || 0) > 0, `${rule.id} should keep rare rewards weighted`);
     }
+    assert((COMBAT_REWARD_RULES.COMMON.rarityWeights[CardRarity.LEGEND] || 0) < (COMBAT_REWARD_RULES.ELITE.rarityWeights[CardRarity.LEGEND] || 0), 'Elite rewards should expose more legendary weight than common rewards');
+    assert((COMBAT_REWARD_RULES.ELITE.rarityWeights[CardRarity.LEGEND] || 0) < (COMBAT_REWARD_RULES.BOSS.rarityWeights[CardRarity.LEGEND] || 0), 'Boss rewards should expose more legendary weight than elite rewards');
 
     assertDeepEqual(SHOP_ITEMS.map(item => item.id).sort(), ['ENERGY', 'HEAL', 'RARE', 'REMOVE'], 'Shop should expose the full static item set');
     assertEqual(new Set(SHOP_ITEMS.map(item => item.id)).size, SHOP_ITEMS.length, 'Shop item ids should be unique');
@@ -999,6 +1005,48 @@ runSuite('Static reward, map, and archetype tests', [
     assertEqual(rollGoldReward(rule, () => 0), rule.gold.min, 'Gold reward should include minimum bound');
     assertEqual(rollGoldReward(rule, () => 0.999), rule.gold.max, 'Gold reward should include maximum bound');
     assertEqual(createRandomCardReward(CardRarity.RARE, CardType.HEAD, () => 0).type, CardType.HEAD, 'Random typed rewards should honor requested slot');
+  }),
+
+  test('combat rewards respect early legend gates and deck needs', () => {
+    const openingContext = {
+      act: 1 as const,
+      floor: 1,
+      deck: [101, 101, 102, 103, 103, 104, 105, 106].map(id => createCardInstance(id, () => 0.1))
+    };
+
+    for (let seed = 1; seed <= 20; seed++) {
+      const reward = createCombatRewardBundle(EnemyTier.COMMON, createSeededRng(`opening-reward-${seed}`), openingContext);
+      assert(
+        reward.cardOptions.every(card => card.rarity !== CardRarity.LEGEND),
+        'Opening common rewards should not surface legendary cards'
+      );
+    }
+
+    const headHeavyContext = {
+      act: 1 as const,
+      floor: 4,
+      deck: [103, 103, 104, 202, 203, 105, 106].map(id => createCardInstance(id, () => 0.2))
+    };
+    const candidateHandle = createCardInstance(201, () => 0.3);
+    const candidateHead = createCardInstance(202, () => 0.4);
+
+    assert(
+      scoreCombatRewardCandidate(candidateHandle, headHeavyContext) > scoreCombatRewardCandidate(candidateHead, headHeavyContext),
+      'Reward scoring should favor a missing required slot when the deck is head-heavy'
+    );
+
+    const statusDeckContext = {
+      act: 2 as const,
+      floor: 6,
+      deck: [201, 203, 205, 238, 103, 104].map(id => createCardInstance(id, () => 0.5))
+    };
+    const matchingStatusCard = createCardInstance(331, () => 0.6);
+    const offPlanCard = createCardInstance(336, () => 0.7);
+
+    assert(
+      scoreCombatRewardCandidate(matchingStatusCard, statusDeckContext) > scoreCombatRewardCandidate(offPlanCard, statusDeckContext),
+      'Reward scoring should reinforce the deck archetype that is already emerging'
+    );
   }),
 
   test('shop and boss rewards resolve from static data without UI state', () => {

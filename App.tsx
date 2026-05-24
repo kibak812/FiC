@@ -225,7 +225,7 @@ export default function App() {
 
   // --- Progression Logic (Replaces Map) ---
 
-const startCombat = (enemyData: EnemyData) => {
+  const startCombat = (enemyData: EnemyData) => {
     // Reset Enemy Block to 0
     setEnemy({ ...enemyData, block: 0 });
     setDeck(prev => shuffle(resetTemporaryDeckModifiers(cleanJunkFromDeck(prev))));
@@ -239,6 +239,7 @@ const startCombat = (enemyData: EnemyData) => {
     setGrowingCrystalBonus(0);
     setInfiniteLoopUsed(false);
     setIsResolvingAction(false);
+    setTutorialStep(0);
   };
 
   const startEvent = (eventId?: string) => {
@@ -271,7 +272,7 @@ const startCombat = (enemyData: EnemyData) => {
       setCompletedMapNodeIds([]);
       setActiveMapNode(null);
       setHasRested(false);
-      showFeedback(`ACT ${nextAct} 시작!`);
+      showFeedback(`제 ${nextAct}막 시작!`);
       playSound('reward');
       setGameState('MAP');
   };
@@ -342,6 +343,7 @@ const startCombat = (enemyData: EnemyData) => {
     setIsResolvingAction(false);
     setAcquiredCard(null);
     setDiscardingCardIds(new Set());
+    setTutorialStep(0);
     
     setPlayer(createInitialPlayerStats());
     
@@ -486,9 +488,13 @@ const startCombat = (enemyData: EnemyData) => {
   ]);
 
   const handleWinCombat = () => {
-      cleanAndConsolidateDeck();
+      const rewardDeck = cleanAndConsolidateDeck();
 
-      const rewardBundle = createCombatRewardBundle(enemy.tier);
+      const rewardBundle = createCombatRewardBundle(enemy.tier, Math.random, {
+          act: act as 1 | 2 | 3,
+          floor,
+          deck: rewardDeck
+      });
       const goldReward = rewardBundle.gold;
       setPlayer(prev => ({
           ...prev,
@@ -841,6 +847,15 @@ const startCombat = (enemyData: EnemyData) => {
     }
 
     if (returnedCard) setHand(prev => [...prev, returnedCard!]);
+    if (shouldShowFirstCombatTutorial) {
+        if (!newSlots.handle) {
+            setTutorialStep(0);
+        } else if (!newSlots.head) {
+            setTutorialStep(1);
+        } else {
+            setTutorialStep(2);
+        }
+    }
     playSound('slot');
   };
 
@@ -864,10 +879,16 @@ const startCombat = (enemyData: EnemyData) => {
     if (!card) return;
 
     playSound('ui');
-    setSlots(prev => ({
-      ...prev,
+    const nextSlots = {
+      ...slots,
       [type === CardType.HANDLE ? 'handle' : type === CardType.HEAD ? 'head' : 'deco']: null
-    }));
+    };
+    setSlots(nextSlots);
+    if (shouldShowFirstCombatTutorial) {
+      if (!nextSlots.handle) setTutorialStep(0);
+      else if (!nextSlots.head) setTutorialStep(1);
+      else setTutorialStep(2);
+    }
     setHand(prev => [...prev, card]);
   };
 
@@ -1024,6 +1045,9 @@ const startCombat = (enemyData: EnemyData) => {
     }
 
     playSound('craft');
+    if (shouldShowFirstCombatTutorial) {
+      setTutorialStep(prev => Math.max(prev, 3));
+    }
     setIsResolvingAction(true);
 
     try {
@@ -1125,7 +1149,7 @@ const startCombat = (enemyData: EnemyData) => {
           showFeedback('방어막: 피해 15로 제한!');
         }
         if (event.thornsDamage > 0) {
-          showFeedback(`가시 반사! -${event.thornsDamage} HP`, 'bad');
+          showFeedback(`가시 반사! -${event.thornsDamage} 체력`, 'bad');
         }
         if (event.blockDamage > 0) {
           showFeedback('방어도에 막힘!');
@@ -1139,7 +1163,7 @@ const startCombat = (enemyData: EnemyData) => {
 
         for (const action of event.onHitActions) {
           if (action.type === 'PLAYER_GAIN_GOLD') showFeedback(`+${action.amount} 골드`, 'good');
-          if (action.type === 'PLAYER_HEAL') showFeedback(`+${action.amount} HP`, 'good');
+          if (action.type === 'PLAYER_HEAL') showFeedback(`+${action.amount} 체력`, 'good');
         }
 
         if (attackResult.events.length > 1) await new Promise(r => setTimeout(r, 200));
@@ -1355,7 +1379,7 @@ case 'PLAYER_DRAW':
                 }
                 break;
               case 'ENEMY_HEAL':
-                showFeedback(`적 회복 +${event.amount} HP`, 'bad');
+                showFeedback(`적 회복 +${event.amount} 체력`, 'bad');
                 break;
               case 'ENEMY_CLEANSE_STRENGTH':
                 showFeedback(`상태이상 정화! 공격력 +${event.amount}`, 'bad');
@@ -1382,7 +1406,16 @@ case 'PLAYER_DRAW':
 
   // Derived state for Anvil
   const weaponPrediction = calculateCurrentWeaponStats();
-  const canCraft = !!(slots.handle && slots.head);
+  const getCraftBlockReason = (): string | null => {
+    if (combatState.phase !== 'PLAYER_ACTION') return '행동 대기 중';
+    if (isResolvingAction) return '처리 중';
+    if (!slots.handle || !slots.head) return '손잡이+머리 필요';
+    if (player.costLimit !== null && weaponPrediction.totalCost > player.costLimit) return `비용 ${player.costLimit} 이하 필요`;
+    if (weaponPrediction.totalCost > player.energy) return '에너지 부족';
+    return null;
+  };
+  const craftBlockReason = getCraftBlockReason();
+  const canCraft = craftBlockReason === null;
   const availableMapNodeIds = getAvailableMapNodeIds(mapNodes, currentMapNodeId);
   const effectiveAnimationsEnabled = settings.animationsEnabled && !settings.reduceMotion;
   const effectiveScreenShake = settings.screenShake && !settings.reduceMotion;
@@ -1409,6 +1442,21 @@ case 'PLAYER_DRAW':
     act === 1 &&
     floor === 1 &&
     !settings.tutorialCompleted;
+  const firstCombatTutorialFocus = shouldShowFirstCombatTutorial
+    ? tutorialStep === 0
+      ? 'handle'
+      : tutorialStep === 1
+        ? 'head'
+        : tutorialStep === 2
+          ? 'craft'
+          : 'intent'
+    : null;
+  const handleIntentInspect = () => {
+    setShowIntentDetail(true);
+    if (shouldShowFirstCombatTutorial && tutorialStep >= TUTORIAL_STEP_COUNT - 1) {
+      completeTutorial();
+    }
+  };
 
   // --- Render Sub-Screens ---
 
@@ -1519,7 +1567,7 @@ case 'PLAYER_DRAW':
       {acquiredCard && (
         <div className="absolute inset-0 z-[100] bg-black/95 flex flex-col items-center justify-center p-4">
             <h2 className="text-xl md:text-2xl font-pixel text-yellow-400 mb-8 animate-pulse" style={{ textShadow: '0 0 20px rgba(250,204,21,0.6)' }}>
-                RARE BLUEPRINT!
+                희귀 도면
             </h2>
             <div className="scale-110 md:scale-125 mb-10">
                 <CardComponent
@@ -1538,7 +1586,7 @@ case 'PLAYER_DRAW':
                   transition-all active:translate-y-1"
                 style={{ boxShadow: '0 4px 0 0 #1c1917' }}
             >
-                OK
+                확인
             </button>
         </div>
       )}
@@ -1626,12 +1674,13 @@ case 'PLAYER_DRAW':
         enemyBurning={effectiveAnimationsEnabled && enemyBurning}
         enemyBleeding={effectiveAnimationsEnabled && enemyBleeding}
         enemyAttacking={effectiveAnimationsEnabled && enemyAttacking}
-        onIntentClick={() => setShowIntentDetail(true)}
+        onIntentClick={handleIntentInspect}
         onStatusClick={(status) => setShowStatusDetail(status)}
+        tutorialFocus={firstCombatTutorialFocus === 'intent' ? 'intent' : null}
       />
 
       {/* --- Middle: Anvil / Crafting --- */}
-      <div className="flex-1 relative flex flex-col justify-center items-center bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-stone-800 to-stone-950 px-2 md:px-4 overflow-y-auto">
+      <div className="combat-forge flex-1 min-h-0 relative flex flex-col justify-center items-center bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-stone-800 to-stone-950 px-2 md:px-4 overflow-hidden">
 
         {/* Player Stats HUD */}
         <PlayerHUD
@@ -1650,7 +1699,7 @@ case 'PLAYER_DRAW':
         <DeckHUD deckCount={deck.length} discardCount={discardPile.length} />
 
         {/* THE ANVIL */}
-        <div className="w-full h-full flex items-center justify-center p-2">
+        <div className="w-full h-full min-h-0 flex items-center justify-center p-1 md:p-2">
             <Anvil
                 slots={slots}
                 onRemove={handleSlotRemove}
@@ -1658,6 +1707,8 @@ case 'PLAYER_DRAW':
                 onDropCard={handleCardDrop}
                 onClear={handleClearSlots}
                 canCraft={canCraft}
+                craftBlockReason={craftBlockReason}
+                tutorialFocus={firstCombatTutorialFocus === 'handle' || firstCombatTutorialFocus === 'head' || firstCombatTutorialFocus === 'craft' ? firstCombatTutorialFocus : null}
                 prediction={{
                     damage: weaponPrediction.damage,
                     cost: weaponPrediction.totalCost,
@@ -1675,14 +1726,15 @@ case 'PLAYER_DRAW':
         </div>
 
         {/* Turn Control - Pixel Style */}
-        <div className="absolute right-4 bottom-4 z-20">
+        <div className="absolute right-3 bottom-3 md:right-4 md:bottom-4 z-20">
            <button
              onClick={endTurn}
              disabled={combatState.phase !== 'PLAYER_ACTION'}
+             data-testid="end-turn-button"
              className={`
-               px-4 py-2 md:px-5 md:py-2.5
+               px-3 py-2 md:px-5 md:py-2.5
                pixel-border border-4
-               font-pixel text-xs md:text-sm
+               font-pixel-kr text-xs md:text-sm font-bold
                transition-all
                ${combatState.phase === 'PLAYER_ACTION'
                  ? 'bg-gradient-to-b from-stone-600 to-stone-700 border-stone-500 text-stone-200 hover:from-stone-500 hover:to-stone-600 active:translate-y-1'
@@ -1690,20 +1742,23 @@ case 'PLAYER_DRAW':
              `}
              style={{ boxShadow: combatState.phase === 'PLAYER_ACTION' ? '0 4px 0 0 #1c1917' : 'none' }}
            >
-             END
+             턴 종료
            </button>
         </div>
 
       </div>
 
       {/* --- Bottom: Hand --- */}
-      <div className="h-40 md:h-64 bg-pixel-bg-mid pixel-border border-t-4 border-stone-700 flex items-center justify-center relative z-30">
+      <div className="combat-hand h-36 md:h-56 xl:h-60 bg-pixel-bg-mid pixel-border border-t-4 border-stone-700 flex items-center justify-center relative z-30" data-testid="hand-zone">
         <div className="flex items-center justify-start md:justify-center gap-2 pb-2 px-4 overflow-x-auto w-full h-full no-scrollbar whitespace-nowrap">
           {hand.map((card, index) => {
             // Simplified layout for mobile: No overlap, simple horizontal scroll
             const isMobile = window.innerWidth < 768;
             const rotation = isMobile ? 0 : (index - (hand.length - 1) / 2) * 5;
             const translateY = isMobile ? 0 : Math.abs(index - (hand.length - 1) / 2) * 10;
+            const tutorialCardFocus =
+              (firstCombatTutorialFocus === 'handle' && card.type === CardType.HANDLE) ||
+              (firstCombatTutorialFocus === 'head' && card.type === CardType.HEAD);
             
             return (
               <div 
@@ -1715,6 +1770,7 @@ case 'PLAYER_DRAW':
                 className={`
                     transition-transform duration-200 
                     ${isMobile ? '' : 'mx-[-30px] hover:z-50 hover:scale-110 hover:-translate-y-16'}
+                    ${tutorialCardFocus ? 'tutorial-focus' : ''}
                     inline-block flex-shrink-0
                 `}
               >

@@ -24,15 +24,15 @@ const canPayOption = (option: EventOption, gold: number, hp: number): boolean =>
 
 const costLabel = (option: EventOption): string | null => {
   if (!option.cost || !option.costResource) return null;
-  return option.costResource === 'GOLD' ? `${option.cost} G` : `${option.cost} HP`;
+  return option.costResource === 'GOLD' ? `${option.cost} 골드` : `체력 ${option.cost}`;
 };
 
 const EventScreen: React.FC<EventScreenProps> = ({ event, gold, hp, onSelectOption }) => {
   return (
     <div className="w-full h-screen-safe flex flex-col bg-pixel-bg-dark text-stone-100 overflow-y-auto">
       <div className="p-4 md:p-6 bg-pixel-bg-mid pixel-border border-b-4 border-stone-700 flex justify-between items-center">
-        <h2 className="text-lg md:text-xl font-pixel flex items-center gap-2 text-cyan-300" style={{ textShadow: '0 0 10px rgba(103,232,249,0.45)' }}>
-          {EVENT_ICONS[event.icon] || <Gem size={30} />} EVENT
+        <h2 className="text-lg md:text-xl font-pixel-kr font-bold flex items-center gap-2 text-cyan-300" style={{ textShadow: '0 0 10px rgba(103,232,249,0.45)' }}>
+          {EVENT_ICONS[event.icon] || <Gem size={30} />} 사건
         </h2>
         <div className="flex items-center gap-3">
           <div className="flex items-center gap-2 bg-black/60 px-3 py-1.5 pixel-border border-2 border-red-700">

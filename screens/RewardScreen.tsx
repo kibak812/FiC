@@ -11,8 +11,8 @@ interface RewardScreenProps {
 const RewardScreen: React.FC<RewardScreenProps> = ({ rewardOptions, onSelectReward }) => {
   return (
     <div className="w-full h-screen-safe flex flex-col items-center justify-center bg-pixel-bg-dark text-stone-100 p-4">
-      <h2 className="text-xl md:text-2xl font-pixel mb-8 text-yellow-400 flex items-center gap-3" style={{ textShadow: '0 0 15px rgba(250,204,21,0.5)' }}>
-        <Trophy size={24} /> LOOT!
+      <h2 className="text-xl md:text-2xl font-pixel-kr font-bold mb-8 text-yellow-400 flex items-center gap-3" style={{ textShadow: '0 0 15px rgba(250,204,21,0.5)' }}>
+        <Trophy size={24} /> 전리품
       </h2>
       <div className="flex flex-wrap justify-center gap-4 md:gap-6 mb-10">
         {rewardOptions.map(card => (
